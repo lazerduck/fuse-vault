@@ -88,6 +88,32 @@ Run the interactive terminal simulator:
 firmware/build-host/fuse_vault_simulator
 ```
 
+On a desktop with GTK 3 development files installed, the host build also
+produces a graphical 160x80 landscape display simulator:
+
+```sh
+firmware/build-host/fuse_vault_display_simulator
+```
+
+The graphical simulator displays the 80x160 panel rotated into the device's
+160x80 landscape orientation at 4x scale. Arrow keys map to the four D-pad
+directions, Enter (or Space) maps to the centre OK button, and Backspace (or
+Escape) maps to the Back button. The window footer lists the additional letter
+keys used to inject platform results that do not exist yet, such as a
+successful or failed authentication.
+
+The first secret-entry prototype uses three 0-99 combination wheels. Left and
+Right choose a wheel, Up and Down change it with wraparound, OK submits the
+combination, and Back cancels and clears it. This provides 1,000,000 possible
+combinations (just under 20 bits); it is intended to be evaluated as a quick
+device PIN protected by the persistent attempt limit and device-held secret,
+not treated as sufficient standalone encryption-key entropy.
+
+In VS Code, run `Fuse Vault: Run display simulator` from **Tasks: Run Task**.
+For breakpoints and stepping, select `Fuse Vault: Debug display simulator` in
+the Run and Debug panel and press F5. The build is configured automatically
+before either action.
+
 Pass `--unprovisioned` to start in first-time setup. The simulator injects
 authentication and persistence outcomes because those platform services do not
 exist yet; it never exposes a real or plaintext storage volume.
@@ -126,7 +152,7 @@ firmware/
 3. Implement display initialization and a test pattern.
 4. Implement directional controls and button debouncing.
 5. Detect the active USB connector and verify the data multiplexer.
-6. Initialize the SD card over SPI and exercise raw block reads and writes.
+6. Initialize the SD card over SDIO and exercise raw block reads and writes.
 7. Add the locked-mode UI and explicit USB mode state machine.
 
 Secure boot, OTP provisioning, destructive lockout, cryptographic storage, and

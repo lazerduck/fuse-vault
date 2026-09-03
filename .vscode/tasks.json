@@ -1,0 +1,60 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Fuse Vault: Configure host simulator",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "-S",
+                "${workspaceFolder}/firmware/host",
+                "-B",
+                "${workspaceFolder}/firmware/build-host",
+                "-G",
+                "Ninja",
+                "-DCMAKE_BUILD_TYPE=Debug"
+            ],
+            "problemMatcher": []
+        },
+        {
+            "label": "Fuse Vault: Build display simulator",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/firmware/build-host",
+                "--target",
+                "fuse_vault_display_simulator"
+            ],
+            "dependsOn": "Fuse Vault: Configure host simulator",
+            "dependsOrder": "sequence",
+            "problemMatcher": "$gcc",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Fuse Vault: Run display simulator",
+            "type": "process",
+            "command": "${workspaceFolder}/firmware/build-host/fuse_vault_display_simulator",
+            "dependsOn": "Fuse Vault: Build display simulator",
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "Fuse Vault: Test host firmware",
+            "type": "process",
+            "command": "ctest",
+            "args": [
+                "--test-dir",
+                "${workspaceFolder}/firmware/build-host",
+                "--output-on-failure"
+            ],
+            "dependsOn": "Fuse Vault: Configure host simulator",
+            "dependsOrder": "sequence",
+            "problemMatcher": [],
+            "group": "test"
+        }
+    ]
+}

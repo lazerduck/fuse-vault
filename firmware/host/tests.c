@@ -51,12 +51,28 @@ static void test_vault_unlock_and_lock(void) {
     CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
     CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
 
+    CHECK(fv_app_handle(&app, FV_EVENT_UP) == FV_COMMAND_NONE);
+    CHECK(app.secret_wheels[0] == 1u);
+    CHECK(fv_app_handle(&app, FV_EVENT_DOWN) == FV_COMMAND_NONE);
+    CHECK(app.secret_wheels[0] == 0u);
+    CHECK(fv_app_handle(&app, FV_EVENT_DOWN) == FV_COMMAND_NONE);
+    CHECK(app.secret_wheels[0] == 99u);
+    CHECK(fv_app_handle(&app, FV_EVENT_RIGHT) == FV_COMMAND_NONE);
+    CHECK(app.selected_secret_wheel == 1u);
+    CHECK(fv_app_handle(&app, FV_EVENT_UP) == FV_COMMAND_NONE);
+    CHECK(app.secret_wheels[1] == 1u);
+    CHECK(fv_app_handle(&app, FV_EVENT_LEFT) == FV_COMMAND_NONE);
+    CHECK(app.selected_secret_wheel == 0u);
+
     fv_command_set_t commands = fv_app_handle(&app, FV_EVENT_SELECT);
     CHECK(has_command(commands, FV_COMMAND_BEGIN_AUTHENTICATION));
     CHECK(!has_command(commands, FV_COMMAND_USB_ATTACH_MSC));
     CHECK(app.state == FV_STATE_VAULT_AUTHENTICATING);
 
     commands = fv_app_handle(&app, FV_EVENT_AUTH_SUCCEEDED);
+    CHECK(app.secret_wheels[0] == 0u);
+    CHECK(app.secret_wheels[1] == 0u);
+    CHECK(app.secret_wheels[2] == 0u);
     CHECK(!has_command(commands, FV_COMMAND_USB_ATTACH_MSC));
     CHECK(has_command(commands, FV_COMMAND_ERASE_TRANSIENT_SECRET));
     CHECK(has_command(commands, FV_COMMAND_STORE_ATTEMPT_COUNTER));
@@ -70,6 +86,23 @@ static void test_vault_unlock_and_lock(void) {
     CHECK(has_command(commands, FV_COMMAND_USB_DETACH));
     CHECK(has_command(commands, FV_COMMAND_ERASE_SESSION_KEYS));
     CHECK(app.state == FV_STATE_MODE_SELECT);
+}
+
+static void test_secret_entry_back_clears_input(void) {
+    fv_app_t app = boot_provisioned();
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    (void)fv_app_handle(&app, FV_EVENT_UP);
+    (void)fv_app_handle(&app, FV_EVENT_RIGHT);
+    (void)fv_app_handle(&app, FV_EVENT_DOWN);
+    CHECK(app.secret_wheels[0] == 1u);
+    CHECK(app.secret_wheels[1] == 99u);
+
+    CHECK(has_command(fv_app_handle(&app, FV_EVENT_BACK),
+                      FV_COMMAND_ERASE_TRANSIENT_SECRET));
+    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.secret_wheels[0] == 0u);
+    CHECK(app.secret_wheels[1] == 0u);
+    CHECK(app.selected_secret_wheel == 0u);
 }
 
 static void test_attempt_limit_destroys_secret(void) {
@@ -150,6 +183,7 @@ static void test_usb_attachment_invariants(void) {
 int main(void) {
     test_boot_paths();
     test_vault_unlock_and_lock();
+    test_secret_entry_back_clears_input();
     test_attempt_limit_destroys_secret();
     test_fido_mode();
     test_fault_closes_security_boundary();

@@ -11,6 +11,8 @@ static fv_command_set_t enter_fault(fv_app_t *app) {
 }
 
 static fv_command_set_t leave_sensitive_mode(fv_app_t *app) {
+    memset(app->secret_wheels, 0, sizeof(app->secret_wheels));
+    app->selected_secret_wheel = 0u;
     app->state = FV_STATE_MODE_SELECT;
     return FV_COMMAND_USB_DETACH |
            FV_COMMAND_ERASE_TRANSIENT_SECRET |
@@ -85,6 +87,8 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                     : FV_MODE_VAULT;
             } else if (event == FV_EVENT_SELECT) {
                 if (app->selected_mode == FV_MODE_VAULT) {
+                    memset(app->secret_wheels, 0, sizeof(app->secret_wheels));
+                    app->selected_secret_wheel = 0u;
                     app->state = FV_STATE_VAULT_SECRET_ENTRY;
                 } else {
                     app->state = FV_STATE_FIDO_READY;
@@ -94,23 +98,42 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
             break;
 
         case FV_STATE_VAULT_SECRET_ENTRY:
-            if (event == FV_EVENT_SELECT) {
+            if (event == FV_EVENT_LEFT) {
+                app->selected_secret_wheel = (uint8_t)(
+                    app->selected_secret_wheel == 0u
+                        ? FV_SECRET_WHEEL_COUNT - 1u
+                        : (unsigned)app->selected_secret_wheel - 1u);
+            } else if (event == FV_EVENT_RIGHT) {
+                app->selected_secret_wheel =
+                    (uint8_t)((app->selected_secret_wheel + 1u) %
+                              FV_SECRET_WHEEL_COUNT);
+            } else if (event == FV_EVENT_UP) {
+                uint8_t *value =
+                    &app->secret_wheels[app->selected_secret_wheel];
+                *value = (uint8_t)((*value + 1u) % FV_SECRET_WHEEL_VALUES);
+            } else if (event == FV_EVENT_DOWN) {
+                uint8_t *value =
+                    &app->secret_wheels[app->selected_secret_wheel];
+                *value = *value == 0u ? FV_SECRET_WHEEL_VALUES - 1u
+                                      : (uint8_t)(*value - 1u);
+            } else if (event == FV_EVENT_SELECT) {
                 app->state = FV_STATE_VAULT_AUTHENTICATING;
                 return FV_COMMAND_BEGIN_AUTHENTICATION;
-            }
-            if (event == FV_EVENT_BACK) {
+            } else if (event == FV_EVENT_BACK) {
                 return leave_sensitive_mode(app);
             }
             break;
 
         case FV_STATE_VAULT_AUTHENTICATING:
             if (event == FV_EVENT_AUTH_SUCCEEDED) {
+                memset(app->secret_wheels, 0, sizeof(app->secret_wheels));
                 app->failed_attempts = 0u;
                 app->state = FV_STATE_VAULT_RECORDING_SUCCESS;
                 return FV_COMMAND_ERASE_TRANSIENT_SECRET |
                        FV_COMMAND_STORE_ATTEMPT_COUNTER;
             }
             if (event == FV_EVENT_AUTH_FAILED) {
+                memset(app->secret_wheels, 0, sizeof(app->secret_wheels));
                 ++app->failed_attempts;
                 app->state = FV_STATE_VAULT_RECORDING_FAILURE;
                 return FV_COMMAND_ERASE_TRANSIENT_SECRET |
@@ -194,11 +217,20 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             break;
         case FV_STATE_VAULT_SECRET_ENTRY:
             snprintf(view->title, sizeof(view->title), "Unlock vault");
-            snprintf(view->lines[0], sizeof(view->lines[0]), "Enter secret");
+            snprintf(view->lines[0], sizeof(view->lines[0]),
+                     app->selected_secret_wheel == 0u
+                         ? "[%02u]  %02u   %02u"
+                         : app->selected_secret_wheel == 1u
+                             ? " %02u  [%02u]  %02u"
+                             : " %02u   %02u  [%02u]",
+                     (unsigned)app->secret_wheels[0],
+                     (unsigned)app->secret_wheels[1],
+                     (unsigned)app->secret_wheels[2]);
             snprintf(view->lines[2], sizeof(view->lines[2]), "Failures: %u/%u",
                      (unsigned)app->failed_attempts,
                      (unsigned)FV_MAX_UNLOCK_ATTEMPTS);
-            snprintf(view->lines[3], sizeof(view->lines[3]), "Select: submit");
+            snprintf(view->lines[3], sizeof(view->lines[3]),
+                     "Arrows: adjust  OK: submit");
             break;
         case FV_STATE_VAULT_AUTHENTICATING:
             snprintf(view->title, sizeof(view->title), "Unlock vault");

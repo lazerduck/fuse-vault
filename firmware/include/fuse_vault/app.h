@@ -7,6 +7,8 @@
 #define FV_MAX_UNLOCK_ATTEMPTS 10u
 #define FV_UI_LINE_COUNT 4u
 #define FV_UI_TEXT_CAPACITY 32u
+#define FV_SECRET_WHEEL_COUNT 3u
+#define FV_SECRET_WHEEL_VALUES 100u
 
 typedef enum {
     FV_STATE_BOOTING = 0,
@@ -66,6 +68,8 @@ typedef uint32_t fv_command_set_t;
 typedef struct {
     fv_state_t state;
     fv_mode_t selected_mode;
+    uint8_t secret_wheels[FV_SECRET_WHEEL_COUNT];
+    uint8_t selected_secret_wheel;
     uint8_t failed_attempts;
     bool provisioned;
 } fv_app_t;

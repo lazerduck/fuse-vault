@@ -26,6 +26,26 @@ target_compile_options(fuse_vault_simulator PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
 )
 
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(GTK3 QUIET IMPORTED_TARGET gtk+-3.0)
+endif()
+
+if(GTK3_FOUND)
+    add_executable(fuse_vault_display_simulator
+        display_simulator.c
+    )
+    target_link_libraries(fuse_vault_display_simulator PRIVATE
+        fuse_vault_core
+        PkgConfig::GTK3
+    )
+    target_compile_options(fuse_vault_display_simulator PRIVATE
+        -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+    )
+else()
+    message(STATUS "GTK 3 not found: graphical display simulator disabled")
+endif()
+
 enable_testing()
 add_executable(fuse_vault_tests
     tests.c
@@ -35,4 +55,3 @@ target_compile_options(fuse_vault_tests PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
 )
 add_test(NAME fuse_vault_state_machine COMMAND fuse_vault_tests)
-
