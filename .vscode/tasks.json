@@ -43,6 +43,17 @@
             "problemMatcher": []
         },
         {
+            "label": "Fuse Vault: Run first-time setup",
+            "type": "process",
+            "command": "${workspaceFolder}/firmware/build-host/fuse_vault_display_simulator",
+            "args": [
+                "--unprovisioned"
+            ],
+            "dependsOn": "Fuse Vault: Build display simulator",
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
             "label": "Fuse Vault: Test host firmware",
             "type": "process",
             "command": "ctest",

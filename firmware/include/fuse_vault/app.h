@@ -13,6 +13,11 @@
 typedef enum {
     FV_STATE_BOOTING = 0,
     FV_STATE_SETUP_REQUIRED,
+    FV_STATE_SETUP_METHOD_SELECT,
+    FV_STATE_SETUP_SECRET_ENTRY,
+    FV_STATE_SETUP_SECRET_CONFIRM,
+    FV_STATE_SETUP_SECRET_MISMATCH,
+    FV_STATE_SETUP_POLICY_CONFIRM,
     FV_STATE_PROVISIONING,
     FV_STATE_MODE_SELECT,
     FV_STATE_VAULT_SECRET_ENTRY,
@@ -30,6 +35,11 @@ typedef enum {
     FV_MODE_FIDO,
     FV_MODE_COUNT,
 } fv_mode_t;
+
+typedef enum {
+    FV_ENTRY_METHOD_WHEELS = 0,
+    FV_ENTRY_METHOD_COUNT,
+} fv_entry_method_t;
 
 typedef enum {
     FV_EVENT_BOOT_COMPLETED = 0,
@@ -68,7 +78,9 @@ typedef uint32_t fv_command_set_t;
 typedef struct {
     fv_state_t state;
     fv_mode_t selected_mode;
+    fv_entry_method_t selected_entry_method;
     uint8_t secret_wheels[FV_SECRET_WHEEL_COUNT];
+    uint8_t setup_secret_wheels[FV_SECRET_WHEEL_COUNT];
     uint8_t selected_secret_wheel;
     uint8_t failed_attempts;
     bool provisioned;

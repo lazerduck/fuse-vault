@@ -27,5 +27,6 @@ typedef struct {
  * derive fv_unlock_key_t using this encoding, a vault salt, and its parameters.
  */
 bool fv_secret_input_encode(const fv_app_t *app, fv_secret_encoding_t *encoding);
+bool fv_setup_secret_encode(const fv_app_t *app, fv_secret_encoding_t *encoding);
 
 #endif

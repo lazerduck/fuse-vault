@@ -20,6 +20,28 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Fuse Vault: Debug first-time setup",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/firmware/build-host/fuse_vault_display_simulator",
+            "args": [
+                "--unprovisioned"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Fuse Vault: Build display simulator",
+            "setupCommands": [
+                {
+                    "description": "Enable GDB pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }

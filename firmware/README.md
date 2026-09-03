@@ -127,6 +127,13 @@ Pass `--unprovisioned` to start in first-time setup. The simulator injects
 authentication and persistence outcomes because those platform services do not
 exist yet; it never exposes a real or plaintext storage volume.
 
+The unprovisioned simulation walks through entry-method selection, initial
+secret entry, independent confirmation, mismatch handling, and acceptance of
+the destructive-lockout/no-recovery policy. Press `O` after the provisioning
+screen appears to inject successful platform provisioning. The confirmed setup
+secret remains transiently available through the canonical setup encoding only
+while the provisioning backend needs it and is cleared on completion or fault.
+
 The core refuses to request USB mass-storage attachment until authentication
 succeeds and the reset attempt counter has been persisted. Failed attempts must
 also be persisted before another attempt is accepted. The initial tests exercise

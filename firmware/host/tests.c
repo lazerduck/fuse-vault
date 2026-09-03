@@ -35,6 +35,22 @@ static void test_boot_paths(void) {
     CHECK(fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED) == FV_COMMAND_NONE);
     CHECK(app.state == FV_STATE_SETUP_REQUIRED);
 
+    CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
+    CHECK(app.state == FV_STATE_SETUP_METHOD_SELECT);
+    CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
+    CHECK(app.state == FV_STATE_SETUP_SECRET_ENTRY);
+
+    (void)fv_app_handle(&app, FV_EVENT_UP);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_SETUP_SECRET_CONFIRM);
+    (void)fv_app_handle(&app, FV_EVENT_UP);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_SETUP_POLICY_CONFIRM);
+
+    fv_secret_encoding_t setup_encoding;
+    CHECK(fv_setup_secret_encode(&app, &setup_encoding));
+    CHECK(setup_encoding.bytes[5] == 1u);
+
     CHECK(has_command(fv_app_handle(&app, FV_EVENT_SELECT),
                       FV_COMMAND_BEGIN_PROVISIONING));
     CHECK(app.state == FV_STATE_PROVISIONING);
@@ -47,6 +63,27 @@ static void test_boot_paths(void) {
     const fv_command_set_t commands = fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
     CHECK(app.state == FV_STATE_DESTROYED);
     CHECK(has_command(commands, FV_COMMAND_DESTROY_DEVICE_SECRET));
+}
+
+static void test_setup_rejects_mismatched_confirmation(void) {
+    fv_app_t app;
+    fv_app_init(&app, false, 0u);
+    (void)fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+
+    (void)fv_app_handle(&app, FV_EVENT_UP);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_SETUP_SECRET_CONFIRM);
+
+    (void)fv_app_handle(&app, FV_EVENT_DOWN);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_SETUP_SECRET_MISMATCH);
+    CHECK(app.secret_wheels[0] == 0u);
+    CHECK(app.setup_secret_wheels[0] == 0u);
+
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_SETUP_SECRET_ENTRY);
 }
 
 static void test_vault_unlock_and_lock(void) {
@@ -211,6 +248,7 @@ static void test_usb_attachment_invariants(void) {
 
 int main(void) {
     test_boot_paths();
+    test_setup_rejects_mismatched_confirmation();
     test_vault_unlock_and_lock();
     test_secret_entry_back_clears_input();
     test_secret_encoding_is_versioned_and_stable();
