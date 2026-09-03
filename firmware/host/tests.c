@@ -1,8 +1,11 @@
 #include "fuse_vault/app.h"
+#include "fuse_vault/secret_input.h"
+#include "fuse_vault/ui.h"
 
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define CHECK(condition) check((condition), #condition, __FILE__, __LINE__)
 
@@ -105,6 +108,32 @@ static void test_secret_entry_back_clears_input(void) {
     CHECK(app.selected_secret_wheel == 0u);
 }
 
+static void test_secret_encoding_is_versioned_and_stable(void) {
+    fv_app_t app = boot_provisioned();
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    app.secret_wheels[0] = 12u;
+    app.secret_wheels[1] = 34u;
+    app.secret_wheels[2] = 56u;
+
+    fv_secret_encoding_t encoding;
+    CHECK(fv_secret_input_encode(&app, &encoding));
+    const uint8_t expected[FV_SECRET_ENCODING_SIZE] = {
+        0x46u, 0x56u, 0x01u, 0x01u, 0x03u, 12u, 34u, 56u,
+    };
+    for (size_t index = 0u; index < FV_SECRET_ENCODING_SIZE; ++index) {
+        CHECK(encoding.bytes[index] == expected[index]);
+    }
+}
+
+static void test_ui_framebuffer_is_deterministic(void) {
+    fv_app_t app = boot_provisioned();
+    fv_framebuffer_t first;
+    fv_framebuffer_t second;
+    fv_ui_draw(&app, &first);
+    fv_ui_draw(&app, &second);
+    CHECK(memcmp(&first, &second, sizeof(first)) == 0);
+}
+
 static void test_attempt_limit_destroys_secret(void) {
     fv_app_t app = boot_provisioned();
     CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
@@ -184,6 +213,8 @@ int main(void) {
     test_boot_paths();
     test_vault_unlock_and_lock();
     test_secret_entry_back_clears_input();
+    test_secret_encoding_is_versioned_and_stable();
+    test_ui_framebuffer_is_deterministic();
     test_attempt_limit_destroys_secret();
     test_fido_mode();
     test_fault_closes_security_boundary();

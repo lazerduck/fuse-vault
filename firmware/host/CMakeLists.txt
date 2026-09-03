@@ -8,6 +8,8 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 add_library(fuse_vault_core STATIC
     ../src/app.c
+    ../src/secret_input.c
+    ../src/ui.c
 )
 
 target_include_directories(fuse_vault_core PUBLIC

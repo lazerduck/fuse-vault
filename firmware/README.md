@@ -9,10 +9,12 @@ Peripheral pin assignments will be added after they have been verified against
 an exported schematic or the assembled board. The initial GPIO map has now been
 captured from the schematic and remains subject to bring-up verification.
 
-The application state machine and UI view model are portable C shared by the
-RP2354A target, a native simulator, and automated tests. Platform code—not the
-application core—owns secrets, persistent security state, USB, storage, input,
-and display hardware.
+The application state machine and 160x80 RGB565 framebuffer renderer are
+portable C shared by the RP2354A target, a native simulator, and automated
+tests. Consequently, the simulator displays the same pixels that will be sent
+to the TFT rather than recreating the interface with desktop widgets. Platform
+code—not the application core—owns secrets, persistent security state, USB,
+storage, input, and display hardware.
 
 The SD card is connected using four-bit SDIO. Its initial driver will use the
 RP2354A's PIO facilities. Higher layers access storage only through the generic
@@ -108,6 +110,13 @@ combination, and Back cancels and clears it. This provides 1,000,000 possible
 combinations (just under 20 bits); it is intended to be evaluated as a quick
 device PIN protected by the persistent attempt limit and device-held secret,
 not treated as sufficient standalone encryption-key entropy.
+
+Every secret-entry method must produce a canonical, domain-separated encoding.
+The current wheel encoding includes a format version, method identifier, wheel
+count, and the three values. A future reviewed KDF backend will transform that
+encoding into a fixed 32-byte unlock key using a per-vault salt and recorded
+parameters. The canonical encoding is deliberately not treated as a key, and
+the KDF/device-secret construction has not yet been selected or implemented.
 
 In VS Code, run `Fuse Vault: Run display simulator` from **Tasks: Run Task**.
 For breakpoints and stepping, select `Fuse Vault: Debug display simulator` in
