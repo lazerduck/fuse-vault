@@ -51,9 +51,12 @@ add_executable(fuse_vault
     src/credential_envelope.c
     src/device_roots.c
     src/device_provisioning.c
+    src/input.c
+    src/input_bindings.c
     src/journal_authenticator.c
     src/main.c
     src/rp2354_random.c
+    src/rp2354_input.c
     src/rp2354_otp.c
     src/rp2354_security_flash.c
     src/secret_input.c
@@ -84,6 +87,7 @@ target_link_libraries(fuse_vault PRIVATE
     pico_unique_id
     pico_flash
     hardware_flash
+    hardware_gpio
     pico_sha256
     pico_mbedtls_crypto
     pico_mbedtls_headers
@@ -91,7 +95,7 @@ target_link_libraries(fuse_vault PRIVATE
 
 # Apply strict diagnostics to our code without imposing them on Pico SDK source
 # files, some of which intentionally use supported GNU C extensions.
-set_source_files_properties(src/app.c src/credential_envelope.c src/device_provisioning.c src/device_roots.c src/journal_authenticator.c src/main.c src/rp2354_otp.c src/rp2354_random.c src/rp2354_security_flash.c src/secret_input.c src/security_journal.c src/ui.c PROPERTIES COMPILE_OPTIONS
+set_source_files_properties(src/app.c src/credential_envelope.c src/device_provisioning.c src/device_roots.c src/input.c src/input_bindings.c src/journal_authenticator.c src/main.c src/rp2354_input.c src/rp2354_otp.c src/rp2354_random.c src/rp2354_security_flash.c src/secret_input.c src/security_journal.c src/ui.c PROPERTIES COMPILE_OPTIONS
     "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow"
 )
 

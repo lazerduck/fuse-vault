@@ -1,4 +1,5 @@
 #include "fuse_vault/app.h"
+#include "fuse_vault/input.h"
 #include "fuse_vault/ui.h"
 #include "host_services.h"
 
@@ -17,6 +18,8 @@ typedef struct {
     fv_platform_services_t services;
     fv_host_services_context_t services_context;
     bool persistence_enabled;
+    fv_input_controller_t input_controller;
+    uint32_t pressed_inputs;
     GtkWidget *display;
     GtkWidget *status;
 } simulator_t;
@@ -112,17 +115,52 @@ static void refresh(simulator_t *simulator) {
     gtk_widget_queue_draw(simulator->display);
 }
 
-static bool key_to_event(guint key, fv_event_t *event) {
+static void refresh_input_map(simulator_t *simulator) {
+    fv_input_map_t map;
+    fv_input_map_for_app(&simulator->app, &map);
+    fv_input_controller_set_map(&simulator->input_controller, &map);
+}
+
+static void dispatch_event(simulator_t *simulator, fv_event_t event) {
+    simulator->last_commands = execute_commands(
+        simulator, fv_app_handle(&simulator->app, event));
+    refresh_input_map(simulator);
+    refresh(simulator);
+}
+
+static void emit_input_event(void *context, fv_event_t event) {
+    dispatch_event(context, event);
+}
+
+static uint32_t monotonic_ms(void) {
+    return (uint32_t)((uint64_t)g_get_monotonic_time() / 1000u);
+}
+
+static gboolean poll_inputs(gpointer data) {
+    simulator_t *simulator = data;
+    fv_input_controller_update(&simulator->input_controller,
+                               simulator->pressed_inputs, monotonic_ms(),
+                               emit_input_event, simulator);
+    return G_SOURCE_CONTINUE;
+}
+
+static bool key_to_input(guint key, fv_input_id_t *input) {
     switch (key) {
-        case GDK_KEY_Up:        *event = FV_EVENT_UP; return true;
-        case GDK_KEY_Down:      *event = FV_EVENT_DOWN; return true;
-        case GDK_KEY_Left:      *event = FV_EVENT_LEFT; return true;
-        case GDK_KEY_Right:     *event = FV_EVENT_RIGHT; return true;
+        case GDK_KEY_Up:        *input = FV_INPUT_UP; return true;
+        case GDK_KEY_Down:      *input = FV_INPUT_DOWN; return true;
+        case GDK_KEY_Left:      *input = FV_INPUT_LEFT; return true;
+        case GDK_KEY_Right:     *input = FV_INPUT_RIGHT; return true;
         case GDK_KEY_Return:
         case GDK_KEY_KP_Enter:
-        case GDK_KEY_space:     *event = FV_EVENT_SELECT; return true;
+        case GDK_KEY_space:     *input = FV_INPUT_SELECT; return true;
         case GDK_KEY_BackSpace:
-        case GDK_KEY_Escape:    *event = FV_EVENT_BACK; return true;
+        case GDK_KEY_Escape:    *input = FV_INPUT_BACK; return true;
+        default: return false;
+    }
+}
+
+static bool key_to_system_event(guint key, fv_event_t *event) {
+    switch (key) {
         case GDK_KEY_y:
         case GDK_KEY_Y:         *event = FV_EVENT_AUTH_SUCCEEDED; return true;
         case GDK_KEY_x:
@@ -145,13 +183,26 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *key_event,
                              gpointer data) {
     (void)widget;
     simulator_t *simulator = data;
+    fv_input_id_t input;
+    if (key_to_input(key_event->keyval, &input)) {
+        simulator->pressed_inputs |= FV_INPUT_BIT(input);
+        return TRUE;
+    }
     fv_event_t event;
-    if (!key_to_event(key_event->keyval, &event)) {
+    if (!key_to_system_event(key_event->keyval, &event)) {
         return FALSE;
     }
-    simulator->last_commands = execute_commands(
-        simulator, fv_app_handle(&simulator->app, event));
-    refresh(simulator);
+    dispatch_event(simulator, event);
+    return TRUE;
+}
+
+static gboolean on_key_release(GtkWidget *widget, GdkEventKey *key_event,
+                               gpointer data) {
+    (void)widget;
+    simulator_t *simulator = data;
+    fv_input_id_t input;
+    if (!key_to_input(key_event->keyval, &input)) return FALSE;
+    simulator->pressed_inputs &= ~FV_INPUT_BIT(input);
     return TRUE;
 }
 
@@ -246,6 +297,14 @@ int main(int argc, char **argv) {
                 FV_ENTRY_METHOD_WHEELS);
     simulator.last_commands = execute_commands(
         &simulator, fv_app_handle(&simulator.app, FV_EVENT_BOOT_COMPLETED));
+    const fv_input_timing_t input_timing = {
+        .debounce_ms = FV_INPUT_DEFAULT_DEBOUNCE_MS,
+        .repeat_delay_ms = FV_INPUT_DEFAULT_REPEAT_DELAY_MS,
+        .repeat_interval_ms = FV_INPUT_DEFAULT_REPEAT_INTERVAL_MS,
+    };
+    fv_input_controller_init(&simulator.input_controller, &input_timing, 0u,
+                             monotonic_ms());
+    refresh_input_map(&simulator);
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Fuse Vault display simulator");
@@ -268,10 +327,13 @@ int main(int argc, char **argv) {
     g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
     g_signal_connect(window, "key-press-event", G_CALLBACK(on_key_press),
                      &simulator);
+    g_signal_connect(window, "key-release-event", G_CALLBACK(on_key_release),
+                     &simulator);
     g_signal_connect(simulator.display, "draw", G_CALLBACK(draw_display),
                      &simulator);
 
     refresh(&simulator);
+    (void)g_timeout_add(5u, poll_inputs, &simulator);
     gtk_widget_show_all(window);
     gtk_main();
     return 0;

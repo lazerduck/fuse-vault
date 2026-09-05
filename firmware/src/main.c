@@ -1,6 +1,8 @@
 #include "fuse_vault/app.h"
 #include "fuse_vault/device_roots.h"
+#include "fuse_vault/input.h"
 #include "fuse_vault/journal_authenticator.h"
+#include "fuse_vault/rp2354_input.h"
 #include "fuse_vault/rp2354_otp.h"
 #include "fuse_vault/rp2354_security_flash.h"
 
@@ -18,6 +20,7 @@ static fv_journal_flash_t security_flash;
 static fv_security_journal_t security_journal;
 static fv_journal_state_t current_journal_state;
 static bool journal_ready;
+static fv_input_controller_t input_controller;
 
 static void secure_clear(void *data, size_t length) {
     volatile uint8_t *bytes = (volatile uint8_t *)data;
@@ -83,7 +86,20 @@ static void execute_commands(fv_command_set_t commands) {
        platform implementations exist. */
 }
 
+static void refresh_input_map(void) {
+    fv_input_map_t map;
+    fv_input_map_for_app(&app, &map);
+    fv_input_controller_set_map(&input_controller, &map);
+}
+
+static void handle_input_event(void *context, fv_event_t event) {
+    (void)context;
+    execute_commands(fv_app_handle(&app, event));
+    refresh_input_map();
+}
+
 int main(void) {
+    const bool input_ready = fv_rp2354_input_init();
     const bool security_flash_ready =
         fv_rp2354_security_flash_init(&security_flash);
     const bool device_roots_ready =
@@ -92,7 +108,8 @@ int main(void) {
         ? fv_device_roots_status(&device_roots_storage)
         : FV_DEVICE_ROOTS_IO_ERROR;
     current_journal_state = (fv_journal_state_t){0};
-    bool boot_storage_safe = security_flash_ready && device_roots_ready;
+    bool boot_storage_safe = security_flash_ready && device_roots_ready &&
+                             input_ready;
     bool provisioned = false;
     uint8_t failed_attempts = 0u;
     if (boot_storage_safe && roots_state == FV_DEVICE_ROOTS_ACTIVE) {
@@ -111,8 +128,20 @@ int main(void) {
         &app, boot_storage_safe ? FV_EVENT_BOOT_COMPLETED
                                 : FV_EVENT_FATAL_ERROR));
 
+    const fv_input_timing_t input_timing = {
+        .debounce_ms = FV_INPUT_DEFAULT_DEBOUNCE_MS,
+        .repeat_delay_ms = FV_INPUT_DEFAULT_REPEAT_DELAY_MS,
+        .repeat_interval_ms = FV_INPUT_DEFAULT_REPEAT_INTERVAL_MS,
+    };
+    fv_input_controller_init(&input_controller, &input_timing,
+                             fv_rp2354_input_pressed_mask(),
+                             to_ms_since_boot(get_absolute_time()));
+    refresh_input_map();
+
     for (;;) {
-        /* Input, UI rendering, and platform command dispatch will run here. */
-        tight_loop_contents();
+        fv_input_controller_update(
+            &input_controller, fv_rp2354_input_pressed_mask(),
+            to_ms_since_boot(get_absolute_time()), handle_input_event, NULL);
+        sleep_ms(1u);
     }
 }

@@ -18,6 +18,8 @@ add_library(fuse_vault_core STATIC
     ../src/credential_envelope.c
     ../src/device_roots.c
     ../src/device_provisioning.c
+    ../src/input.c
+    ../src/input_bindings.c
     ../src/journal_authenticator.c
     ../src/secret_input.c
     ../src/security_journal.c
@@ -196,3 +198,12 @@ target_compile_options(fuse_vault_credential_envelope_tests PRIVATE
 )
 add_test(NAME fuse_vault_credential_envelope
     COMMAND fuse_vault_credential_envelope_tests)
+
+add_executable(fuse_vault_input_tests
+    input_tests.c
+)
+target_link_libraries(fuse_vault_input_tests PRIVATE fuse_vault_core)
+target_compile_options(fuse_vault_input_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_input_controller COMMAND fuse_vault_input_tests)

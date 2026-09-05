@@ -129,6 +129,13 @@ Escape) maps to the Back button. The window footer lists the additional letter
 keys used to inject platform results that do not exist yet, such as a
 successful or failed authentication.
 
+Keyboard press and release events now pass through the same input controller as
+the RP2354 GPIO buttons. It applies a 25 ms debounce, a 450 ms hold delay, and a
+120 ms repeat interval. Each application state registers only the controls it
+accepts and whether they may repeat; changing screens while a control is held
+requires release before the new binding can fire. See
+[`docs/firmware-architecture.md`](../docs/firmware-architecture.md).
+
 Secret entry is a reusable component shared by setup, confirmation, and
 unlocking. The setup method screen offers four methods:
 
