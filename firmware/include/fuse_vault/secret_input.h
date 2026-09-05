@@ -6,12 +6,21 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define FV_SECRET_ENCODING_SIZE 8u
+#define FV_SECRET_ENCODING_SIZE 24u
 #define FV_UNLOCK_KEY_SIZE 32u
 
 typedef enum {
     FV_SECRET_METHOD_WHEELS_V1 = 1,
+    FV_SECRET_METHOD_DIRECTIONS_V1 = 2,
+    FV_SECRET_METHOD_KEYPAD_V1 = 3,
+    FV_SECRET_METHOD_WORD_LIST_V1 = 4,
 } fv_secret_method_t;
+
+typedef enum {
+    FV_SECRET_EVENT_IGNORED = 0,
+    FV_SECRET_EVENT_CHANGED,
+    FV_SECRET_EVENT_COMPLETE,
+} fv_secret_event_result_t;
 
 typedef struct {
     uint8_t bytes[FV_SECRET_ENCODING_SIZE];
@@ -28,5 +37,13 @@ typedef struct {
  */
 bool fv_secret_input_encode(const fv_app_t *app, fv_secret_encoding_t *encoding);
 bool fv_setup_secret_encode(const fv_app_t *app, fv_secret_encoding_t *encoding);
+void fv_secret_entry_begin(fv_secret_entry_t *entry, fv_entry_method_t method);
+void fv_secret_entry_clear(fv_secret_entry_t *entry);
+fv_secret_event_result_t fv_secret_entry_handle(fv_secret_entry_t *entry,
+                                                 fv_event_t event);
+bool fv_secret_entry_encode(const fv_secret_entry_t *entry,
+                            fv_secret_encoding_t *encoding);
+void fv_secret_entry_render(const fv_secret_entry_t *entry, fv_ui_view_t *view);
+const char *fv_secret_method_name(fv_entry_method_t method);
 
 #endif

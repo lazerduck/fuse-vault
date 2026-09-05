@@ -9,6 +9,9 @@
 #define FV_UI_TEXT_CAPACITY 32u
 #define FV_SECRET_WHEEL_COUNT 3u
 #define FV_SECRET_WHEEL_VALUES 100u
+#define FV_SECRET_DIRECTION_MAX 16u
+#define FV_SECRET_KEYPAD_MAX 12u
+#define FV_SECRET_WORD_COUNT 4u
 
 typedef enum {
     FV_STATE_BOOTING = 0,
@@ -38,6 +41,9 @@ typedef enum {
 
 typedef enum {
     FV_ENTRY_METHOD_WHEELS = 0,
+    FV_ENTRY_METHOD_DIRECTIONS,
+    FV_ENTRY_METHOD_KEYPAD,
+    FV_ENTRY_METHOD_WORD_LIST,
     FV_ENTRY_METHOD_COUNT,
 } fv_entry_method_t;
 
@@ -76,12 +82,42 @@ typedef enum {
 typedef uint32_t fv_command_set_t;
 
 typedef struct {
+    uint8_t values[FV_SECRET_WHEEL_COUNT];
+    uint8_t selected;
+} fv_wheel_entry_t;
+
+typedef struct {
+    uint8_t values[FV_SECRET_DIRECTION_MAX];
+    uint8_t length;
+} fv_direction_entry_t;
+
+typedef struct {
+    uint8_t digits[FV_SECRET_KEYPAD_MAX];
+    uint8_t length;
+    uint8_t selected;
+} fv_keypad_entry_t;
+
+typedef struct {
+    uint8_t words[FV_SECRET_WORD_COUNT];
+    uint8_t selected;
+} fv_word_entry_t;
+
+typedef struct {
+    fv_entry_method_t method;
+    union {
+        fv_wheel_entry_t wheels;
+        fv_direction_entry_t directions;
+        fv_keypad_entry_t keypad;
+        fv_word_entry_t word_list;
+    } state;
+} fv_secret_entry_t;
+
+typedef struct {
     fv_state_t state;
     fv_mode_t selected_mode;
     fv_entry_method_t selected_entry_method;
-    uint8_t secret_wheels[FV_SECRET_WHEEL_COUNT];
-    uint8_t setup_secret_wheels[FV_SECRET_WHEEL_COUNT];
-    uint8_t selected_secret_wheel;
+    fv_secret_entry_t secret_entry;
+    fv_secret_entry_t setup_secret_entry;
     uint8_t failed_attempts;
     bool provisioned;
 } fv_app_t;
@@ -91,7 +127,8 @@ typedef struct {
     char lines[FV_UI_LINE_COUNT][FV_UI_TEXT_CAPACITY];
 } fv_ui_view_t;
 
-void fv_app_init(fv_app_t *app, bool provisioned, uint8_t persisted_failed_attempts);
+void fv_app_init(fv_app_t *app, bool provisioned, uint8_t persisted_failed_attempts,
+                 fv_entry_method_t entry_method);
 fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event);
 void fv_app_render(const fv_app_t *app, fv_ui_view_t *view);
 const char *fv_state_name(fv_state_t state);

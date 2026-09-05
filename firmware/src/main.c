@@ -106,7 +106,7 @@ int main(void) {
     } else if (roots_state != FV_DEVICE_ROOTS_EMPTY) {
         boot_storage_safe = false;
     }
-    fv_app_init(&app, provisioned, failed_attempts);
+    fv_app_init(&app, provisioned, failed_attempts, FV_ENTRY_METHOD_WHEELS);
     execute_commands(fv_app_handle(
         &app, boot_storage_safe ? FV_EVENT_BOOT_COMPLETED
                                 : FV_EVENT_FATAL_ERROR));

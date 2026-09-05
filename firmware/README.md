@@ -129,18 +129,30 @@ Escape) maps to the Back button. The window footer lists the additional letter
 keys used to inject platform results that do not exist yet, such as a
 successful or failed authentication.
 
-The first secret-entry prototype uses three 0-99 combination wheels. Left and
-Right choose a wheel, Up and Down change it with wraparound, OK submits the
-combination, and Back cancels and clears it. This provides 1,000,000 possible
-combinations (just under 20 bits); it is intended to be evaluated as a quick
-device PIN protected by the persistent attempt limit and device-held secret,
-not treated as sufficient standalone encryption-key entropy.
+Secret entry is a reusable component shared by setup, confirmation, and
+unlocking. The setup method screen offers four methods:
 
-Every secret-entry method must produce a canonical, domain-separated encoding.
-The current wheel encoding includes a format version, method identifier, wheel
-count, and the three values. The credential-envelope backend now consumes that
-encoding directly through two independently salted, bounded work functions;
-the canonical encoding is never treated as an encryption key.
+- **Number wheels:** three 0-99 wheels. Left and Right choose a wheel, Up and
+  Down change it, and OK completes entry.
+- **Direction sequence:** D-pad directions append to a 6-16 step sequence,
+  Back removes the last step, and OK completes a sufficiently long sequence.
+- **Numeric keypad:** a navigable 3x4 keypad provides digits, delete, and OK.
+  PINs contain 4-12 digits; Back also deletes the most recent digit.
+- **Word list:** four positions each select one of 64 stable words. Left and
+  Right choose a position, Up and Down choose its word, and OK completes entry.
+
+Pressing Back on an empty variable-length entry returns to the preceding
+screen. Setup keeps the first entry in transient memory and confirms it by
+comparing its canonical encoding with a separately entered value. The selected
+method remains active after setup and must be supplied to `fv_app_init` from
+authenticated vault metadata when loading an existing vault.
+
+Every method produces a fixed-capacity, zero-padded canonical encoding with a
+format version, method identifier, value count, and method-specific values.
+The credential-envelope backend consumes the complete encoding through two
+independently salted, bounded work functions; the encoding is never treated as
+an encryption key. These human-entered methods rely on the persistent attempt
+limit and device-held secret rather than standalone password entropy.
 
 In VS Code, run `Fuse Vault: Run display simulator` from **Tasks: Run Task**.
 Use `Fuse Vault: Run persistent simulator` to exercise attempt persistence

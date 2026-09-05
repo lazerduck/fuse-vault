@@ -1,59 +1,37 @@
 #include "fuse_vault/app.h"
+#include "fuse_vault/secret_input.h"
 
 #include <stdio.h>
 #include <string.h>
 
-static void clear_wheels(uint8_t wheels[FV_SECRET_WHEEL_COUNT]) {
-    memset(wheels, 0, FV_SECRET_WHEEL_COUNT * sizeof(wheels[0]));
+static void secure_clear(void *data, size_t length) {
+    volatile uint8_t *bytes = data;
+    while (length-- > 0u) *bytes++ = 0u;
 }
 
 static fv_command_set_t enter_fault(fv_app_t *app) {
-    clear_wheels(app->secret_wheels);
-    clear_wheels(app->setup_secret_wheels);
+    fv_secret_entry_clear(&app->secret_entry);
+    fv_secret_entry_clear(&app->setup_secret_entry);
     app->state = FV_STATE_FAULT;
     return FV_COMMAND_USB_DETACH |
            FV_COMMAND_ERASE_TRANSIENT_SECRET |
            FV_COMMAND_ERASE_SESSION_KEYS;
 }
 
-static void begin_wheel_entry(fv_app_t *app) {
-    clear_wheels(app->secret_wheels);
-    app->selected_secret_wheel = 0u;
-}
-
-static bool handle_wheel_event(fv_app_t *app, fv_event_t event) {
-    if (event == FV_EVENT_LEFT) {
-        app->selected_secret_wheel = (uint8_t)(
-            app->selected_secret_wheel == 0u
-                ? FV_SECRET_WHEEL_COUNT - 1u
-                : (unsigned)app->selected_secret_wheel - 1u);
-    } else if (event == FV_EVENT_RIGHT) {
-        app->selected_secret_wheel =
-            (uint8_t)((app->selected_secret_wheel + 1u) %
-                      FV_SECRET_WHEEL_COUNT);
-    } else if (event == FV_EVENT_UP) {
-        uint8_t *value = &app->secret_wheels[app->selected_secret_wheel];
-        *value = (uint8_t)((*value + 1u) % FV_SECRET_WHEEL_VALUES);
-    } else if (event == FV_EVENT_DOWN) {
-        uint8_t *value = &app->secret_wheels[app->selected_secret_wheel];
-        *value = *value == 0u ? FV_SECRET_WHEEL_VALUES - 1u
-                              : (uint8_t)(*value - 1u);
-    } else {
-        return false;
-    }
-    return true;
+static void begin_secret_entry(fv_app_t *app) {
+    fv_secret_entry_begin(&app->secret_entry, app->selected_entry_method);
 }
 
 static fv_command_set_t leave_sensitive_mode(fv_app_t *app) {
-    clear_wheels(app->secret_wheels);
-    app->selected_secret_wheel = 0u;
+    fv_secret_entry_clear(&app->secret_entry);
     app->state = FV_STATE_MODE_SELECT;
     return FV_COMMAND_USB_DETACH |
            FV_COMMAND_ERASE_TRANSIENT_SECRET |
            FV_COMMAND_ERASE_SESSION_KEYS;
 }
 
-void fv_app_init(fv_app_t *app, bool provisioned, uint8_t persisted_failed_attempts) {
+void fv_app_init(fv_app_t *app, bool provisioned, uint8_t persisted_failed_attempts,
+                 fv_entry_method_t entry_method) {
     if (app == NULL) {
         return;
     }
@@ -61,7 +39,8 @@ void fv_app_init(fv_app_t *app, bool provisioned, uint8_t persisted_failed_attem
     *app = (fv_app_t) {
         .state = FV_STATE_BOOTING,
         .selected_mode = FV_MODE_VAULT,
-        .selected_entry_method = FV_ENTRY_METHOD_WHEELS,
+        .selected_entry_method = (unsigned)entry_method < FV_ENTRY_METHOD_COUNT
+            ? entry_method : FV_ENTRY_METHOD_WHEELS,
         .failed_attempts = persisted_failed_attempts > FV_MAX_UNLOCK_ATTEMPTS
             ? FV_MAX_UNLOCK_ATTEMPTS
             : persisted_failed_attempts,
@@ -100,55 +79,66 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
             break;
 
         case FV_STATE_SETUP_METHOD_SELECT:
-            if (event == FV_EVENT_SELECT) {
-                begin_wheel_entry(app);
+            if (event == FV_EVENT_UP) {
+                app->selected_entry_method = app->selected_entry_method == 0
+                    ? (fv_entry_method_t)(FV_ENTRY_METHOD_COUNT - 1)
+                    : (fv_entry_method_t)(app->selected_entry_method - 1);
+            } else if (event == FV_EVENT_DOWN) {
+                app->selected_entry_method = (fv_entry_method_t)(
+                    (app->selected_entry_method + 1) % FV_ENTRY_METHOD_COUNT);
+            } else if (event == FV_EVENT_SELECT) {
+                begin_secret_entry(app);
                 app->state = FV_STATE_SETUP_SECRET_ENTRY;
             } else if (event == FV_EVENT_BACK) {
                 app->state = FV_STATE_SETUP_REQUIRED;
             }
             break;
 
-        case FV_STATE_SETUP_SECRET_ENTRY:
-            if (handle_wheel_event(app, event)) {
-                break;
-            }
-            if (event == FV_EVENT_SELECT) {
-                memcpy(app->setup_secret_wheels, app->secret_wheels,
-                       sizeof(app->setup_secret_wheels));
-                begin_wheel_entry(app);
+        case FV_STATE_SETUP_SECRET_ENTRY: {
+            const fv_secret_event_result_t result =
+                fv_secret_entry_handle(&app->secret_entry, event);
+            if (result == FV_SECRET_EVENT_COMPLETE) {
+                app->setup_secret_entry = app->secret_entry;
+                begin_secret_entry(app);
                 app->state = FV_STATE_SETUP_SECRET_CONFIRM;
-            } else if (event == FV_EVENT_BACK) {
-                begin_wheel_entry(app);
+            } else if (event == FV_EVENT_BACK && result == FV_SECRET_EVENT_IGNORED) {
+                begin_secret_entry(app);
                 app->state = FV_STATE_SETUP_METHOD_SELECT;
             }
             break;
+        }
 
-        case FV_STATE_SETUP_SECRET_CONFIRM:
-            if (handle_wheel_event(app, event)) {
-                break;
-            }
-            if (event == FV_EVENT_SELECT) {
-                if (memcmp(app->secret_wheels, app->setup_secret_wheels,
-                           sizeof(app->secret_wheels)) == 0) {
-                    clear_wheels(app->secret_wheels);
-                    app->selected_secret_wheel = 0u;
+        case FV_STATE_SETUP_SECRET_CONFIRM: {
+            const fv_secret_event_result_t result =
+                fv_secret_entry_handle(&app->secret_entry, event);
+            if (result == FV_SECRET_EVENT_COMPLETE) {
+                fv_secret_encoding_t entered;
+                fv_secret_encoding_t expected;
+                const bool matches =
+                    fv_secret_entry_encode(&app->secret_entry, &entered) &&
+                    fv_secret_entry_encode(&app->setup_secret_entry, &expected) &&
+                    memcmp(&entered, &expected, sizeof(entered)) == 0;
+                secure_clear(&entered, sizeof(entered));
+                secure_clear(&expected, sizeof(expected));
+                if (matches) {
+                    fv_secret_entry_clear(&app->secret_entry);
                     app->state = FV_STATE_SETUP_POLICY_CONFIRM;
                 } else {
-                    clear_wheels(app->secret_wheels);
-                    clear_wheels(app->setup_secret_wheels);
-                    app->selected_secret_wheel = 0u;
+                    fv_secret_entry_clear(&app->secret_entry);
+                    fv_secret_entry_clear(&app->setup_secret_entry);
                     app->state = FV_STATE_SETUP_SECRET_MISMATCH;
                 }
-            } else if (event == FV_EVENT_BACK) {
-                clear_wheels(app->setup_secret_wheels);
-                begin_wheel_entry(app);
+            } else if (event == FV_EVENT_BACK && result == FV_SECRET_EVENT_IGNORED) {
+                fv_secret_entry_clear(&app->setup_secret_entry);
+                begin_secret_entry(app);
                 app->state = FV_STATE_SETUP_SECRET_ENTRY;
             }
             break;
+        }
 
         case FV_STATE_SETUP_SECRET_MISMATCH:
             if (event == FV_EVENT_SELECT || event == FV_EVENT_BACK) {
-                begin_wheel_entry(app);
+                begin_secret_entry(app);
                 app->state = FV_STATE_SETUP_SECRET_ENTRY;
             }
             break;
@@ -159,15 +149,15 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 return FV_COMMAND_BEGIN_PROVISIONING;
             }
             if (event == FV_EVENT_BACK) {
-                clear_wheels(app->setup_secret_wheels);
-                begin_wheel_entry(app);
+                fv_secret_entry_clear(&app->setup_secret_entry);
+                begin_secret_entry(app);
                 app->state = FV_STATE_SETUP_SECRET_ENTRY;
             }
             break;
 
         case FV_STATE_PROVISIONING:
             if (event == FV_EVENT_PROVISIONING_SUCCEEDED) {
-                clear_wheels(app->setup_secret_wheels);
+                fv_secret_entry_clear(&app->setup_secret_entry);
                 app->provisioned = true;
                 app->failed_attempts = 0u;
                 app->state = FV_STATE_MODE_SELECT;
@@ -175,7 +165,7 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                        FV_COMMAND_ERASE_SESSION_KEYS;
             }
             if (event == FV_EVENT_PROVISIONING_FAILED) {
-                clear_wheels(app->setup_secret_wheels);
+                fv_secret_entry_clear(&app->setup_secret_entry);
                 app->state = FV_STATE_SETUP_REQUIRED;
                 return FV_COMMAND_ERASE_TRANSIENT_SECRET |
                        FV_COMMAND_ERASE_SESSION_KEYS;
@@ -189,7 +179,7 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                     : FV_MODE_VAULT;
             } else if (event == FV_EVENT_SELECT) {
                 if (app->selected_mode == FV_MODE_VAULT) {
-                    begin_wheel_entry(app);
+                    begin_secret_entry(app);
                     app->state = FV_STATE_VAULT_SECRET_ENTRY;
                 } else {
                     app->state = FV_STATE_FIDO_READY;
@@ -198,13 +188,12 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
             }
             break;
 
-        case FV_STATE_VAULT_SECRET_ENTRY:
-            if (handle_wheel_event(app, event)) {
-                break;
-            }
-            if (event == FV_EVENT_SELECT) {
+        case FV_STATE_VAULT_SECRET_ENTRY: {
+            const fv_secret_event_result_t result =
+                fv_secret_entry_handle(&app->secret_entry, event);
+            if (result == FV_SECRET_EVENT_COMPLETE) {
                 if (app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
-                    clear_wheels(app->secret_wheels);
+                    fv_secret_entry_clear(&app->secret_entry);
                     app->state = FV_STATE_DESTROYED;
                     return FV_COMMAND_ERASE_TRANSIENT_SECRET |
                            FV_COMMAND_DESTROY_DEVICE_SECRET;
@@ -212,10 +201,11 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 ++app->failed_attempts;
                 app->state = FV_STATE_VAULT_RESERVING_ATTEMPT;
                 return FV_COMMAND_STORE_ATTEMPT_COUNTER;
-            } else if (event == FV_EVENT_BACK) {
+            } else if (event == FV_EVENT_BACK && result == FV_SECRET_EVENT_IGNORED) {
                 return leave_sensitive_mode(app);
             }
             break;
+        }
 
         case FV_STATE_VAULT_RESERVING_ATTEMPT:
             if (event == FV_EVENT_ATTEMPT_COUNTER_STORED) {
@@ -226,14 +216,14 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
 
         case FV_STATE_VAULT_AUTHENTICATING:
             if (event == FV_EVENT_AUTH_SUCCEEDED) {
-                clear_wheels(app->secret_wheels);
+                fv_secret_entry_clear(&app->secret_entry);
                 app->failed_attempts = 0u;
                 app->state = FV_STATE_VAULT_RECORDING_SUCCESS;
                 return FV_COMMAND_ERASE_TRANSIENT_SECRET |
                        FV_COMMAND_STORE_ATTEMPT_COUNTER;
             }
             if (event == FV_EVENT_AUTH_FAILED) {
-                clear_wheels(app->secret_wheels);
+                begin_secret_entry(app);
                 if (app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
                     app->state = FV_STATE_DESTROYED;
                     return FV_COMMAND_ERASE_TRANSIENT_SECRET |
@@ -280,19 +270,6 @@ static void clear_view(fv_ui_view_t *view) {
     memset(view, 0, sizeof(*view));
 }
 
-static void render_wheels(const fv_app_t *app,
-                          char line[FV_UI_TEXT_CAPACITY]) {
-    snprintf(line, FV_UI_TEXT_CAPACITY,
-             app->selected_secret_wheel == 0u
-                 ? "[%02u]  %02u   %02u"
-                 : app->selected_secret_wheel == 1u
-                     ? " %02u  [%02u]  %02u"
-                     : " %02u   %02u  [%02u]",
-             (unsigned)app->secret_wheels[0],
-             (unsigned)app->secret_wheels[1],
-             (unsigned)app->secret_wheels[2]);
-}
-
 void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
     if (app == NULL || view == NULL) {
         return;
@@ -312,21 +289,22 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             break;
         case FV_STATE_SETUP_METHOD_SELECT:
             snprintf(view->title, sizeof(view->title), "Entry method");
-            snprintf(view->lines[0], sizeof(view->lines[0]), "> Number wheels");
-            snprintf(view->lines[2], sizeof(view->lines[2]), "More methods later");
-            snprintf(view->lines[3], sizeof(view->lines[3]), "OK: choose  Back: cancel");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "> %s",
+                     fv_secret_method_name(app->selected_entry_method));
+            snprintf(view->lines[1], sizeof(view->lines[1]), "%u of %u",
+                     (unsigned)app->selected_entry_method + 1u,
+                     (unsigned)FV_ENTRY_METHOD_COUNT);
+            snprintf(view->lines[3], sizeof(view->lines[3]), "Up/down; OK choose");
             break;
         case FV_STATE_SETUP_SECRET_ENTRY:
             snprintf(view->title, sizeof(view->title), "Create secret");
-            render_wheels(app, view->lines[0]);
-            snprintf(view->lines[2], sizeof(view->lines[2]), "Remember this combination");
-            snprintf(view->lines[3], sizeof(view->lines[3]), "Arrows: adjust  OK: next");
+            fv_secret_entry_render(&app->secret_entry, view);
+            snprintf(view->lines[3], sizeof(view->lines[3]), "Back at empty: cancel");
             break;
         case FV_STATE_SETUP_SECRET_CONFIRM:
             snprintf(view->title, sizeof(view->title), "Confirm secret");
-            render_wheels(app, view->lines[0]);
-            snprintf(view->lines[2], sizeof(view->lines[2]), "Enter it again");
-            snprintf(view->lines[3], sizeof(view->lines[3]), "Arrows: adjust  OK: check");
+            fv_secret_entry_render(&app->secret_entry, view);
+            snprintf(view->lines[3], sizeof(view->lines[3]), "Enter it again");
             break;
         case FV_STATE_SETUP_SECRET_MISMATCH:
             snprintf(view->title, sizeof(view->title), "Secrets differ");
@@ -355,12 +333,10 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             break;
         case FV_STATE_VAULT_SECRET_ENTRY:
             snprintf(view->title, sizeof(view->title), "Unlock vault");
-            render_wheels(app, view->lines[0]);
-            snprintf(view->lines[2], sizeof(view->lines[2]), "Failures: %u/%u",
+            fv_secret_entry_render(&app->secret_entry, view);
+            snprintf(view->lines[3], sizeof(view->lines[3]), "Failures: %u/%u",
                      (unsigned)app->failed_attempts,
                      (unsigned)FV_MAX_UNLOCK_ATTEMPTS);
-            snprintf(view->lines[3], sizeof(view->lines[3]),
-                     "Arrows: adjust  OK: submit");
             break;
         case FV_STATE_VAULT_RESERVING_ATTEMPT:
             snprintf(view->title, sizeof(view->title), "Unlock vault");

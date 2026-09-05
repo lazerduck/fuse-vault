@@ -242,7 +242,8 @@ int main(int argc, char **argv) {
         }
         secure_clear(&state, sizeof(state));
     }
-    fv_app_init(&simulator.app, provisioned, persisted_attempts);
+    fv_app_init(&simulator.app, provisioned, persisted_attempts,
+                FV_ENTRY_METHOD_WHEELS);
     simulator.last_commands = execute_commands(
         &simulator, fv_app_handle(&simulator.app, FV_EVENT_BOOT_COMPLETED));
 

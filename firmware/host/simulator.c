@@ -91,7 +91,7 @@ static void print_help(void) {
 int main(int argc, char **argv) {
     const bool provisioned = !(argc == 2 && strcmp(argv[1], "--unprovisioned") == 0);
     fv_app_t app;
-    fv_app_init(&app, provisioned, 0u);
+    fv_app_init(&app, provisioned, 0u, FV_ENTRY_METHOD_WHEELS);
     fv_command_set_t commands = fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
 
     puts("Fuse Vault host simulator");
