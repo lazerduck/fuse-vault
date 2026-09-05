@@ -62,7 +62,7 @@ static void fixture(fv_secret_encoding_t *entry, fv_device_secret_t *roots,
     }
     *header = (fv_vault_header_t) {
         .sequence = 7u,
-        .entry_method = 1u,
+        .entry_method = FV_SECRET_METHOD_WHEELS_V1,
     };
     for (size_t index = 0u; index < sizeof(header->vault_id); ++index) {
         header->vault_id[index] = (uint8_t)(0xa0u + index);
@@ -119,7 +119,7 @@ static void test_round_trip_and_tampering(void) {
     altered.sequence ^= 1u;
     expect_authentication_failure(&entry, &roots, &altered);
     altered = header;
-    ++altered.entry_method;
+    altered.entry_method = FV_SECRET_METHOD_DIRECTIONS_V1;
     expect_authentication_failure(&entry, &roots, &altered);
     altered = header;
     altered.vault_id[0] ^= 1u;
@@ -155,10 +155,32 @@ static void test_rejects_unbounded_costs(void) {
           FV_CREDENTIAL_INVALID_ARGUMENT);
 }
 
+static void test_rejects_unknown_entry_methods(void) {
+    fv_secret_encoding_t entry;
+    fv_device_secret_t roots;
+    fv_vault_header_t header;
+    fixture(&entry, &roots, &header);
+    const fv_credential_costs_t costs = {
+        .pbkdf2_iterations = 1u,
+        .kmac_iterations = 1u,
+    };
+    random_fixture_t random = {.next = 0x20u};
+    fv_volume_master_key_t output;
+    header.entry_method = (fv_secret_method_t)0;
+    CHECK(fv_credential_envelope_create(
+        &entry, &roots, &costs, deterministic_random, &random,
+        &header, &output) == FV_CREDENTIAL_INVALID_ARGUMENT);
+    header.entry_method = (fv_secret_method_t)5;
+    CHECK(fv_credential_envelope_create(
+        &entry, &roots, &costs, deterministic_random, &random,
+        &header, &output) == FV_CREDENTIAL_INVALID_ARGUMENT);
+}
+
 int main(void) {
     test_official_ascon_vector();
     test_round_trip_and_tampering();
     test_rejects_unbounded_costs();
+    test_rejects_unknown_entry_methods();
     puts("All credential-envelope tests passed.");
     return EXIT_SUCCESS;
 }

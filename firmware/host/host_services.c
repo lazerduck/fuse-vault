@@ -374,7 +374,7 @@ static fv_persist_result_t host_load_vault_header(
     *header = (fv_vault_header_t) {0};
     header->sequence = sequence;
     header->crypto_profile = (fv_crypto_profile_t)read_u32(payload);
-    header->entry_method = read_u32(payload + 4u);
+    header->entry_method = (fv_secret_method_t)read_u32(payload + 4u);
     memcpy(header->vault_id, payload + 8u, FV_VAULT_ID_SIZE);
     memcpy(header->branch_a_salt, payload + 24u, FV_SALT_SIZE);
     memcpy(header->branch_b_salt, payload + 40u, FV_SALT_SIZE);
@@ -382,7 +382,8 @@ static fv_persist_result_t host_load_vault_header(
     header->branch_b_cost = read_u32(payload + 60u);
     header->wrapped_vmk_length = read_u16(payload + 64u);
     if (header->wrapped_vmk_length > FV_WRAPPED_VMK_CAPACITY ||
-        header->crypto_profile == FV_CRYPTO_PROFILE_UNAVAILABLE) {
+        header->crypto_profile == FV_CRYPTO_PROFILE_UNAVAILABLE ||
+        !fv_secret_method_valid(header->entry_method)) {
         return FV_PERSIST_INVALID;
     }
     memcpy(header->wrapped_vmk, payload + 66u, FV_WRAPPED_VMK_CAPACITY);
@@ -393,13 +394,14 @@ static fv_persist_result_t host_store_vault_header(
     fv_platform_services_t *services, const fv_vault_header_t *header) {
     if (services == NULL || header == NULL ||
         header->crypto_profile == FV_CRYPTO_PROFILE_UNAVAILABLE ||
+        !fv_secret_method_valid(header->entry_method) ||
         header->wrapped_vmk_length == 0u ||
         header->wrapped_vmk_length > FV_WRAPPED_VMK_CAPACITY) {
         return FV_PERSIST_INVALID;
     }
     uint8_t payload[VAULT_PAYLOAD_SIZE] = {0};
     write_u32(payload, (uint32_t)header->crypto_profile);
-    write_u32(payload + 4u, header->entry_method);
+    write_u32(payload + 4u, (uint32_t)header->entry_method);
     memcpy(payload + 8u, header->vault_id, FV_VAULT_ID_SIZE);
     memcpy(payload + 24u, header->branch_a_salt, FV_SALT_SIZE);
     memcpy(payload + 40u, header->branch_b_salt, FV_SALT_SIZE);

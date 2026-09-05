@@ -1,6 +1,8 @@
 #ifndef FUSE_VAULT_PERSISTENCE_H
 #define FUSE_VAULT_PERSISTENCE_H
 
+#include "fuse_vault/entry_method.h"
+
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -44,7 +46,7 @@ typedef struct {
 typedef struct {
     uint64_t sequence;
     fv_crypto_profile_t crypto_profile;
-    uint32_t entry_method;
+    fv_secret_method_t entry_method;
     uint8_t vault_id[FV_VAULT_ID_SIZE];
     uint8_t branch_a_salt[FV_SALT_SIZE];
     uint8_t branch_b_salt[FV_SALT_SIZE];

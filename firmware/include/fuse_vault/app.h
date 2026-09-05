@@ -1,6 +1,8 @@
 #ifndef FUSE_VAULT_APP_H
 #define FUSE_VAULT_APP_H
 
+#include "fuse_vault/entry_method.h"
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -38,14 +40,6 @@ typedef enum {
     FV_MODE_FIDO,
     FV_MODE_COUNT,
 } fv_mode_t;
-
-typedef enum {
-    FV_ENTRY_METHOD_WHEELS = 0,
-    FV_ENTRY_METHOD_DIRECTIONS,
-    FV_ENTRY_METHOD_KEYPAD,
-    FV_ENTRY_METHOD_WORD_LIST,
-    FV_ENTRY_METHOD_COUNT,
-} fv_entry_method_t;
 
 typedef enum {
     FV_EVENT_BOOT_COMPLETED = 0,

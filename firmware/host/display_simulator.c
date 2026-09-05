@@ -1,5 +1,8 @@
 #include "fuse_vault/app.h"
+#include "fuse_vault/authentication_coordinator.h"
+#include "fuse_vault/boot_recovery.h"
 #include "fuse_vault/input.h"
+#include "fuse_vault/provisioning_coordinator.h"
 #include "fuse_vault/ui.h"
 #include "host_services.h"
 
@@ -17,6 +20,7 @@ typedef struct {
     fv_command_set_t last_commands;
     fv_platform_services_t services;
     fv_host_services_context_t services_context;
+    fv_authentication_session_t authentication_session;
     bool persistence_enabled;
     fv_input_controller_t input_controller;
     uint32_t pressed_inputs;
@@ -32,26 +36,59 @@ static void secure_clear(void *data, size_t length) {
 static fv_command_set_t execute_commands(simulator_t *simulator,
                                          fv_command_set_t commands) {
     fv_command_set_t observed = commands;
+    if ((commands & FV_COMMAND_ERASE_SESSION_KEYS) != 0u) {
+        fv_authentication_session_clear(&simulator->authentication_session);
+    }
     if (!simulator->persistence_enabled) return observed;
+
+    if ((commands & FV_COMMAND_BEGIN_PROVISIONING) != 0u) {
+        const fv_credential_costs_t costs = {
+            .pbkdf2_iterations = 100000u,
+            .kmac_iterations = 100000u,
+        };
+        fv_setup_provision_workspace_t workspace;
+        const fv_setup_provision_result_t result = fv_setup_provision(
+            &simulator->app, &simulator->services, &costs, &workspace);
+        observed |= execute_commands(simulator, fv_app_handle(
+            &simulator->app, result == FV_SETUP_PROVISION_OK
+                ? FV_EVENT_PROVISIONING_SUCCEEDED
+                : FV_EVENT_PROVISIONING_FAILED));
+    }
 
     if ((commands & FV_COMMAND_STORE_ATTEMPT_COUNTER) != 0u) {
         fv_security_state_t state;
         if (simulator->services.ops->load_security_state(
                 &simulator->services, &state) != FV_PERSIST_OK) {
-            return observed | fv_app_handle(&simulator->app,
-                                             FV_EVENT_FATAL_ERROR);
+            return observed | execute_commands(
+                simulator, fv_app_handle(&simulator->app,
+                                         FV_EVENT_FATAL_ERROR));
         }
         ++state.sequence;
         state.failed_attempts = simulator->app.failed_attempts;
         if (simulator->services.ops->store_security_state(
                 &simulator->services, &state) != FV_PERSIST_OK) {
             secure_clear(&state, sizeof(state));
-            return observed | fv_app_handle(&simulator->app,
-                                             FV_EVENT_FATAL_ERROR);
+            return observed | execute_commands(
+                simulator, fv_app_handle(&simulator->app,
+                                         FV_EVENT_FATAL_ERROR));
         }
         secure_clear(&state, sizeof(state));
-        observed |= fv_app_handle(&simulator->app,
-                                  FV_EVENT_ATTEMPT_COUNTER_STORED);
+        observed |= execute_commands(
+            simulator, fv_app_handle(&simulator->app,
+                                     FV_EVENT_ATTEMPT_COUNTER_STORED));
+    }
+
+    if ((commands & FV_COMMAND_BEGIN_AUTHENTICATION) != 0u) {
+        fv_authentication_workspace_t workspace;
+        const fv_authenticate_result_t result = fv_authenticate(
+            &simulator->app, &simulator->services,
+            &simulator->authentication_session, &workspace);
+        const fv_event_t event = result == FV_AUTHENTICATE_OK
+            ? FV_EVENT_AUTH_SUCCEEDED
+            : result == FV_AUTHENTICATE_REJECTED
+                ? FV_EVENT_AUTH_FAILED : FV_EVENT_FATAL_ERROR;
+        observed |= execute_commands(
+            simulator, fv_app_handle(&simulator->app, event));
     }
 
     if ((commands & FV_COMMAND_DESTROY_DEVICE_SECRET) != 0u) {
@@ -225,6 +262,7 @@ int main(int argc, char **argv) {
     gtk_init(&argc, &argv);
     simulator_t simulator = {0};
     uint8_t persisted_attempts = 0u;
+    fv_entry_method_t entry_method = FV_ENTRY_METHOD_WHEELS;
     if (state_directory != NULL) {
         if (!fv_host_services_init(&simulator.services,
                                    &simulator.services_context,
@@ -241,44 +279,21 @@ int main(int argc, char **argv) {
             provisioned = state.provisioned;
             persisted_attempts = state.failed_attempts;
         } else if (load_result == FV_PERSIST_NOT_FOUND && provisioned) {
-            fv_device_secret_status_t secret_status;
-            if (simulator.services.ops->device_secret_status(
-                    &simulator.services, &secret_status) != FV_PERSIST_OK) {
-                fprintf(stderr, "cannot inspect development device secret\n");
-                return 1;
-            }
-            if (secret_status == FV_DEVICE_SECRET_EMPTY) {
-                fv_device_secret_t secret;
-                if (!simulator.services.ops->random_fill(
-                        &simulator.services, secret.device_secret,
-                        sizeof(secret.device_secret)) ||
-                    simulator.services.ops->provision_device_secret(
-                        &simulator.services, &secret) != FV_PERSIST_OK) {
-                    secure_clear(&secret, sizeof(secret));
-                    fprintf(stderr, "cannot create development device secret\n");
-                    return 1;
-                }
-                secure_clear(&secret, sizeof(secret));
-            } else if (secret_status != FV_DEVICE_SECRET_ACTIVE) {
-                fprintf(stderr, "development device secret is revoked\n");
-                return 1;
-            }
-            state = (fv_security_state_t) {
-                .sequence = 1u,
-                .failed_attempts = 0u,
-                .provisioned = true,
-            };
-            if (simulator.services.ops->store_security_state(
-                    &simulator.services, &state) != FV_PERSIST_OK) {
-                secure_clear(&state, sizeof(state));
-                fprintf(stderr, "cannot create development security state\n");
-                return 1;
-            }
+            fprintf(stderr, "development vault is not provisioned; restart "
+                    "with --unprovisioned\n");
+            return 1;
         } else if (load_result != FV_PERSIST_NOT_FOUND) {
             fprintf(stderr, "development device state is corrupt\n");
             return 1;
         }
         if (provisioned) {
+            if (fv_boot_recover_entry_method(&simulator.services,
+                                             &entry_method) !=
+                FV_BOOT_RECOVERY_OK) {
+                fprintf(stderr, "development vault header is missing or "
+                        "invalid\n");
+                return 1;
+            }
             fv_device_secret_status_t secret_status;
             if (simulator.services.ops->device_secret_status(
                     &simulator.services, &secret_status) != FV_PERSIST_OK ||
@@ -294,7 +309,7 @@ int main(int argc, char **argv) {
         secure_clear(&state, sizeof(state));
     }
     fv_app_init(&simulator.app, provisioned, persisted_attempts,
-                FV_ENTRY_METHOD_WHEELS);
+                entry_method);
     simulator.last_commands = execute_commands(
         &simulator, fv_app_handle(&simulator.app, FV_EVENT_BOOT_COMPLETED));
     const fv_input_timing_t input_timing = {
@@ -336,5 +351,6 @@ int main(int argc, char **argv) {
     (void)g_timeout_add(5u, poll_inputs, &simulator);
     gtk_widget_show_all(window);
     gtk_main();
+    fv_authentication_session_clear(&simulator.authentication_session);
     return 0;
 }

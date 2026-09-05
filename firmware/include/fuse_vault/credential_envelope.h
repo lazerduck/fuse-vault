@@ -33,6 +33,10 @@ typedef struct {
     uint8_t bytes[FV_VMK_SIZE];
 } fv_volume_master_key_t;
 
+/* Validates the complete persisted header structure, without authenticating a
+ * user credential or opening the wrapped VMK. */
+bool fv_vault_header_valid(const fv_vault_header_t *header);
+
 /* header.sequence, entry_method, and vault_id must be set by the caller. */
 fv_credential_result_t fv_credential_envelope_create(
     const fv_secret_encoding_t *entry,

@@ -151,8 +151,10 @@ unlocking. The setup method screen offers four methods:
 Pressing Back on an empty variable-length entry returns to the preceding
 screen. Setup keeps the first entry in transient memory and confirms it by
 comparing its canonical encoding with a separately entered value. The selected
-method remains active after setup and must be supplied to `fv_app_init` from
-authenticated vault metadata when loading an existing vault.
+method remains active after setup. On a persistent restart, the boot-recovery
+boundary validates the complete vault header and translates its stable method
+identifier before supplying the recovered method to `fv_app_init`; missing or
+invalid provisioned metadata fails closed.
 
 Every method produces a fixed-capacity, zero-padded canonical encoding with a
 format version, method identifier, value count, and method-specific values.
@@ -174,17 +176,27 @@ exist yet; it never exposes a real or plaintext storage volume.
 
 The unprovisioned simulation walks through entry-method selection, initial
 secret entry, independent confirmation, mismatch handling, and acceptance of
-the destructive-lockout/no-recovery policy. Press `O` after the provisioning
-screen appears to inject successful platform provisioning. The confirmed setup
-secret remains transiently available through the canonical setup encoding only
-while the provisioning backend needs it and is cleared on completion or fault.
+the destructive-lockout/no-recovery policy. Without persistent development
+storage, press `O` after the provisioning screen appears to inject successful
+platform provisioning. With `--state-dir`, the provisioning command runs the
+credential coordinator: it creates and verifies device roots and a credential
+envelope before publishing the provisioned security-state record. The confirmed
+setup secret remains transiently available through the canonical setup encoding
+only while the provisioning backend needs it and is cleared on completion or
+fault.
 
 Run the graphical simulator with persistent development attempt state using:
 
 ```sh
 firmware/build-host/fuse_vault_display_simulator \
+  --unprovisioned \
   --state-dir firmware/build-host/simulator-state
 ```
+
+`--unprovisioned` supplies the initial state only when the directory is empty;
+after provisioning, the recovered security state and vault-header method take
+precedence on every restart. Omitting it for an empty directory fails closed
+instead of synthesizing incomplete provisioned metadata.
 
 In this mode the simulator creates a development-only device secret using the
 operating system random source and stores it separately from vault metadata.
@@ -198,6 +210,13 @@ the newest valid sequence is recovered after restart. CRC32 detects corruption
 and incomplete records but is not cryptographic authentication. These local
 files contain a plaintext simulated device secret and must never be treated as
 a production vault or copied into device firmware.
+
+The RP2354 boot path uses the same recovery boundary, but deliberately supplies
+no vault-header service yet: the physical redundant SD header backend is not
+implemented. Consequently an otherwise provisioned hardware build remains
+locked in the fault state rather than assuming the wheels method. Credential
+authentication is compiled as portable core code but remains disconnected on
+hardware until that storage service is available.
 
 A limited host NOR utility tests the invariants needed by the future RP2354A
 internal-flash attempt journal: aligned erase/program operations, the inability
@@ -269,6 +288,13 @@ has been persisted, and it refuses to request USB mass-storage attachment until
 successful authentication and persistence of the reset counter. The tests exercise
 provisioning, vault and FIDO mode selection, unlock and lock, persistent attempt
 limits, fault handling, and the MSC attachment boundary.
+
+The shared authentication coordinator canonicalizes the active entry, validates
+the persisted header and method, reads both device roots, and opens the envelope.
+Credential and method mismatches are ordinary failed attempts; missing, corrupt,
+or unreadable security material faults closed. A successful VMK belongs to an
+explicit session until lock, eject, or fault requests session-key erasure, while
+the coordinator workspace is cleared before every return.
 
 ## Flash
 

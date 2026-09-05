@@ -20,6 +20,32 @@ static bool has_command(fv_command_set_t commands, fv_command_t command) {
     return (commands & (fv_command_set_t)command) != 0u;
 }
 
+static void test_entry_method_conversion(void) {
+    static const fv_secret_method_t canonical[FV_ENTRY_METHOD_COUNT] = {
+        FV_SECRET_METHOD_WHEELS_V1,
+        FV_SECRET_METHOD_DIRECTIONS_V1,
+        FV_SECRET_METHOD_KEYPAD_V1,
+        FV_SECRET_METHOD_WORD_LIST_V1,
+    };
+    for (fv_entry_method_t ui = FV_ENTRY_METHOD_WHEELS;
+         ui < FV_ENTRY_METHOD_COUNT; ui = (fv_entry_method_t)(ui + 1)) {
+        fv_secret_method_t persisted;
+        fv_entry_method_t restored;
+        CHECK(fv_entry_method_to_secret_method(ui, &persisted));
+        CHECK(persisted == canonical[ui]);
+        CHECK(fv_secret_method_to_entry_method(persisted, &restored));
+        CHECK(restored == ui);
+    }
+
+    fv_secret_method_t persisted = FV_SECRET_METHOD_WHEELS_V1;
+    fv_entry_method_t ui = FV_ENTRY_METHOD_WHEELS;
+    CHECK(!fv_entry_method_to_secret_method(FV_ENTRY_METHOD_COUNT, &persisted));
+    CHECK(!fv_entry_method_to_secret_method(FV_ENTRY_METHOD_WHEELS, NULL));
+    CHECK(!fv_secret_method_to_entry_method((fv_secret_method_t)0, &ui));
+    CHECK(!fv_secret_method_to_entry_method((fv_secret_method_t)5, &ui));
+    CHECK(!fv_secret_method_to_entry_method(FV_SECRET_METHOD_WHEELS_V1, NULL));
+}
+
 static fv_app_t boot_provisioned(void) {
     fv_app_t app;
     fv_app_init(&app, true, 0u, FV_ENTRY_METHOD_WHEELS);
@@ -299,6 +325,7 @@ static void test_attempt_limit_destroys_secret(void) {
             CHECK(app.state == FV_STATE_DESTROYED);
             CHECK(has_command(commands, FV_COMMAND_DESTROY_DEVICE_SECRET));
             CHECK(has_command(commands, FV_COMMAND_USB_DETACH));
+            CHECK(has_command(commands, FV_COMMAND_ERASE_SESSION_KEYS));
         }
     }
 }
@@ -351,6 +378,7 @@ static void test_usb_attachment_invariants(void) {
 }
 
 int main(void) {
+    test_entry_method_conversion();
     test_boot_paths();
     test_setup_rejects_mismatched_confirmation();
     test_vault_unlock_and_lock();

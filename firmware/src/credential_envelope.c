@@ -63,10 +63,10 @@ static bool costs_valid(uint32_t branch_a, uint32_t branch_b) {
            branch_b > 0u && branch_b <= FV_CREDENTIAL_KMAC_MAX_ITERATIONS;
 }
 
-static bool header_valid(const fv_vault_header_t *header) {
+bool fv_vault_header_valid(const fv_vault_header_t *header) {
     return header != NULL && header->sequence != 0u &&
            header->crypto_profile == FV_CRYPTO_PROFILE_DUAL_FAMILY_V1 &&
-           header->entry_method != 0u &&
+           fv_secret_method_valid(header->entry_method) &&
            !all_zero(header->vault_id, sizeof(header->vault_id)) &&
            !all_zero(header->branch_a_salt, sizeof(header->branch_a_salt)) &&
            !all_zero(header->branch_b_salt, sizeof(header->branch_b_salt)) &&
@@ -80,7 +80,7 @@ static void encode_aad(const fv_vault_header_t *header,
     memcpy(output, magic, sizeof(magic));
     write_u64(output + 8u, header->sequence);
     write_u32(output + 16u, (uint32_t)header->crypto_profile);
-    write_u32(output + 20u, header->entry_method);
+    write_u32(output + 20u, (uint32_t)header->entry_method);
     memcpy(output + 24u, header->vault_id, FV_VAULT_ID_SIZE);
     memcpy(output + 40u, header->branch_a_salt, FV_SALT_SIZE);
     memcpy(output + 56u, header->branch_b_salt, FV_SALT_SIZE);
@@ -277,7 +277,7 @@ fv_credential_result_t fv_credential_envelope_create(
     fv_vault_header_t *header, fv_volume_master_key_t *vmk) {
     if (entry == NULL || device_roots == NULL || costs == NULL ||
         random_fill == NULL || header == NULL || vmk == NULL ||
-        header->sequence == 0u || header->entry_method == 0u ||
+        header->sequence == 0u || !fv_secret_method_valid(header->entry_method) ||
         all_zero(header->vault_id, sizeof(header->vault_id)) ||
         !costs_valid(costs->pbkdf2_iterations, costs->kmac_iterations)) {
         return FV_CREDENTIAL_INVALID_ARGUMENT;
@@ -340,7 +340,7 @@ fv_credential_result_t fv_credential_envelope_open(
     const fv_secret_encoding_t *entry,
     const fv_device_secret_t *device_roots,
     const fv_vault_header_t *header, fv_volume_master_key_t *vmk) {
-    if (entry == NULL || device_roots == NULL || !header_valid(header) ||
+    if (entry == NULL || device_roots == NULL || !fv_vault_header_valid(header) ||
         vmk == NULL) {
         return FV_CREDENTIAL_INVALID_ARGUMENT;
     }

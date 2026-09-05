@@ -49,6 +49,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/firmware/build-host/fuse_vault_display_simulator",
             "args": [
+                "--unprovisioned",
                 "--state-dir",
                 "${workspaceFolder}/firmware/build-host/simulator-state"
             ],

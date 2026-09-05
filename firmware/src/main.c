@@ -1,4 +1,5 @@
 #include "fuse_vault/app.h"
+#include "fuse_vault/boot_recovery.h"
 #include "fuse_vault/device_roots.h"
 #include "fuse_vault/input.h"
 #include "fuse_vault/journal_authenticator.h"
@@ -112,6 +113,7 @@ int main(void) {
                              input_ready;
     bool provisioned = false;
     uint8_t failed_attempts = 0u;
+    fv_entry_method_t entry_method = FV_ENTRY_METHOD_WHEELS;
     if (boot_storage_safe && roots_state == FV_DEVICE_ROOTS_ACTIVE) {
         boot_storage_safe = recover_active_device(&current_journal_state) &&
                             current_journal_state.provisioned;
@@ -119,11 +121,20 @@ int main(void) {
             provisioned = true;
             failed_attempts = current_journal_state.failed_attempts;
             journal_ready = true;
+
+            /* The physical SD vault-header service is intentionally not
+             * claimed yet. Provisioned hardware stays fail-closed until that
+             * backend can be passed through this shared recovery boundary. */
+            if (fv_boot_recover_entry_method(NULL, &entry_method) !=
+                FV_BOOT_RECOVERY_OK) {
+                boot_storage_safe = false;
+                journal_ready = false;
+            }
         }
     } else if (roots_state != FV_DEVICE_ROOTS_EMPTY) {
         boot_storage_safe = false;
     }
-    fv_app_init(&app, provisioned, failed_attempts, FV_ENTRY_METHOD_WHEELS);
+    fv_app_init(&app, provisioned, failed_attempts, entry_method);
     execute_commands(fv_app_handle(
         &app, boot_storage_safe ? FV_EVENT_BOOT_COMPLETED
                                 : FV_EVENT_FATAL_ERROR));

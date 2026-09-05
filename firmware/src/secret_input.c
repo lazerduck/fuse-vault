@@ -140,6 +140,8 @@ fv_secret_event_result_t fv_secret_entry_handle(fv_secret_entry_t *entry,
 bool fv_secret_entry_encode(const fv_secret_entry_t *entry,
                             fv_secret_encoding_t *encoding) {
     if (entry == NULL || encoding == NULL || (unsigned)entry->method >= FV_ENTRY_METHOD_COUNT) return false;
+    fv_secret_method_t secret_method;
+    if (!fv_entry_method_to_secret_method(entry->method, &secret_method)) return false;
     memset(encoding, 0, sizeof(*encoding));
     encoding->bytes[0] = 0x46u;
     encoding->bytes[1] = 0x56u;
@@ -147,12 +149,13 @@ bool fv_secret_entry_encode(const fv_secret_entry_t *entry,
     size_t length = 0u;
     const uint8_t *values = NULL;
     switch (entry->method) {
-        case FV_ENTRY_METHOD_WHEELS: encoding->bytes[3] = FV_SECRET_METHOD_WHEELS_V1; length = FV_SECRET_WHEEL_COUNT; values = entry->state.wheels.values; break;
-        case FV_ENTRY_METHOD_DIRECTIONS: encoding->bytes[3] = FV_SECRET_METHOD_DIRECTIONS_V1; length = entry->state.directions.length; values = entry->state.directions.values; break;
-        case FV_ENTRY_METHOD_KEYPAD: encoding->bytes[3] = FV_SECRET_METHOD_KEYPAD_V1; length = entry->state.keypad.length; values = entry->state.keypad.digits; break;
-        case FV_ENTRY_METHOD_WORD_LIST: encoding->bytes[3] = FV_SECRET_METHOD_WORD_LIST_V1; length = FV_SECRET_WORD_COUNT; values = entry->state.word_list.words; break;
+        case FV_ENTRY_METHOD_WHEELS: length = FV_SECRET_WHEEL_COUNT; values = entry->state.wheels.values; break;
+        case FV_ENTRY_METHOD_DIRECTIONS: length = entry->state.directions.length; values = entry->state.directions.values; break;
+        case FV_ENTRY_METHOD_KEYPAD: length = entry->state.keypad.length; values = entry->state.keypad.digits; break;
+        case FV_ENTRY_METHOD_WORD_LIST: length = FV_SECRET_WORD_COUNT; values = entry->state.word_list.words; break;
         case FV_ENTRY_METHOD_COUNT: return false;
     }
+    encoding->bytes[3] = (uint8_t)secret_method;
     if (length > FV_SECRET_ENCODING_SIZE - 5u) return false;
     encoding->bytes[4] = (uint8_t)length;
     memcpy(encoding->bytes + 5u, values, length);

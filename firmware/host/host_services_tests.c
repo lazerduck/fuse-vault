@@ -117,7 +117,7 @@ int main(void) {
     fv_vault_header_t header = {
         .sequence = 7u,
         .crypto_profile = FV_CRYPTO_PROFILE_DUAL_FAMILY_V1,
-        .entry_method = 1u,
+        .entry_method = FV_SECRET_METHOD_WHEELS_V1,
         .branch_a_cost = 1024u,
         .branch_b_cost = 2048u,
         .wrapped_vmk_length = 64u,
@@ -136,6 +136,14 @@ int main(void) {
     CHECK(loaded_header.wrapped_vmk_length == header.wrapped_vmk_length);
     CHECK(memcmp(loaded_header.wrapped_vmk, header.wrapped_vmk,
                  header.wrapped_vmk_length) == 0);
+
+    header.entry_method = (fv_secret_method_t)0;
+    CHECK(services.ops->store_vault_header(&services, &header) ==
+          FV_PERSIST_INVALID);
+    header.entry_method = (fv_secret_method_t)5;
+    CHECK(services.ops->store_vault_header(&services, &header) ==
+          FV_PERSIST_INVALID);
+    header.entry_method = FV_SECRET_METHOD_WHEELS_V1;
 
     header.crypto_profile = FV_CRYPTO_PROFILE_UNAVAILABLE;
     CHECK(services.ops->store_vault_header(&services, &header) ==

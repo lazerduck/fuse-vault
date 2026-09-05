@@ -195,7 +195,9 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 if (app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
                     fv_secret_entry_clear(&app->secret_entry);
                     app->state = FV_STATE_DESTROYED;
-                    return FV_COMMAND_ERASE_TRANSIENT_SECRET |
+                    return FV_COMMAND_USB_DETACH |
+                           FV_COMMAND_ERASE_TRANSIENT_SECRET |
+                           FV_COMMAND_ERASE_SESSION_KEYS |
                            FV_COMMAND_DESTROY_DEVICE_SECRET;
                 }
                 ++app->failed_attempts;

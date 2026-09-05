@@ -14,13 +14,16 @@ target_include_directories(fuse_vault_ascon PUBLIC
 )
 
 add_library(fuse_vault_core STATIC
+    ../src/authentication_coordinator.c
     ../src/app.c
+    ../src/boot_recovery.c
     ../src/credential_envelope.c
     ../src/device_roots.c
     ../src/device_provisioning.c
     ../src/input.c
     ../src/input_bindings.c
     ../src/journal_authenticator.c
+    ../src/provisioning_coordinator.c
     ../src/secret_input.c
     ../src/security_journal.c
     ../src/ui.c
@@ -198,6 +201,43 @@ target_compile_options(fuse_vault_credential_envelope_tests PRIVATE
 )
 add_test(NAME fuse_vault_credential_envelope
     COMMAND fuse_vault_credential_envelope_tests)
+
+add_executable(fuse_vault_provisioning_coordinator_tests
+    provisioning_coordinator_tests.c
+)
+target_link_libraries(fuse_vault_provisioning_coordinator_tests PRIVATE
+    fuse_vault_core
+)
+target_compile_options(fuse_vault_provisioning_coordinator_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_provisioning_coordinator
+    COMMAND fuse_vault_provisioning_coordinator_tests)
+
+add_executable(fuse_vault_boot_recovery_tests
+    boot_recovery_tests.c
+)
+target_link_libraries(fuse_vault_boot_recovery_tests PRIVATE
+    fuse_vault_core
+    fuse_vault_host_services
+)
+target_compile_options(fuse_vault_boot_recovery_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_boot_recovery
+    COMMAND fuse_vault_boot_recovery_tests)
+
+add_executable(fuse_vault_authentication_coordinator_tests
+    authentication_coordinator_tests.c
+)
+target_link_libraries(fuse_vault_authentication_coordinator_tests PRIVATE
+    fuse_vault_core
+)
+target_compile_options(fuse_vault_authentication_coordinator_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_authentication_coordinator
+    COMMAND fuse_vault_authentication_coordinator_tests)
 
 add_executable(fuse_vault_input_tests
     input_tests.c
