@@ -24,33 +24,74 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(FUSE_VAULT_ENABLE_OTP_PROVISIONING
+    "Compile irreversible device-root OTP programming support" OFF)
+set(FUSE_VAULT_OTP_PROVISIONING_CONFIRMATION "" CACHE STRING
+    "Required confirmation token for an OTP provisioning build")
+
+if(FUSE_VAULT_ENABLE_OTP_PROVISIONING AND
+   NOT FUSE_VAULT_OTP_PROVISIONING_CONFIRMATION STREQUAL
+       "I_UNDERSTAND_OTP_WRITES_ARE_PERMANENT")
+    message(FATAL_ERROR
+        "OTP provisioning is irreversible. Set "
+        "FUSE_VAULT_OTP_PROVISIONING_CONFIRMATION="
+        "I_UNDERSTAND_OTP_WRITES_ARE_PERMANENT to build it deliberately.")
+endif()
+
 if(PICO_SDK_VERSION_STRING VERSION_LESS "2.3.0")
     message(FATAL_ERROR "Fuse Vault requires Pico SDK 2.3.0 or later")
 endif()
 
+set(PICO_MBEDTLS_CONFIG_FILE
+    "${CMAKE_CURRENT_LIST_DIR}/mbedtls_config.h")
 pico_sdk_init()
 
 add_executable(fuse_vault
     src/app.c
+    src/credential_envelope.c
+    src/device_roots.c
+    src/device_provisioning.c
+    src/journal_authenticator.c
     src/main.c
     src/rp2354_random.c
+    src/rp2354_otp.c
+    src/rp2354_security_flash.c
     src/secret_input.c
     src/security_journal.c
     src/ui.c
+    third_party/ascon_aead128_ref/aead.c
 )
+
+if(FUSE_VAULT_ENABLE_OTP_PROVISIONING)
+    target_compile_definitions(fuse_vault PRIVATE
+        FUSE_VAULT_ENABLE_OTP_PROVISIONING=1)
+endif()
 
 target_include_directories(fuse_vault PRIVATE
     "${CMAKE_CURRENT_LIST_DIR}/include"
+    "${CMAKE_CURRENT_LIST_DIR}/third_party/ascon_aead128_ref"
+)
+
+# Keep the final 8 KiB outside the firmware image as a second, link-time guard
+# in addition to the backend's runtime overlap check.
+target_link_options(fuse_vault PRIVATE
+    "LINKER:-T,${CMAKE_CURRENT_LIST_DIR}/linker/security_journal_assert.ld"
 )
 
 target_link_libraries(fuse_vault PRIVATE
     pico_stdlib
     pico_rand
+    pico_unique_id
+    pico_flash
+    hardware_flash
+    pico_sha256
+    pico_mbedtls_crypto
+    pico_mbedtls_headers
 )
 
 # Apply strict diagnostics to our code without imposing them on Pico SDK source
 # files, some of which intentionally use supported GNU C extensions.
-set_source_files_properties(src/app.c src/main.c src/rp2354_random.c src/secret_input.c src/security_journal.c src/ui.c PROPERTIES COMPILE_OPTIONS
+set_source_files_properties(src/app.c src/credential_envelope.c src/device_provisioning.c src/device_roots.c src/journal_authenticator.c src/main.c src/rp2354_otp.c src/rp2354_random.c src/rp2354_security_flash.c src/secret_input.c src/security_journal.c src/ui.c PROPERTIES COMPILE_OPTIONS
     "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow"
 )
 

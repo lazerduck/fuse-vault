@@ -78,6 +78,56 @@
             "dependsOrder": "sequence",
             "problemMatcher": [],
             "group": "test"
+        },
+        {
+            "label": "Fuse Vault: Build emulated OTP tool",
+            "type": "process",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "${workspaceFolder}/firmware/build-host",
+                "--target",
+                "fuse_vault_otp_file_tool"
+            ],
+            "dependsOn": "Fuse Vault: Configure host simulator",
+            "dependsOrder": "sequence",
+            "problemMatcher": "$gcc"
+        },
+        {
+            "label": "Fuse Vault: Inspect emulated OTP",
+            "type": "process",
+            "command": "${workspaceFolder}/firmware/build-host/fuse_vault_otp_file_tool",
+            "args": [
+                "${workspaceFolder}/firmware/build-host/emulated-otp.bin",
+                "status"
+            ],
+            "dependsOn": "Fuse Vault: Build emulated OTP tool",
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "Fuse Vault: Provision emulated OTP",
+            "type": "process",
+            "command": "${workspaceFolder}/firmware/build-host/fuse_vault_otp_file_tool",
+            "args": [
+                "${workspaceFolder}/firmware/build-host/emulated-otp.bin",
+                "provision"
+            ],
+            "dependsOn": "Fuse Vault: Build emulated OTP tool",
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "label": "Fuse Vault: Revoke emulated OTP",
+            "type": "process",
+            "command": "${workspaceFolder}/firmware/build-host/fuse_vault_otp_file_tool",
+            "args": [
+                "${workspaceFolder}/firmware/build-host/emulated-otp.bin",
+                "revoke"
+            ],
+            "dependsOn": "Fuse Vault: Build emulated OTP tool",
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ]
 }

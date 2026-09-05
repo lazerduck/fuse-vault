@@ -25,10 +25,12 @@ The following values have distinct roles:
   human-input method. It is not a cryptographic key.
 - **Input key:** a 32-byte result from a password-hardening function using the
   entry encoding, a random per-vault salt, and stored parameters.
-- **Device secret:** a random 32-byte value unique to the physical device. It
-  is never stored on the SD card.
+- **Device roots:** two independently generated random 32-byte values unique
+  to the physical device. Neither is ever stored on the SD card. The roots are
+  assigned permanently to the SHA-256 and Keccak families and are never used
+  directly as operational keys.
 - **Key-encryption keys:** independent values derived from the input key and
-  device secret by the profile's two cryptographic families.
+  corresponding device root by the profile's two cryptographic families.
 - **Volume master key (VMK):** a random 32-byte value generated during setup.
   It is wrapped by both profile branches and is never derived directly from
   human input.
@@ -40,30 +42,44 @@ authentication; it does not require re-encrypting every data block.
 
 ## Default dual-family profile
 
-The V1 profile must use two independently designed derivation/wrapping branches
-and require both branches to unlock the VMK. The current candidates are:
+The implemented provisional V1 profile uses two independently designed
+derivation and wrapping branches, both of which are required to unlock the
+VMK:
 
-1. A memory-hard scrypt branch, which internally uses HMAC-SHA-256 and
-   Salsa20/8, with parameters calibrated against available SRAM and acceptable
-   unlock latency on the production board.
-2. A SHA-3-family branch based on KMAC256, with an independently encoded domain
-   and independently derived wrapping key.
+1. PBKDF2-HMAC-SHA-256 hardens the canonical entry with a random salt and a
+   recorded iteration count. HMAC-SHA-256 then combines that result with device
+   Root A to derive an AES-256-GCM key. AES-256-GCM forms the inner envelope.
+2. A versioned iterated-KMAC256 construction hardens the same canonical entry
+   under an independent salt, iteration count, and encoding. KMAC256 combines
+   that result with Root B to derive a 128-bit Ascon key. NIST Ascon-AEAD128
+   authenticates the complete inner envelope as the outer layer.
 
-The VMK will be authentically wrapped in two layers using independently
-derived keys. The exact authenticated-encryption algorithms, nonce format,
-branch ordering, KMAC password-hardening cost, and failure behaviour are open
-design decisions. They must not be silently selected during implementation.
+The fixed envelope is 92 bytes: a 16-byte Ascon nonce, a 60-byte encrypted
+inner envelope, and a 16-byte Ascon tag. The inner envelope contains a 12-byte
+AES nonce, 32-byte encrypted VMK, and 16-byte AES-GCM tag. Both AEAD layers use
+the same canonical associated data containing the envelope version, header
+sequence, profile ID, entry-method ID, vault ID, both salts, both costs, and
+wrapped length. A wrong entry, either wrong device root, or alteration of any
+authenticated metadata therefore prevents VMK recovery.
+
+PBKDF2 was selected for the first implementation instead of committing to
+scrypt parameters before RP2354A SRAM use and latency can be measured. The
+device-held roots and rollback-resistant ten-attempt limit prevent an SD-card
+image from becoming a standalone password oracle, but the final iteration
+counts and whether the SHA branch moves to scrypt remain review items. Header
+costs are bounded to prevent malicious metadata from causing unbounded work.
 
 Every cryptographic operation has a fixed ASCII domain label beginning with
 `fuse-vault/v1/`. All variable-length inputs use length-prefix encoding. The
 profile ID and all parameters required to reproduce derivation are
 authenticated metadata.
 
-The references for the candidate primitives are [RFC 7914 for
-scrypt](https://www.rfc-editor.org/rfc/rfc7914), [NIST SP 800-185 for
-KMAC](https://csrc.nist.gov/pubs/sp/800/185/final), and [RFC 5869 for
-HKDF](https://www.rfc-editor.org/rfc/rfc5869). Reference documents do not by
-themselves constitute a review of the composed Fuse Vault profile.
+The primary references are [NIST SP 800-132 for
+PBKDF2](https://csrc.nist.gov/pubs/sp/800/132/final), [NIST SP 800-185 for
+KMAC](https://csrc.nist.gov/pubs/sp/800/185/final), [NIST SP 800-38D for
+GCM](https://csrc.nist.gov/pubs/sp/800/38/d/final), and [NIST SP 800-232 for
+Ascon](https://csrc.nist.gov/pubs/sp/800/232/final). Reference documents do not
+by themselves constitute a review of the composed Fuse Vault profile.
 
 ## Vault header
 
@@ -101,6 +117,14 @@ An unprovisioned device exposes no USB data interface. The setup sequence is:
 11. Erase transient inputs and derived keys from RAM.
 12. Require a complete verification unlock before marking setup complete.
 
+The implemented `device_provisioning.c` transaction covers the device-root and
+initial-journal portion of this sequence. Its critical commit order is journal
+erase, authenticated initial-record write, journal verification, OTP root
+write, OTP active-marker write, root read-back, and a second journal
+verification using the read-back roots. It is intentionally not connected to
+the setup-success event until the KDF, wrapped VMK, and vault-header stages can
+run before the OTP active marker.
+
 OTP and permanent secure-boot settings are not changed by ordinary development
 firmware. Production OTP provisioning is a separate, deliberately invoked
 process with read-back verification before irreversible lock bits are set.
@@ -125,8 +149,13 @@ The portable production journal core uses two flash sectors, append-only
 256-byte records, sequence linkage, vault binding, and two independent
 authentication tags. Recovery ignores torn or unauthenticated records and
 sector rotation retains the latest valid record before erasing old history.
-The tags will be keyed from the device secret using two cryptographic families;
-the host fault-injection test authenticator is deliberately not cryptographic.
+The implemented authenticator derives one journal key from Root A using
+SP 800-108 counter mode with HMAC-SHA-256 and another from Root B using the
+SP 800-108 KMAC256 construction. Full 32-byte HMAC-SHA-256 and KMAC256 tags are
+required. Labels and device context separate these keys from every other use.
+Host known-answer tests cover the HMAC derivation/tag path and the official
+NIST KMAC256 sample. The journal fault-injection tests retain a deliberately
+non-cryptographic authenticator so every write boundary can be controlled.
 
 The counter cannot rely solely on the removable card because an attacker could
 restore an older card image. Internal-flash journalling prevents ordinary SD
@@ -146,9 +175,10 @@ required. The host simulator never implements a plaintext storage fallback.
 
 ## Decisions still requiring review
 
-- Exact parameters and measured latency for both password-hardening branches.
-- The robust two-family combiner/double-wrapping construction.
-- Authenticated-encryption algorithms for VMK wrapping and storage sectors.
+- Final parameters and measured latency for both password-hardening branches,
+  including whether scrypt fits the SHA branch on the production board.
+- Independent review of the two-family credential-envelope composition.
+- Authenticated-encryption algorithms for storage sectors.
 - Nonce construction and power-loss-safe authenticated metadata updates.
 - Rollback-resistant attempt accounting within flash/OTP endurance limits.
 - Secure boot, debug lockdown, firmware update, and recovery policy.

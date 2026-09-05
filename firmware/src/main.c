@@ -1,22 +1,115 @@
 #include "fuse_vault/app.h"
+#include "fuse_vault/device_roots.h"
+#include "fuse_vault/journal_authenticator.h"
+#include "fuse_vault/rp2354_otp.h"
+#include "fuse_vault/rp2354_security_flash.h"
 
 #include "pico/stdlib.h"
+#include "pico/unique_id.h"
+
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 static fv_app_t app;
+static fv_device_roots_storage_t device_roots_storage;
+static fv_dual_journal_authenticator_t journal_authenticator;
+static fv_journal_flash_t security_flash;
+static fv_security_journal_t security_journal;
+static fv_journal_state_t current_journal_state;
+static bool journal_ready;
+
+static void secure_clear(void *data, size_t length) {
+    volatile uint8_t *bytes = (volatile uint8_t *)data;
+    while (length-- > 0u) *bytes++ = 0u;
+}
+
+static bool recover_active_device(fv_journal_state_t *journal_state) {
+    fv_device_secret_t roots;
+    if (fv_device_roots_read(&device_roots_storage, &roots) !=
+        FV_DEVICE_ROOTS_ACTIVE) return false;
+    pico_unique_board_id_t board_id;
+    pico_get_unique_board_id(&board_id);
+    uint8_t device_context[FV_VAULT_ID_SIZE] = {'F', 'V', 'J', '1'};
+    memcpy(device_context + 4u, board_id.id, sizeof(board_id.id));
+    const bool authenticator_ready = fv_dual_journal_authenticator_init(
+        &journal_authenticator, &roots, device_context);
+    secure_clear(&roots, sizeof(roots));
+    secure_clear(device_context, sizeof(device_context));
+    if (!authenticator_ready ||
+        !fv_security_journal_init(&security_journal, &security_flash,
+                                  &journal_authenticator.interface)) {
+        fv_dual_journal_authenticator_deinit(&journal_authenticator);
+        return false;
+    }
+    if (fv_security_journal_recover(&security_journal, journal_state) !=
+        FV_JOURNAL_OK) {
+        fv_dual_journal_authenticator_deinit(&journal_authenticator);
+        return false;
+    }
+    return true;
+}
 
 static void execute_commands(fv_command_set_t commands) {
-    /*
-     * Platform implementations will be added as hardware drivers arrive.
-     * Until then, every security-sensitive command is intentionally a no-op:
-     * in particular, neither MSC nor FIDO USB interfaces can be attached.
-     */
-    (void)commands;
+    if ((commands & FV_COMMAND_STORE_ATTEMPT_COUNTER) != 0u) {
+        if (!journal_ready || current_journal_state.sequence == UINT64_MAX) {
+            execute_commands(fv_app_handle(&app, FV_EVENT_FATAL_ERROR));
+            return;
+        }
+        fv_journal_state_t next = current_journal_state;
+        next.previous_sequence = current_journal_state.sequence;
+        ++next.sequence;
+        next.failed_attempts = app.failed_attempts;
+        if (fv_security_journal_append(&security_journal, &next) !=
+            FV_JOURNAL_OK) {
+            execute_commands(fv_app_handle(&app, FV_EVENT_FATAL_ERROR));
+            return;
+        }
+        current_journal_state = next;
+        execute_commands(fv_app_handle(&app,
+                                       FV_EVENT_ATTEMPT_COUNTER_STORED));
+    }
+    if ((commands & FV_COMMAND_DESTROY_DEVICE_SECRET) != 0u) {
+        const fv_device_roots_result_t result =
+            fv_device_roots_revoke(&device_roots_storage);
+        journal_ready = false;
+        fv_dual_journal_authenticator_deinit(&journal_authenticator);
+        if (result != FV_DEVICE_ROOTS_OK &&
+            result != FV_DEVICE_ROOTS_REVOKED) {
+            execute_commands(fv_app_handle(&app, FV_EVENT_FATAL_ERROR));
+        }
+    }
+    /* Authentication and USB commands remain disconnected until those
+       platform implementations exist. */
 }
 
 int main(void) {
-    /* Provisioning state will ultimately be read from authenticated storage. */
-    fv_app_init(&app, false, 0u);
-    execute_commands(fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED));
+    const bool security_flash_ready =
+        fv_rp2354_security_flash_init(&security_flash);
+    const bool device_roots_ready =
+        fv_rp2354_otp_init(&device_roots_storage);
+    const fv_device_roots_result_t roots_state = device_roots_ready
+        ? fv_device_roots_status(&device_roots_storage)
+        : FV_DEVICE_ROOTS_IO_ERROR;
+    current_journal_state = (fv_journal_state_t){0};
+    bool boot_storage_safe = security_flash_ready && device_roots_ready;
+    bool provisioned = false;
+    uint8_t failed_attempts = 0u;
+    if (boot_storage_safe && roots_state == FV_DEVICE_ROOTS_ACTIVE) {
+        boot_storage_safe = recover_active_device(&current_journal_state) &&
+                            current_journal_state.provisioned;
+        if (boot_storage_safe) {
+            provisioned = true;
+            failed_attempts = current_journal_state.failed_attempts;
+            journal_ready = true;
+        }
+    } else if (roots_state != FV_DEVICE_ROOTS_EMPTY) {
+        boot_storage_safe = false;
+    }
+    fv_app_init(&app, provisioned, failed_attempts);
+    execute_commands(fv_app_handle(
+        &app, boot_storage_safe ? FV_EVENT_BOOT_COMPLETED
+                                : FV_EVENT_FATAL_ERROR));
 
     for (;;) {
         /* Input, UI rendering, and platform command dispatch will run here. */

@@ -84,6 +84,31 @@ cmake --build firmware/build-host
 ctest --test-dir firmware/build-host --output-on-failure
 ```
 
+### File-backed OTP emulator
+
+Host builds include a deliberately small OTP model backed by an 8 KiB file.
+It represents all 4096 logical ECC data rows as little-endian 16-bit values.
+New images contain only zeroes; programming may change bits only from zero to
+one, each row is flushed independently, and the image persists across process
+restarts. It therefore exercises the firmware's empty, partially programmed,
+active, invalid, and revoked layouts without claiming to reproduce OTP timing,
+analogue failure modes, ECC fault correction, permissions, or page locking.
+
+The accompanying tool generates test roots from the host operating system and
+never prints them:
+
+```sh
+firmware/build-host/fuse_vault_otp_file_tool /tmp/fuse-vault-otp.bin status
+firmware/build-host/fuse_vault_otp_file_tool /tmp/fuse-vault-otp.bin provision
+firmware/build-host/fuse_vault_otp_file_tool /tmp/fuse-vault-otp.bin status
+firmware/build-host/fuse_vault_otp_file_tool /tmp/fuse-vault-otp.bin revoke
+```
+
+Deleting the image creates a new emulated device on the next invocation. This
+is intentionally possible only in the host model; real OTP cannot be reset.
+Equivalent inspect, provision, and revoke commands are available in the VS Code
+task list and use `firmware/build-host/emulated-otp.bin`.
+
 Run the interactive terminal simulator:
 
 ```sh
@@ -113,10 +138,9 @@ not treated as sufficient standalone encryption-key entropy.
 
 Every secret-entry method must produce a canonical, domain-separated encoding.
 The current wheel encoding includes a format version, method identifier, wheel
-count, and the three values. A future reviewed KDF backend will transform that
-encoding into a fixed 32-byte unlock key using a per-vault salt and recorded
-parameters. The canonical encoding is deliberately not treated as a key, and
-the KDF/device-secret construction has not yet been selected or implemented.
+count, and the three values. The credential-envelope backend now consumes that
+encoding directly through two independently salted, bounded work functions;
+the canonical encoding is never treated as an encryption key.
 
 In VS Code, run `Fuse Vault: Run display simulator` from **Tasks: Run Task**.
 Use `Fuse Vault: Run persistent simulator` to exercise attempt persistence
@@ -168,13 +192,58 @@ keeps the latest valid record safe while rotating sectors, and authenticates
 each record with two 32-byte tags supplied by the platform cryptography layer.
 Host tests interrupt writes at every byte boundary, corrupt the newest record,
 and force sector rotation. Their deterministic tag function is intentionally
-non-cryptographic; hardware flash access and the real device-secret-derived
-dual-family authenticator are the next integration step.
+non-cryptographic.
 
-The host vault-header backend accepts only a nonzero crypto-profile identifier
-and nonempty opaque wrapped-key material. Because the real dual-family wrapping
-profile is not implemented yet, the simulator does not create a vault header
-or claim that injected provisioning produced a cryptographic vault.
+The RP2354A flash adapter reserves the final 8 KiB of stacked flash, enforces
+page/sector alignment and bounds, performs writes through Pico SDK safe-flash
+coordination, and verifies programmed or erased contents. Link-time and boot-time
+overlap checks keep firmware out of the reserved range; boot fails locked if the
+geometry is not safe.
+
+The dual authenticator is now implemented: independent 256-bit device roots
+feed SP 800-108 HMAC-SHA-256 and KMAC256 derivations, and both full-size tags
+must validate. The SHA branch uses RP2350 hardware acceleration and the Keccak
+branch is portable C. Host tests include NIST's published KMAC256 sample and an
+independently generated HMAC derivation/tag answer. Hardware journal writes
+are enabled only after active roots have been recovered; the boot path connects
+that root set to journal recovery.
+
+The shared first-time security-state transaction now generates both roots and
+a vault ID, erases and writes the first authenticated journal record, reads it
+back, and only then commits the OTP active marker. It finally discards the RAM
+copy, reads the roots back through the selected OTP backend, and authenticates
+the journal again. The same transaction is covered with the file-backed OTP
+emulator and is compiled for the RP2354A. It is not yet dispatched from the UI:
+the vault-header wrapping and encrypted-storage stages must be placed before
+its irreversible final commit so setup cannot mark an unusable vault complete.
+
+The two-root OTP lifecycle backend now reserves user-data page 60 and uses ECC
+rows for both roots and separate format, active, and revocation markers. Root
+data is read back before the active marker is programmed, interrupted
+provisioning is permanently invalid rather than retried, and revoked roots are
+never returned. Ordinary firmware cannot provision roots; that operation is
+available only to an explicitly configured provisioning build. Enabling it
+requires both `-DFUSE_VAULT_ENABLE_OTP_PROVISIONING=ON` and the CMake cache
+confirmation
+`-DFUSE_VAULT_OTP_PROVISIONING_CONFIRMATION=I_UNDERSTAND_OTP_WRITES_ARE_PERMANENT`.
+Persistent page locks and access permissions remain deferred until
+sacrificial-board testing.
+The hardware boot path now accepts either a completely empty root page or a
+fully active root set with a valid authenticated journal. Every other state
+fails locked. Temporary roots are cleared after deriving journal keys. Attempt
+reservations now append to the hardware journal before authentication can
+continue, while destructive lockout programs the one-way revocation marker and
+clears the derived keys.
+
+The credential-envelope backend generates a random 32-byte VMK and protects it
+with an inner AES-256-GCM envelope and an outer Ascon-AEAD128 envelope. The
+independent wrapping keys come from PBKDF2-HMAC-SHA-256 plus Root A and iterated
+KMAC256 plus Root B. The 92-byte result fits in the existing vault header, whose
+security-relevant metadata is authenticated as AEAD associated data. Host tests
+require the correct entry and both roots, mutate every envelope byte, exercise
+metadata tampering and work limits, and include the official empty-message
+Ascon-AEAD128 known answer. Production iteration counts remain unset pending
+measurement on the assembled RP2354A.
 
 The core refuses to begin authentication until an incremented attempt counter
 has been persisted, and it refuses to request USB mass-storage attachment until
@@ -198,8 +267,12 @@ firmware/
 ├── include/fuse_vault/app.h  Portable application interface
 ├── include/fuse_vault/block_device.h
 │                              Protocol-neutral storage interface
+├── include/fuse_vault/security_journal.h
+│                              Portable authenticated journal interface
 ├── src/app.c                 State machine and UI view model
 ├── src/main.c                RP2354A platform entry point
+├── src/rp2354_security_flash.c
+│                              Reserved stacked-flash journal backend
 └── CMakeLists.txt            Firmware build definition
 ```
 

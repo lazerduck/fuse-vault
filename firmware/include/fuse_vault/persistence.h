@@ -5,7 +5,9 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define FV_DEVICE_SECRET_SIZE 32u
+#define FV_DEVICE_ROOT_SIZE 32u
+#define FV_DEVICE_ROOT_COUNT 2u
+#define FV_DEVICE_SECRET_SIZE (FV_DEVICE_ROOT_SIZE * FV_DEVICE_ROOT_COUNT)
 #define FV_VAULT_ID_SIZE 16u
 #define FV_SALT_SIZE 16u
 #define FV_WRAPPED_VMK_CAPACITY 128u

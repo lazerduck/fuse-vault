@@ -68,6 +68,14 @@ pico_board_cmake_set_default(PICO_FLASH_SIZE_BYTES, (2 * 1024 * 1024))
 #define PICO_FLASH_SIZE_BYTES (2 * 1024 * 1024)
 #endif
 
+/*
+ * Mutable security state occupies the final two 4 KiB sectors. Application
+ * code must access this region only through the authenticated journal backend.
+ */
+#define FUSE_VAULT_SECURITY_JOURNAL_SIZE_BYTES (2u * 4096u)
+#define FUSE_VAULT_SECURITY_JOURNAL_OFFSET_BYTES \
+    (PICO_FLASH_SIZE_BYTES - FUSE_VAULT_SECURITY_JOURNAL_SIZE_BYTES)
+
 pico_board_cmake_set_default(PICO_RP2350_A2_SUPPORTED, 1)
 #ifndef PICO_RP2350_A2_SUPPORTED
 #define PICO_RP2350_A2_SUPPORTED 1
