@@ -5,6 +5,11 @@
 #include "printstate.h"
 #include "word.h"
 
+static void fuse_vault_secure_clear(void* data, unsigned long long length) {
+  volatile unsigned char* bytes = (volatile unsigned char*)data;
+  while (length-- > 0) *bytes++ = 0;
+}
+
 int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
                         const unsigned char* m, unsigned long long mlen,
                         const unsigned char* ad, unsigned long long adlen,
@@ -23,10 +28,10 @@ int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
   printbytes("m", m, mlen);
 
   /* load key and nonce */
-  const uint64_t K0 = LOADBYTES(k, 8);
-  const uint64_t K1 = LOADBYTES(k + 8, 8);
-  const uint64_t N0 = LOADBYTES(npub, 8);
-  const uint64_t N1 = LOADBYTES(npub + 8, 8);
+  uint64_t K0 = LOADBYTES(k, 8);
+  uint64_t K1 = LOADBYTES(k + 8, 8);
+  uint64_t N0 = LOADBYTES(npub, 8);
+  uint64_t N1 = LOADBYTES(npub + 8, 8);
 
   /* initialize */
   ascon_state_t s;
@@ -113,6 +118,12 @@ int crypto_aead_encrypt(unsigned char* c, unsigned long long* clen,
   printbytes("t", c, CRYPTO_ABYTES);
   print("\n");
 
+  fuse_vault_secure_clear(&s, sizeof(s));
+  fuse_vault_secure_clear(&K0, sizeof(K0));
+  fuse_vault_secure_clear(&K1, sizeof(K1));
+  fuse_vault_secure_clear(&N0, sizeof(N0));
+  fuse_vault_secure_clear(&N1, sizeof(N1));
+
   return 0;
 }
 
@@ -137,10 +148,10 @@ int crypto_aead_decrypt(unsigned char* m, unsigned long long* mlen,
   printbytes("t", c + *mlen, CRYPTO_ABYTES);
 
   /* load key and nonce */
-  const uint64_t K0 = LOADBYTES(k, 8);
-  const uint64_t K1 = LOADBYTES(k + 8, 8);
-  const uint64_t N0 = LOADBYTES(npub, 8);
-  const uint64_t N1 = LOADBYTES(npub + 8, 8);
+  uint64_t K0 = LOADBYTES(k, 8);
+  uint64_t K1 = LOADBYTES(k + 8, 8);
+  uint64_t N0 = LOADBYTES(npub, 8);
+  uint64_t N1 = LOADBYTES(npub + 8, 8);
 
   /* initialize */
   ascon_state_t s;
@@ -236,6 +247,13 @@ int crypto_aead_decrypt(unsigned char* m, unsigned long long* mlen,
   int result = 0;
   for (i = 0; i < CRYPTO_ABYTES; ++i) result |= c[i] ^ t[i];
   result = (((result - 1) >> 8) & 1) - 1;
+
+  fuse_vault_secure_clear(t, sizeof(t));
+  fuse_vault_secure_clear(&s, sizeof(s));
+  fuse_vault_secure_clear(&K0, sizeof(K0));
+  fuse_vault_secure_clear(&K1, sizeof(K1));
+  fuse_vault_secure_clear(&N0, sizeof(N0));
+  fuse_vault_secure_clear(&N1, sizeof(N1));
 
   /* print output bytes */
   printbytes("m", m - *mlen, *mlen);

@@ -14,19 +14,25 @@ target_include_directories(fuse_vault_ascon PUBLIC
 )
 
 add_library(fuse_vault_core STATIC
+    ../src/block_slice.c
     ../src/authentication_coordinator.c
     ../src/app.c
     ../src/boot_recovery.c
     ../src/credential_envelope.c
     ../src/device_roots.c
     ../src/device_provisioning.c
+    ../src/display.c
+    ../src/encrypted_block.c
     ../src/input.c
     ../src/input_bindings.c
     ../src/journal_authenticator.c
     ../src/provisioning_coordinator.c
+    ../src/peripheral_safety.c
     ../src/secret_input.c
     ../src/security_journal.c
     ../src/ui.c
+    ../src/vault_header_store.c
+    ../src/virtual_msc.c
 )
 
 find_package(OpenSSL REQUIRED COMPONENTS Crypto)
@@ -82,7 +88,9 @@ add_test(NAME fuse_vault_state_machine COMMAND fuse_vault_tests)
 
 add_library(fuse_vault_host_services STATIC
     host_services.c
+    file_block_device.c
 )
+target_link_libraries(fuse_vault_host_services PUBLIC fuse_vault_core)
 target_include_directories(fuse_vault_host_services PUBLIC
     .
     ../include
@@ -247,3 +255,40 @@ target_compile_options(fuse_vault_input_tests PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
 )
 add_test(NAME fuse_vault_input_controller COMMAND fuse_vault_input_tests)
+
+add_executable(fuse_vault_vault_header_store_tests vault_header_store_tests.c)
+target_link_libraries(fuse_vault_vault_header_store_tests PRIVATE fuse_vault_core)
+target_compile_options(fuse_vault_vault_header_store_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_vault_header_store
+    COMMAND fuse_vault_vault_header_store_tests)
+
+add_executable(fuse_vault_lifecycle_msc_tests lifecycle_msc_tests.c)
+target_link_libraries(fuse_vault_lifecycle_msc_tests PRIVATE
+    fuse_vault_core fuse_vault_host_services)
+target_compile_options(fuse_vault_lifecycle_msc_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_stage3_lifecycle_msc
+    COMMAND fuse_vault_lifecycle_msc_tests)
+
+add_executable(fuse_vault_persistent_vault_tests persistent_vault_tests.c)
+target_link_libraries(fuse_vault_persistent_vault_tests PRIVATE
+    fuse_vault_core fuse_vault_host_services)
+target_compile_options(fuse_vault_persistent_vault_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_persistent_vault
+    COMMAND fuse_vault_persistent_vault_tests)
+
+add_executable(fuse_vault_encrypted_block_tests encrypted_block_tests.c)
+target_link_libraries(fuse_vault_encrypted_block_tests PRIVATE
+    fuse_vault_core fuse_vault_host_services)
+target_compile_options(fuse_vault_encrypted_block_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_encrypted_block COMMAND fuse_vault_encrypted_block_tests)
+
+add_executable(fuse_vault_peripheral_safety_tests peripheral_safety_tests.c)
+target_link_libraries(fuse_vault_peripheral_safety_tests PRIVATE fuse_vault_core)
+target_compile_options(fuse_vault_peripheral_safety_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_stage4_peripheral_safety
+    COMMAND fuse_vault_peripheral_safety_tests)

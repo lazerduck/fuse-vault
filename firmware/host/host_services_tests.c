@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include "host_services.h"
+#include "fuse_vault/credential_envelope.h"
 
 #include <fcntl.h>
 #include <stdbool.h>
@@ -27,7 +28,9 @@ static void remove_test_directory(const char *directory) {
         "device-secret-active.0", "device-secret-active.1",
         "device-secret-revoked.0", "device-secret-revoked.1",
         "security-state.0", "security-state.1",
+        "security-journal.bin",
         "vault-header.0", "vault-header.1",
+        "vault-media.bin",
     };
     for (size_t index = 0u; index < sizeof(files) / sizeof(files[0]); ++index) {
         const int result = snprintf(path, sizeof(path), "%s/%s",
@@ -45,7 +48,7 @@ int main(void) {
     fv_host_services_context_t context;
     CHECK(fv_host_services_init(&services, &context, directory));
 
-    uint8_t random_bytes[64] = {0};
+    uint8_t random_bytes[FV_WRAPPED_VMK_CAPACITY] = {0};
     CHECK(services.ops->random_fill(&services, random_bytes,
                                     sizeof(random_bytes)));
 
@@ -78,6 +81,10 @@ int main(void) {
         .failed_attempts = 3u,
         .provisioned = true,
     };
+    /* The journal is vault-bound; a production caller obtains this identity
+     * by loading or storing the authenticated removable-media header first. */
+    memcpy(context.current_vault_id, random_bytes, FV_VAULT_ID_SIZE);
+    context.current_vault_id_valid = true;
     CHECK(services.ops->store_security_state(&services, &state) == FV_PERSIST_OK);
 
     fv_security_state_t loaded;
@@ -94,33 +101,25 @@ int main(void) {
     CHECK(loaded.failed_attempts == 4u);
 
     char newest_path[FV_HOST_PATH_CAPACITY];
-    CHECK(snprintf(newest_path, sizeof(newest_path), "%s/security-state.0",
+    CHECK(snprintf(newest_path, sizeof(newest_path), "%s/security-journal.bin",
                    directory) > 0);
-    const int descriptor = open(newest_path, O_WRONLY | O_TRUNC);
+    const int descriptor = open(newest_path, O_WRONLY);
     CHECK(descriptor >= 0);
-    CHECK(write(descriptor, "corrupt", 7u) == 7);
+    CHECK(pwrite(descriptor, "corrupt", 7u,
+                 (off_t)(FV_JOURNAL_RECORD_SIZE +
+                         FV_JOURNAL_AUTHENTICATED_SIZE)) == 7);
     CHECK(close(descriptor) == 0);
     CHECK(services.ops->load_security_state(&services, &loaded) == FV_PERSIST_OK);
     CHECK(loaded.sequence == 1u);
     CHECK(loaded.failed_attempts == 3u);
 
-    CHECK(services.ops->revoke_device_secret(&services) == FV_PERSIST_OK);
-    CHECK(services.ops->device_secret_status(&services, &secret_status) ==
-          FV_PERSIST_OK);
-    CHECK(secret_status == FV_DEVICE_SECRET_REVOKED);
-    CHECK(services.ops->read_device_secret(&services, &loaded_secret) ==
-          FV_PERSIST_INVALID);
-    CHECK(services.ops->revoke_device_secret(&services) == FV_PERSIST_OK);
-    CHECK(services.ops->provision_device_secret(&services, &secret) ==
-          FV_PERSIST_INVALID);
-
     fv_vault_header_t header = {
-        .sequence = 7u,
+        .sequence = 1u,
         .crypto_profile = FV_CRYPTO_PROFILE_DUAL_FAMILY_V1,
         .entry_method = FV_SECRET_METHOD_WHEELS_V1,
         .branch_a_cost = 1024u,
         .branch_b_cost = 2048u,
-        .wrapped_vmk_length = 64u,
+        .wrapped_vmk_length = FV_CREDENTIAL_ENVELOPE_SIZE,
     };
     memcpy(header.vault_id, random_bytes, FV_VAULT_ID_SIZE);
     memcpy(header.branch_a_salt, random_bytes + 16u, FV_SALT_SIZE);
@@ -147,6 +146,16 @@ int main(void) {
 
     header.crypto_profile = FV_CRYPTO_PROFILE_UNAVAILABLE;
     CHECK(services.ops->store_vault_header(&services, &header) ==
+          FV_PERSIST_INVALID);
+
+    CHECK(services.ops->revoke_device_secret(&services) == FV_PERSIST_OK);
+    CHECK(services.ops->device_secret_status(&services, &secret_status) ==
+          FV_PERSIST_OK);
+    CHECK(secret_status == FV_DEVICE_SECRET_REVOKED);
+    CHECK(services.ops->read_device_secret(&services, &loaded_secret) ==
+          FV_PERSIST_INVALID);
+    CHECK(services.ops->revoke_device_secret(&services) == FV_PERSIST_OK);
+    CHECK(services.ops->provision_device_secret(&services, &secret) ==
           FV_PERSIST_INVALID);
 
     remove_test_directory(directory);

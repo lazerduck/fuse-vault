@@ -84,8 +84,8 @@ static bool read_rows(fv_device_roots_storage_t *storage, uint16_t first_row,
         const off_t offset = (off_t)(((size_t)first_row + index) * 2u);
         ok = read_all(descriptor, encoded, sizeof(encoded), offset);
         if (ok) {
-            output[index] = (uint16_t)encoded[0] |
-                            ((uint16_t)encoded[1] << 8u);
+            output[index] = (uint16_t)((uint16_t)encoded[0] |
+                            (uint16_t)((uint16_t)encoded[1] << 8u));
         }
     }
     if (close(descriptor) != 0) ok = false;
@@ -103,8 +103,8 @@ static bool write_rows(fv_device_roots_storage_t *storage, uint16_t first_row,
         uint8_t encoded[2] = {0};
         const off_t offset = (off_t)(((size_t)first_row + index) * 2u);
         ok = read_all(descriptor, encoded, sizeof(encoded), offset);
-        const uint16_t existing = (uint16_t)encoded[0] |
-                                  ((uint16_t)encoded[1] << 8u);
+        const uint16_t existing = (uint16_t)((uint16_t)encoded[0] |
+                                  (uint16_t)((uint16_t)encoded[1] << 8u));
         if (ok && (existing & input[index]) != existing) ok = false;
         const uint16_t programmed = existing | input[index];
         encoded[0] = (uint8_t)programmed;

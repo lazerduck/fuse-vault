@@ -12,6 +12,14 @@
 pico_board_cmake_set(PICO_PLATFORM, rp2350-arm-s)
 
 #define FUSE_VAULT_BOARD
+#define FUSE_VAULT_BOARD_REVISION 1
+
+/* These gates remain zero until the named facts have been checked against a
+ * deterministic schematic export and an assembled board. Code must not infer
+ * electrical behavior merely from the pin-number aliases below. */
+#define FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED 0
+#define FUSE_VAULT_SD_CARD_DETECT_POLARITY_CONFIRMED 0
+#define FUSE_VAULT_DISPLAY_CONTROLLER_CONFIRMED 0
 
 /* RP2354A uses the 60-pin, 30-GPIO RP2350 A package. */
 #define PICO_RP2350A 1

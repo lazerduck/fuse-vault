@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 
 #include "host_services.h"
+#include "fuse_vault/journal_authenticator.h"
+#include "fuse_vault/vault_header_store.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -17,14 +19,16 @@
 #define RECORD_PAYLOAD_CAPACITY (RECORD_SIZE - RECORD_HEADER_SIZE - 4u)
 #define RECORD_FORMAT_VERSION 1u
 #define SECRET_PAYLOAD_SIZE FV_DEVICE_SECRET_SIZE
-#define SECURITY_PAYLOAD_SIZE 8u
-#define VAULT_PAYLOAD_SIZE 194u
+#define JOURNAL_SIZE 8192u
+#define JOURNAL_ERASE_SIZE 4096u
 
 static const uint8_t SECRET_MAGIC[8] = {'F','V','S','E','C','D','1',0};
 static const uint8_t ACTIVE_MAGIC[8] = {'F','V','A','C','T','D','1',0};
 static const uint8_t REVOKE_MAGIC[8] = {'F','V','R','E','V','D','1',0};
-static const uint8_t SECURITY_MAGIC[8] = {'F','V','S','T','A','D','1',0};
-static const uint8_t VAULT_MAGIC[8] = {'F','V','H','D','R','D','1',0};
+static const uint8_t JOURNAL_DEVICE_ID[FV_VAULT_ID_SIZE] = {
+    0x46,0x56,0x48,0x4f,0x53,0x54,0x4a,0x4f,
+    0x55,0x52,0x4e,0x41,0x4c,0x30,0x30,0x31
+};
 
 static uint32_t read_u32(const uint8_t *input) {
     return (uint32_t)input[0] |
@@ -36,15 +40,6 @@ static uint32_t read_u32(const uint8_t *input) {
 static uint64_t read_u64(const uint8_t *input) {
     return (uint64_t)read_u32(input) |
            ((uint64_t)read_u32(input + 4u) << 32u);
-}
-
-static void write_u16(uint8_t *output, uint16_t value) {
-    output[0] = (uint8_t)value;
-    output[1] = (uint8_t)(value >> 8u);
-}
-
-static uint16_t read_u16(const uint8_t *input) {
-    return (uint16_t)((uint16_t)input[0] | ((uint16_t)input[1] << 8u));
 }
 
 static void write_u32(uint8_t *output, uint32_t value) {
@@ -335,82 +330,153 @@ static fv_persist_result_t host_revoke_device_secret(
                         REVOKE_MAGIC, &revoked, 1u, 1u);
 }
 
+static bool journal_transfer(fv_journal_flash_t *flash, size_t offset,
+                             uint8_t *data, size_t length, bool programming) {
+    fv_host_services_context_t *context = flash->context;
+    if (offset > flash->size || length > flash->size - offset) return false;
+    const int descriptor = open(context->journal_path,
+        (programming ? O_RDWR : O_RDONLY) | O_CLOEXEC);
+    if (descriptor < 0) return false;
+    uint8_t existing[FV_JOURNAL_RECORD_SIZE];
+    if (length > sizeof(existing)) { (void)close(descriptor); return false; }
+    if (programming && pread(descriptor,existing,length,(off_t)offset)!=(ssize_t)length) {
+        (void)close(descriptor); return false;
+    }
+    if (programming) {
+        for (size_t index = 0u; index < length; ++index) {
+            if ((existing[index] & data[index]) != data[index]) {
+                (void)close(descriptor); return false;
+            }
+        }
+    }
+    size_t done = 0u;
+    while (done < length) {
+        const ssize_t amount = programming
+            ? pwrite(descriptor, data + done, length - done,
+                     (off_t)(offset + done))
+            : pread(descriptor, data + done, length - done,
+                    (off_t)(offset + done));
+        if (amount < 0 && errno == EINTR) continue;
+        if (amount <= 0) { (void)close(descriptor); return false; }
+        done += (size_t)amount;
+    }
+    const bool ok = (!programming || fdatasync(descriptor) == 0) &&
+                    close(descriptor) == 0;
+    secure_clear(existing, sizeof(existing));
+    return ok;
+}
+static bool journal_read(fv_journal_flash_t *flash,size_t offset,
+                         uint8_t *output,size_t length){
+    return output != NULL && journal_transfer(flash,offset,output,length,false);
+}
+static bool journal_program(fv_journal_flash_t *flash,size_t offset,
+                            const uint8_t *input,size_t length){
+    return input != NULL && journal_transfer(flash,offset,(uint8_t *)input,length,true);
+}
+static bool journal_erase(fv_journal_flash_t *flash,size_t offset,size_t length){
+    fv_host_services_context_t *context=flash->context;
+    if(offset%flash->erase_block_size!=0u||length%flash->erase_block_size!=0u||
+       offset>flash->size||length>flash->size-offset)return false;
+    int descriptor=open(context->journal_path,O_RDWR|O_CLOEXEC);if(descriptor<0)return false;
+    uint8_t erased[256];memset(erased,0xff,sizeof(erased));bool ok=true;
+    for(size_t position=0u;ok&&position<length;position+=sizeof(erased))
+        ok=pwrite(descriptor,erased,sizeof(erased),(off_t)(offset+position))==(ssize_t)sizeof(erased);
+    if(ok)ok=fdatasync(descriptor)==0;
+    if(close(descriptor)!=0)ok=false;
+    return ok;
+}
+static const fv_journal_flash_ops_t JOURNAL_OPS={journal_read,journal_program,journal_erase};
+
+static fv_persist_result_t open_journal(fv_platform_services_t *services,
+                                        fv_security_journal_t *journal,
+                                        fv_dual_journal_authenticator_t *auth) {
+    fv_device_secret_t roots={0};
+    const fv_persist_result_t result=host_read_device_secret(services,&roots);
+    if(result!=FV_PERSIST_OK)return result;
+    bool ok=fv_dual_journal_authenticator_init(auth,&roots,JOURNAL_DEVICE_ID)&&
+            fv_security_journal_init(journal,
+                &((fv_host_services_context_t *)services->context)->journal_flash,
+                &auth->interface);
+    secure_clear(&roots,sizeof(roots));return ok?FV_PERSIST_OK:FV_PERSIST_IO_ERROR;
+}
+
 static fv_persist_result_t host_load_security_state(
     fv_platform_services_t *services, fv_security_state_t *state) {
     if (services == NULL || state == NULL) return FV_PERSIST_INVALID;
-    uint8_t payload[SECURITY_PAYLOAD_SIZE];
-    uint64_t sequence = 0u;
-    const fv_persist_result_t result = load_latest(
-        services->context, "security-state", SECURITY_MAGIC, payload,
-        sizeof(payload), &sequence);
-    if (result != FV_PERSIST_OK) return result;
+    fv_security_journal_t journal;fv_dual_journal_authenticator_t auth;
+    fv_persist_result_t opened=open_journal(services,&journal,&auth);
+    if(opened!=FV_PERSIST_OK)return opened;
+    fv_journal_state_t recovered;
+    const fv_journal_result_t result=fv_security_journal_recover(&journal,&recovered);
+    fv_dual_journal_authenticator_deinit(&auth);
+    if(result==FV_JOURNAL_EMPTY)return FV_PERSIST_NOT_FOUND;
+    if(result!=FV_JOURNAL_OK)return result==FV_JOURNAL_IO_ERROR?FV_PERSIST_IO_ERROR:FV_PERSIST_INVALID;
     *state = (fv_security_state_t) {
-        .sequence = sequence,
-        .failed_attempts = payload[0],
-        .provisioned = payload[1] == 1u,
+        .sequence = recovered.sequence,
+        .failed_attempts = recovered.failed_attempts,
+        .provisioned = recovered.provisioned,
     };
-    return payload[1] <= 1u ? FV_PERSIST_OK : FV_PERSIST_INVALID;
+    fv_host_services_context_t *context=services->context;
+    memcpy(context->current_vault_id,recovered.vault_id,FV_VAULT_ID_SIZE);
+    context->current_vault_id_valid=true;
+    secure_clear(&recovered,sizeof(recovered));return FV_PERSIST_OK;
 }
 
 static fv_persist_result_t host_store_security_state(
     fv_platform_services_t *services, const fv_security_state_t *state) {
     if (services == NULL || state == NULL) return FV_PERSIST_INVALID;
-    uint8_t payload[SECURITY_PAYLOAD_SIZE] = {0};
-    payload[0] = state->failed_attempts;
-    payload[1] = state->provisioned ? 1u : 0u;
-    return store_record(services->context, "security-state", SECURITY_MAGIC,
-                        payload, sizeof(payload), state->sequence);
+    fv_host_services_context_t *context=services->context;
+    if(!context->current_vault_id_valid)return FV_PERSIST_INVALID;
+    fv_security_journal_t journal;fv_dual_journal_authenticator_t auth;
+    fv_persist_result_t opened=open_journal(services,&journal,&auth);
+    if(opened!=FV_PERSIST_OK)return opened;
+    fv_journal_state_t previous;fv_journal_result_t recovered=fv_security_journal_recover(&journal,&previous);
+    fv_journal_state_t next={.sequence=state->sequence,
+        .previous_sequence=recovered==FV_JOURNAL_OK?previous.sequence:0u,
+        .failed_attempts=state->failed_attempts,.provisioned=state->provisioned};
+    memcpy(next.vault_id,context->current_vault_id,FV_VAULT_ID_SIZE);
+    fv_journal_result_t appended=(recovered==FV_JOURNAL_OK||recovered==FV_JOURNAL_EMPTY)
+        ?fv_security_journal_append(&journal,&next):recovered;
+    fv_dual_journal_authenticator_deinit(&auth);secure_clear(&previous,sizeof(previous));
+    return appended==FV_JOURNAL_OK?FV_PERSIST_OK:
+        appended==FV_JOURNAL_IO_ERROR?FV_PERSIST_IO_ERROR:FV_PERSIST_INVALID;
 }
 
 static fv_persist_result_t host_load_vault_header(
     fv_platform_services_t *services, fv_vault_header_t *header) {
     if (services == NULL || header == NULL) return FV_PERSIST_INVALID;
-    uint8_t payload[VAULT_PAYLOAD_SIZE];
-    uint64_t sequence = 0u;
-    const fv_persist_result_t result = load_latest(
-        services->context, "vault-header", VAULT_MAGIC, payload,
-        sizeof(payload), &sequence);
-    if (result != FV_PERSIST_OK) return result;
-    *header = (fv_vault_header_t) {0};
-    header->sequence = sequence;
-    header->crypto_profile = (fv_crypto_profile_t)read_u32(payload);
-    header->entry_method = (fv_secret_method_t)read_u32(payload + 4u);
-    memcpy(header->vault_id, payload + 8u, FV_VAULT_ID_SIZE);
-    memcpy(header->branch_a_salt, payload + 24u, FV_SALT_SIZE);
-    memcpy(header->branch_b_salt, payload + 40u, FV_SALT_SIZE);
-    header->branch_a_cost = read_u32(payload + 56u);
-    header->branch_b_cost = read_u32(payload + 60u);
-    header->wrapped_vmk_length = read_u16(payload + 64u);
-    if (header->wrapped_vmk_length > FV_WRAPPED_VMK_CAPACITY ||
-        header->crypto_profile == FV_CRYPTO_PROFILE_UNAVAILABLE ||
-        !fv_secret_method_valid(header->entry_method)) {
-        return FV_PERSIST_INVALID;
+    fv_device_secret_t roots = {0};
+    fv_persist_result_t rr = host_read_device_secret(services, &roots);
+    if (rr != FV_PERSIST_OK) return rr;
+    fv_host_services_context_t *context = services->context;
+    const fv_vault_header_store_result_t result = fv_vault_header_store_load(
+        &context->vault_device, &roots, NULL, header);
+    if (result == FV_VAULT_HEADER_STORE_OK) {
+        memcpy(context->current_vault_id,header->vault_id,FV_VAULT_ID_SIZE);
+        context->current_vault_id_valid=true;
     }
-    memcpy(header->wrapped_vmk, payload + 66u, FV_WRAPPED_VMK_CAPACITY);
-    return FV_PERSIST_OK;
+    secure_clear(&roots, sizeof(roots));
+    if (result == FV_VAULT_HEADER_STORE_OK) return FV_PERSIST_OK;
+    if (result == FV_VAULT_HEADER_STORE_NOT_FOUND) return FV_PERSIST_NOT_FOUND;
+    return result == FV_VAULT_HEADER_STORE_IO_ERROR ? FV_PERSIST_IO_ERROR
+                                                    : FV_PERSIST_INVALID;
 }
 
 static fv_persist_result_t host_store_vault_header(
     fv_platform_services_t *services, const fv_vault_header_t *header) {
-    if (services == NULL || header == NULL ||
-        header->crypto_profile == FV_CRYPTO_PROFILE_UNAVAILABLE ||
-        !fv_secret_method_valid(header->entry_method) ||
-        header->wrapped_vmk_length == 0u ||
-        header->wrapped_vmk_length > FV_WRAPPED_VMK_CAPACITY) {
-        return FV_PERSIST_INVALID;
-    }
-    uint8_t payload[VAULT_PAYLOAD_SIZE] = {0};
-    write_u32(payload, (uint32_t)header->crypto_profile);
-    write_u32(payload + 4u, (uint32_t)header->entry_method);
-    memcpy(payload + 8u, header->vault_id, FV_VAULT_ID_SIZE);
-    memcpy(payload + 24u, header->branch_a_salt, FV_SALT_SIZE);
-    memcpy(payload + 40u, header->branch_b_salt, FV_SALT_SIZE);
-    write_u32(payload + 56u, header->branch_a_cost);
-    write_u32(payload + 60u, header->branch_b_cost);
-    write_u16(payload + 64u, header->wrapped_vmk_length);
-    memcpy(payload + 66u, header->wrapped_vmk, FV_WRAPPED_VMK_CAPACITY);
-    return store_record(services->context, "vault-header", VAULT_MAGIC,
-                        payload, sizeof(payload), header->sequence);
+    if (services == NULL || header == NULL) return FV_PERSIST_INVALID;
+    fv_device_secret_t roots = {0};
+    fv_persist_result_t rr = host_read_device_secret(services, &roots);
+    if (rr != FV_PERSIST_OK) return rr;
+    fv_host_services_context_t *context = services->context;
+    memcpy(context->current_vault_id,header->vault_id,FV_VAULT_ID_SIZE);
+    context->current_vault_id_valid=true;
+    const fv_vault_header_store_result_t result = fv_vault_header_store_update(
+        &context->vault_device, &roots, header);
+    secure_clear(&roots, sizeof(roots));
+    return result == FV_VAULT_HEADER_STORE_OK ? FV_PERSIST_OK
+        : result == FV_VAULT_HEADER_STORE_IO_ERROR ? FV_PERSIST_IO_ERROR
+                                                  : FV_PERSIST_INVALID;
 }
 
 static const fv_platform_service_ops_t HOST_OPS = {
@@ -433,10 +499,35 @@ bool fv_host_services_init(fv_platform_services_t *services,
     const size_t length = strlen(directory);
     if (length >= sizeof(context->directory)) return false;
     memcpy(context->directory, directory, length + 1u);
+    context->current_vault_id_valid=false;
     if (mkdir(directory, S_IRWXU) != 0 && errno != EEXIST) return false;
     struct stat status;
     if (stat(directory, &status) != 0 || !S_ISDIR(status.st_mode) ||
         (status.st_mode & (S_IRWXG | S_IRWXO)) != 0u) return false;
+    char media_path[FV_HOST_PATH_CAPACITY];
+    const int media_result = snprintf(media_path, sizeof(media_path),
+                                      "%s/vault-media.bin", directory);
+    if (media_result < 0 || (size_t)media_result >= sizeof(media_path) ||
+        !fv_host_file_block_device_init(&context->vault_device,
+                                        &context->vault_device_context,
+                                        media_path, 66u)) return false;
+    const int journal_result=snprintf(context->journal_path,sizeof(context->journal_path),
+                                      "%s/security-journal.bin",directory);
+    if(journal_result<0||(size_t)journal_result>=sizeof(context->journal_path))return false;
+    int journal_fd=open(context->journal_path,O_RDWR|O_CREAT|O_CLOEXEC,S_IRUSR|S_IWUSR);
+    if(journal_fd<0)return false;
+    struct stat journal_status;
+    bool journal_ok=fstat(journal_fd,&journal_status)==0;
+    if(journal_ok&&journal_status.st_size==0){uint8_t erased[256];memset(erased,0xff,sizeof(erased));
+        for(size_t offset=0u;journal_ok&&offset<JOURNAL_SIZE;offset+=sizeof(erased))
+            journal_ok=write(journal_fd,erased,sizeof(erased))==(ssize_t)sizeof(erased);
+        if(journal_ok)journal_ok=fsync(journal_fd)==0;
+    }else if(journal_ok)journal_ok=journal_status.st_size==(off_t)JOURNAL_SIZE;
+    if(close(journal_fd)!=0)journal_ok=false;
+    if(!journal_ok)return false;
+    context->journal_flash=(fv_journal_flash_t){.ops=&JOURNAL_OPS,.context=context,
+        .size=JOURNAL_SIZE,.erase_block_size=JOURNAL_ERASE_SIZE,
+        .program_size=FV_JOURNAL_RECORD_SIZE};
     services->ops = &HOST_OPS;
     services->context = context;
     return true;

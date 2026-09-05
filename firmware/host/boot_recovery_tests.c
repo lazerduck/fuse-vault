@@ -44,6 +44,18 @@ static void remove_state_directory(const char *directory) {
                                     directory, slot);
         if (result > 0 && (size_t)result < sizeof(path)) (void)unlink(path);
     }
+    const char *const root_files[] = {"device-secret.0", "device-secret.1",
+        "device-secret-active.0", "device-secret-active.1"};
+    for (size_t index = 0; index < sizeof(root_files) / sizeof(root_files[0]);
+         ++index) {
+        const int result = snprintf(path, sizeof(path), "%s/%s", directory,
+                                    root_files[index]);
+        if (result > 0 && (size_t)result < sizeof(path)) (void)unlink(path);
+    }
+    const int media_result = snprintf(path, sizeof(path), "%s/vault-media.bin",
+                                      directory);
+    if (media_result > 0 && (size_t)media_result < sizeof(path))
+        (void)unlink(path);
     (void)rmdir(directory);
 }
 
@@ -56,6 +68,11 @@ static void test_all_methods_survive_restart(void) {
         fv_platform_services_t writer;
         fv_host_services_context_t writer_context;
         CHECK(fv_host_services_init(&writer, &writer_context, directory));
+
+        fv_device_secret_t roots;
+        memset(&roots, 0x5a, sizeof(roots));
+        CHECK(writer.ops->provision_device_secret(&writer, &roots) ==
+              FV_PERSIST_OK);
 
         fv_secret_method_t stable_method;
         CHECK(fv_entry_method_to_secret_method(expected, &stable_method));
