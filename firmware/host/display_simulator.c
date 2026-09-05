@@ -32,15 +32,15 @@ static fv_command_set_t execute_commands(simulator_t *simulator,
     if (!simulator->persistence_enabled) return observed;
 
     if ((commands & FV_COMMAND_STORE_ATTEMPT_COUNTER) != 0u) {
-        fv_device_state_t state;
-        if (simulator->services.ops->load_device_state(
+        fv_security_state_t state;
+        if (simulator->services.ops->load_security_state(
                 &simulator->services, &state) != FV_PERSIST_OK) {
             return observed | fv_app_handle(&simulator->app,
                                              FV_EVENT_FATAL_ERROR);
         }
         ++state.sequence;
         state.failed_attempts = simulator->app.failed_attempts;
-        if (simulator->services.ops->store_device_state(
+        if (simulator->services.ops->store_security_state(
                 &simulator->services, &state) != FV_PERSIST_OK) {
             secure_clear(&state, sizeof(state));
             return observed | fv_app_handle(&simulator->app,
@@ -52,13 +52,14 @@ static fv_command_set_t execute_commands(simulator_t *simulator,
     }
 
     if ((commands & FV_COMMAND_DESTROY_DEVICE_SECRET) != 0u) {
-        fv_device_state_t state;
-        if (simulator->services.ops->load_device_state(
+        (void)simulator->services.ops->revoke_device_secret(
+            &simulator->services);
+        fv_security_state_t state;
+        if (simulator->services.ops->load_security_state(
                 &simulator->services, &state) == FV_PERSIST_OK) {
             ++state.sequence;
-            secure_clear(state.device_secret, sizeof(state.device_secret));
             state.provisioned = false;
-            (void)simulator->services.ops->store_device_state(
+            (void)simulator->services.ops->store_security_state(
                 &simulator->services, &state);
             secure_clear(&state, sizeof(state));
         }
@@ -181,31 +182,63 @@ int main(int argc, char **argv) {
             return 1;
         }
         simulator.persistence_enabled = true;
-        fv_device_state_t state;
+        fv_security_state_t state;
         const fv_persist_result_t load_result =
-            simulator.services.ops->load_device_state(&simulator.services,
-                                                       &state);
+            simulator.services.ops->load_security_state(&simulator.services,
+                                                         &state);
         if (load_result == FV_PERSIST_OK) {
             provisioned = state.provisioned;
             persisted_attempts = state.failed_attempts;
         } else if (load_result == FV_PERSIST_NOT_FOUND && provisioned) {
-            state = (fv_device_state_t) {
+            fv_device_secret_status_t secret_status;
+            if (simulator.services.ops->device_secret_status(
+                    &simulator.services, &secret_status) != FV_PERSIST_OK) {
+                fprintf(stderr, "cannot inspect development device secret\n");
+                return 1;
+            }
+            if (secret_status == FV_DEVICE_SECRET_EMPTY) {
+                fv_device_secret_t secret;
+                if (!simulator.services.ops->random_fill(
+                        &simulator.services, secret.device_secret,
+                        sizeof(secret.device_secret)) ||
+                    simulator.services.ops->provision_device_secret(
+                        &simulator.services, &secret) != FV_PERSIST_OK) {
+                    secure_clear(&secret, sizeof(secret));
+                    fprintf(stderr, "cannot create development device secret\n");
+                    return 1;
+                }
+                secure_clear(&secret, sizeof(secret));
+            } else if (secret_status != FV_DEVICE_SECRET_ACTIVE) {
+                fprintf(stderr, "development device secret is revoked\n");
+                return 1;
+            }
+            state = (fv_security_state_t) {
                 .sequence = 1u,
                 .failed_attempts = 0u,
                 .provisioned = true,
             };
-            if (!simulator.services.ops->random_fill(
-                    &simulator.services, state.device_secret,
-                    sizeof(state.device_secret)) ||
-                simulator.services.ops->store_device_state(
+            if (simulator.services.ops->store_security_state(
                     &simulator.services, &state) != FV_PERSIST_OK) {
                 secure_clear(&state, sizeof(state));
-                fprintf(stderr, "cannot create development device state\n");
+                fprintf(stderr, "cannot create development security state\n");
                 return 1;
             }
         } else if (load_result != FV_PERSIST_NOT_FOUND) {
             fprintf(stderr, "development device state is corrupt\n");
             return 1;
+        }
+        if (provisioned) {
+            fv_device_secret_status_t secret_status;
+            if (simulator.services.ops->device_secret_status(
+                    &simulator.services, &secret_status) != FV_PERSIST_OK ||
+                secret_status == FV_DEVICE_SECRET_EMPTY ||
+                secret_status == FV_DEVICE_SECRET_INVALID) {
+                fprintf(stderr, "development device secret is unavailable\n");
+                return 1;
+            }
+            if (secret_status == FV_DEVICE_SECRET_REVOKED) {
+                persisted_attempts = FV_MAX_UNLOCK_ATTEMPTS;
+            }
         }
         secure_clear(&state, sizeof(state));
     }

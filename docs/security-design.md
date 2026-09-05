@@ -104,6 +104,8 @@ An unprovisioned device exposes no USB data interface. The setup sequence is:
 OTP and permanent secure-boot settings are not changed by ordinary development
 firmware. Production OTP provisioning is a separate, deliberately invoked
 process with read-back verification before irreversible lock bits are set.
+The proposed device-secret lifecycle and RP2354A storage mapping are detailed in
+[rp2354-storage.md](rp2354-storage.md).
 
 ## Attempt accounting
 
@@ -119,10 +121,20 @@ write. The host development backend implements this with two alternating,
 sequence-numbered records and atomic file replacement; its CRC is only for
 corruption recovery and is not the production counter-authentication design.
 
+The portable production journal core uses two flash sectors, append-only
+256-byte records, sequence linkage, vault binding, and two independent
+authentication tags. Recovery ignores torn or unauthenticated records and
+sector rotation retains the latest valid record before erasing old history.
+The tags will be keyed from the device secret using two cryptographic families;
+the host fault-injection test authenticator is deliberately not cryptographic.
+
 The counter cannot rely solely on the removable card because an attacker could
-restore an older card image. Its journal, rollback resistance, flash-wear
-strategy, interrupted-write handling, and behaviour at the tenth reserved
-attempt remain required design work before destructive lockout is enabled.
+restore an older card image. Internal-flash journalling prevents ordinary SD
+rollback and handles interrupted writes, but an invasive attacker who can clone
+and restore the RP2354A's internal flash remains outside this V1 mechanism. The
+hardware flash adapter, endurance budget, dual-family MAC implementation, and
+behaviour at the tenth reserved attempt remain required before destructive
+lockout is enabled on hardware.
 
 ## Secret lifecycle
 

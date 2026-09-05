@@ -9,6 +9,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 add_library(fuse_vault_core STATIC
     ../src/app.c
     ../src/secret_input.c
+    ../src/security_journal.c
     ../src/ui.c
 )
 
@@ -80,3 +81,27 @@ target_compile_options(fuse_vault_host_services_tests PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
 )
 add_test(NAME fuse_vault_host_services COMMAND fuse_vault_host_services_tests)
+
+add_executable(fuse_vault_nor_flash_tests
+    nor_flash.c
+    nor_flash_tests.c
+)
+target_include_directories(fuse_vault_nor_flash_tests PRIVATE .)
+target_compile_options(fuse_vault_nor_flash_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_nor_flash_semantics COMMAND fuse_vault_nor_flash_tests)
+
+add_executable(fuse_vault_security_journal_tests
+    ../src/security_journal.c
+    nor_flash.c
+    security_journal_tests.c
+)
+target_include_directories(fuse_vault_security_journal_tests PRIVATE
+    .
+    ../include
+)
+target_compile_options(fuse_vault_security_journal_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_security_journal COMMAND fuse_vault_security_journal_tests)

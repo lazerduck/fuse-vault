@@ -22,12 +22,22 @@ typedef enum {
     FV_CRYPTO_PROFILE_DUAL_FAMILY_V1 = 1,
 } fv_crypto_profile_t;
 
+typedef enum {
+    FV_DEVICE_SECRET_EMPTY = 0,
+    FV_DEVICE_SECRET_ACTIVE,
+    FV_DEVICE_SECRET_REVOKED,
+    FV_DEVICE_SECRET_INVALID,
+} fv_device_secret_status_t;
+
+typedef struct {
+    uint8_t device_secret[FV_DEVICE_SECRET_SIZE];
+} fv_device_secret_t;
+
 typedef struct {
     uint64_t sequence;
     uint8_t failed_attempts;
     bool provisioned;
-    uint8_t device_secret[FV_DEVICE_SECRET_SIZE];
-} fv_device_state_t;
+} fv_security_state_t;
 
 typedef struct {
     uint64_t sequence;
@@ -47,10 +57,18 @@ typedef struct fv_platform_services fv_platform_services_t;
 typedef struct {
     bool (*random_fill)(fv_platform_services_t *services,
                         uint8_t *output, size_t length);
-    fv_persist_result_t (*load_device_state)(fv_platform_services_t *services,
-                                             fv_device_state_t *state);
-    fv_persist_result_t (*store_device_state)(fv_platform_services_t *services,
-                                              const fv_device_state_t *state);
+    fv_persist_result_t (*device_secret_status)(
+        fv_platform_services_t *services, fv_device_secret_status_t *status);
+    fv_persist_result_t (*provision_device_secret)(
+        fv_platform_services_t *services, const fv_device_secret_t *secret);
+    fv_persist_result_t (*read_device_secret)(
+        fv_platform_services_t *services, fv_device_secret_t *secret);
+    fv_persist_result_t (*revoke_device_secret)(
+        fv_platform_services_t *services);
+    fv_persist_result_t (*load_security_state)(
+        fv_platform_services_t *services, fv_security_state_t *state);
+    fv_persist_result_t (*store_security_state)(
+        fv_platform_services_t *services, const fv_security_state_t *state);
     fv_persist_result_t (*load_vault_header)(fv_platform_services_t *services,
                                              fv_vault_header_t *header);
     fv_persist_result_t (*store_vault_header)(fv_platform_services_t *services,

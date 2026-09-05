@@ -16,10 +16,14 @@
 #define RECORD_HEADER_SIZE 24u
 #define RECORD_PAYLOAD_CAPACITY (RECORD_SIZE - RECORD_HEADER_SIZE - 4u)
 #define RECORD_FORMAT_VERSION 1u
-#define DEVICE_PAYLOAD_SIZE 40u
+#define SECRET_PAYLOAD_SIZE 32u
+#define SECURITY_PAYLOAD_SIZE 8u
 #define VAULT_PAYLOAD_SIZE 194u
 
-static const uint8_t DEVICE_MAGIC[8] = {'F','V','D','E','V','D','1',0};
+static const uint8_t SECRET_MAGIC[8] = {'F','V','S','E','C','D','1',0};
+static const uint8_t ACTIVE_MAGIC[8] = {'F','V','A','C','T','D','1',0};
+static const uint8_t REVOKE_MAGIC[8] = {'F','V','R','E','V','D','1',0};
+static const uint8_t SECURITY_MAGIC[8] = {'F','V','S','T','A','D','1',0};
 static const uint8_t VAULT_MAGIC[8] = {'F','V','H','D','R','D','1',0};
 
 static uint32_t read_u32(const uint8_t *input) {
@@ -64,6 +68,11 @@ static uint32_t crc32(const uint8_t *data, size_t length) {
         }
     }
     return ~value;
+}
+
+static void secure_clear(void *data, size_t length) {
+    volatile uint8_t *bytes = data;
+    while (length-- > 0u) *bytes++ = 0u;
 }
 
 static bool make_path(const fv_host_services_context_t *context,
@@ -210,32 +219,146 @@ static bool host_random_fill(fv_platform_services_t *services, uint8_t *output,
     return true;
 }
 
-static fv_persist_result_t host_load_device_state(
-    fv_platform_services_t *services, fv_device_state_t *state) {
-    if (services == NULL || state == NULL) return FV_PERSIST_INVALID;
-    const fv_host_services_context_t *context = services->context;
-    uint8_t payload[DEVICE_PAYLOAD_SIZE];
+static fv_persist_result_t marker_status(
+    const fv_host_services_context_t *context, const char *name,
+    const uint8_t magic[8], uint32_t payload_size, bool *present) {
+    uint8_t payload[SECRET_PAYLOAD_SIZE];
     uint64_t sequence = 0u;
     const fv_persist_result_t result = load_latest(
-        context, "device-state", DEVICE_MAGIC, payload, sizeof(payload), &sequence);
-    if (result != FV_PERSIST_OK) return result;
-    *state = (fv_device_state_t) {0};
-    state->sequence = sequence;
-    state->failed_attempts = payload[0];
-    state->provisioned = payload[1] == 1u;
-    memcpy(state->device_secret, payload + 8u, FV_DEVICE_SECRET_SIZE);
-    if (payload[1] > 1u) return FV_PERSIST_INVALID;
+        context, name, magic, payload, payload_size, &sequence);
+    (void)sequence;
+    if (result == FV_PERSIST_OK) {
+        *present = true;
+        return FV_PERSIST_OK;
+    }
+    if (result == FV_PERSIST_NOT_FOUND) {
+        *present = false;
+        return FV_PERSIST_OK;
+    }
+    return result;
+}
+
+static fv_persist_result_t host_device_secret_status(
+    fv_platform_services_t *services, fv_device_secret_status_t *status) {
+    if (services == NULL || status == NULL) return FV_PERSIST_INVALID;
+    const fv_host_services_context_t *context = services->context;
+    bool revoked = false;
+    fv_persist_result_t result = marker_status(
+        context, "device-secret-revoked", REVOKE_MAGIC, 1u, &revoked);
+    if (result != FV_PERSIST_OK) {
+        *status = FV_DEVICE_SECRET_INVALID;
+        return result;
+    }
+    if (revoked) {
+        *status = FV_DEVICE_SECRET_REVOKED;
+        return FV_PERSIST_OK;
+    }
+    bool secret_present = false;
+    result = marker_status(context, "device-secret", SECRET_MAGIC,
+                           SECRET_PAYLOAD_SIZE, &secret_present);
+    if (result != FV_PERSIST_OK) {
+        *status = FV_DEVICE_SECRET_INVALID;
+        return result;
+    }
+    bool active_marker = false;
+    result = marker_status(context, "device-secret-active", ACTIVE_MAGIC,
+                           1u, &active_marker);
+    if (result != FV_PERSIST_OK) {
+        *status = FV_DEVICE_SECRET_INVALID;
+        return result;
+    }
+    if (!secret_present && !active_marker) {
+        *status = FV_DEVICE_SECRET_EMPTY;
+    } else if (secret_present && active_marker) {
+        *status = FV_DEVICE_SECRET_ACTIVE;
+    } else {
+        *status = FV_DEVICE_SECRET_INVALID;
+    }
     return FV_PERSIST_OK;
 }
 
-static fv_persist_result_t host_store_device_state(
-    fv_platform_services_t *services, const fv_device_state_t *state) {
+static fv_persist_result_t host_provision_device_secret(
+    fv_platform_services_t *services, const fv_device_secret_t *secret) {
+    if (services == NULL || secret == NULL) return FV_PERSIST_INVALID;
+    fv_device_secret_status_t status;
+    const fv_persist_result_t result = host_device_secret_status(services, &status);
+    if (result != FV_PERSIST_OK) return result;
+    if (status != FV_DEVICE_SECRET_EMPTY) return FV_PERSIST_INVALID;
+    fv_persist_result_t store_result = store_record(
+        services->context, "device-secret", SECRET_MAGIC,
+        secret->device_secret, FV_DEVICE_SECRET_SIZE, 1u);
+    if (store_result != FV_PERSIST_OK) return store_result;
+
+    fv_device_secret_t verified;
+    uint64_t sequence = 0u;
+    store_result = load_latest(services->context, "device-secret", SECRET_MAGIC,
+                               verified.device_secret, FV_DEVICE_SECRET_SIZE,
+                               &sequence);
+    const bool verified_ok = store_result == FV_PERSIST_OK &&
+        memcmp(verified.device_secret, secret->device_secret,
+               FV_DEVICE_SECRET_SIZE) == 0;
+    secure_clear(&verified, sizeof(verified));
+    if (!verified_ok) {
+        return FV_PERSIST_INVALID;
+    }
+    const uint8_t active = 1u;
+    return store_record(services->context, "device-secret-active",
+                        ACTIVE_MAGIC, &active, 1u, 1u);
+}
+
+static fv_persist_result_t host_read_device_secret(
+    fv_platform_services_t *services, fv_device_secret_t *secret) {
+    if (services == NULL || secret == NULL) return FV_PERSIST_INVALID;
+    fv_device_secret_status_t status;
+    fv_persist_result_t result = host_device_secret_status(services, &status);
+    if (result != FV_PERSIST_OK) return result;
+    if (status == FV_DEVICE_SECRET_EMPTY) return FV_PERSIST_NOT_FOUND;
+    if (status != FV_DEVICE_SECRET_ACTIVE) return FV_PERSIST_INVALID;
+    uint64_t sequence = 0u;
+    result = load_latest(services->context, "device-secret", SECRET_MAGIC,
+                         secret->device_secret, FV_DEVICE_SECRET_SIZE,
+                         &sequence);
+    (void)sequence;
+    return result;
+}
+
+static fv_persist_result_t host_revoke_device_secret(
+    fv_platform_services_t *services) {
+    if (services == NULL) return FV_PERSIST_INVALID;
+    fv_device_secret_status_t status;
+    const fv_persist_result_t result = host_device_secret_status(services, &status);
+    if (result != FV_PERSIST_OK) return result;
+    if (status == FV_DEVICE_SECRET_REVOKED) return FV_PERSIST_OK;
+    if (status != FV_DEVICE_SECRET_ACTIVE) return FV_PERSIST_INVALID;
+    const uint8_t revoked = 1u;
+    return store_record(services->context, "device-secret-revoked",
+                        REVOKE_MAGIC, &revoked, 1u, 1u);
+}
+
+static fv_persist_result_t host_load_security_state(
+    fv_platform_services_t *services, fv_security_state_t *state) {
     if (services == NULL || state == NULL) return FV_PERSIST_INVALID;
-    uint8_t payload[DEVICE_PAYLOAD_SIZE] = {0};
+    uint8_t payload[SECURITY_PAYLOAD_SIZE];
+    uint64_t sequence = 0u;
+    const fv_persist_result_t result = load_latest(
+        services->context, "security-state", SECURITY_MAGIC, payload,
+        sizeof(payload), &sequence);
+    if (result != FV_PERSIST_OK) return result;
+    *state = (fv_security_state_t) {
+        .sequence = sequence,
+        .failed_attempts = payload[0],
+        .provisioned = payload[1] == 1u,
+    };
+    return payload[1] <= 1u ? FV_PERSIST_OK : FV_PERSIST_INVALID;
+}
+
+static fv_persist_result_t host_store_security_state(
+    fv_platform_services_t *services, const fv_security_state_t *state) {
+    if (services == NULL || state == NULL) return FV_PERSIST_INVALID;
+    uint8_t payload[SECURITY_PAYLOAD_SIZE] = {0};
     payload[0] = state->failed_attempts;
     payload[1] = state->provisioned ? 1u : 0u;
-    memcpy(payload + 8u, state->device_secret, FV_DEVICE_SECRET_SIZE);
-    return store_record(services->context, "device-state", DEVICE_MAGIC,
+    return store_record(services->context, "security-state", SECURITY_MAGIC,
                         payload, sizeof(payload), state->sequence);
 }
 
@@ -290,8 +413,12 @@ static fv_persist_result_t host_store_vault_header(
 
 static const fv_platform_service_ops_t HOST_OPS = {
     .random_fill = host_random_fill,
-    .load_device_state = host_load_device_state,
-    .store_device_state = host_store_device_state,
+    .device_secret_status = host_device_secret_status,
+    .provision_device_secret = host_provision_device_secret,
+    .read_device_secret = host_read_device_secret,
+    .revoke_device_secret = host_revoke_device_secret,
+    .load_security_state = host_load_security_state,
+    .store_security_state = host_store_security_state,
     .load_vault_header = host_load_vault_header,
     .store_vault_header = host_store_vault_header,
 };

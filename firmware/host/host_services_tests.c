@@ -23,7 +23,10 @@ static void check(bool condition, const char *expression, const char *file,
 static void remove_test_directory(const char *directory) {
     char path[FV_HOST_PATH_CAPACITY];
     const char *const files[] = {
-        "device-state.0", "device-state.1",
+        "device-secret.0", "device-secret.1",
+        "device-secret-active.0", "device-secret-active.1",
+        "device-secret-revoked.0", "device-secret-revoked.1",
+        "security-state.0", "security-state.1",
         "vault-header.0", "vault-header.1",
     };
     for (size_t index = 0u; index < sizeof(files) / sizeof(files[0]); ++index) {
@@ -46,43 +49,70 @@ int main(void) {
     CHECK(services.ops->random_fill(&services, random_bytes,
                                     sizeof(random_bytes)));
 
-    fv_device_state_t missing_state;
-    CHECK(services.ops->load_device_state(&services, &missing_state) ==
+    fv_device_secret_status_t secret_status;
+    CHECK(services.ops->device_secret_status(&services, &secret_status) ==
+          FV_PERSIST_OK);
+    CHECK(secret_status == FV_DEVICE_SECRET_EMPTY);
+
+    fv_device_secret_t secret;
+    memcpy(secret.device_secret, random_bytes, FV_DEVICE_SECRET_SIZE);
+    CHECK(services.ops->provision_device_secret(&services, &secret) ==
+          FV_PERSIST_OK);
+    CHECK(services.ops->device_secret_status(&services, &secret_status) ==
+          FV_PERSIST_OK);
+    CHECK(secret_status == FV_DEVICE_SECRET_ACTIVE);
+    fv_device_secret_t loaded_secret;
+    CHECK(services.ops->read_device_secret(&services, &loaded_secret) ==
+          FV_PERSIST_OK);
+    CHECK(memcmp(loaded_secret.device_secret, secret.device_secret,
+                 FV_DEVICE_SECRET_SIZE) == 0);
+    CHECK(services.ops->provision_device_secret(&services, &secret) ==
+          FV_PERSIST_INVALID);
+
+    fv_security_state_t missing_state;
+    CHECK(services.ops->load_security_state(&services, &missing_state) ==
           FV_PERSIST_NOT_FOUND);
 
-    fv_device_state_t state = {
+    fv_security_state_t state = {
         .sequence = 1u,
         .failed_attempts = 3u,
         .provisioned = true,
     };
-    memcpy(state.device_secret, random_bytes, FV_DEVICE_SECRET_SIZE);
-    CHECK(services.ops->store_device_state(&services, &state) == FV_PERSIST_OK);
+    CHECK(services.ops->store_security_state(&services, &state) == FV_PERSIST_OK);
 
-    fv_device_state_t loaded;
-    CHECK(services.ops->load_device_state(&services, &loaded) == FV_PERSIST_OK);
+    fv_security_state_t loaded;
+    CHECK(services.ops->load_security_state(&services, &loaded) == FV_PERSIST_OK);
     CHECK(loaded.sequence == 1u);
     CHECK(loaded.failed_attempts == 3u);
     CHECK(loaded.provisioned);
-    CHECK(memcmp(loaded.device_secret, state.device_secret,
-                 FV_DEVICE_SECRET_SIZE) == 0);
 
     state.sequence = 2u;
     state.failed_attempts = 4u;
-    CHECK(services.ops->store_device_state(&services, &state) == FV_PERSIST_OK);
-    CHECK(services.ops->load_device_state(&services, &loaded) == FV_PERSIST_OK);
+    CHECK(services.ops->store_security_state(&services, &state) == FV_PERSIST_OK);
+    CHECK(services.ops->load_security_state(&services, &loaded) == FV_PERSIST_OK);
     CHECK(loaded.sequence == 2u);
     CHECK(loaded.failed_attempts == 4u);
 
     char newest_path[FV_HOST_PATH_CAPACITY];
-    CHECK(snprintf(newest_path, sizeof(newest_path), "%s/device-state.0",
+    CHECK(snprintf(newest_path, sizeof(newest_path), "%s/security-state.0",
                    directory) > 0);
     const int descriptor = open(newest_path, O_WRONLY | O_TRUNC);
     CHECK(descriptor >= 0);
     CHECK(write(descriptor, "corrupt", 7u) == 7);
     CHECK(close(descriptor) == 0);
-    CHECK(services.ops->load_device_state(&services, &loaded) == FV_PERSIST_OK);
+    CHECK(services.ops->load_security_state(&services, &loaded) == FV_PERSIST_OK);
     CHECK(loaded.sequence == 1u);
     CHECK(loaded.failed_attempts == 3u);
+
+    CHECK(services.ops->revoke_device_secret(&services) == FV_PERSIST_OK);
+    CHECK(services.ops->device_secret_status(&services, &secret_status) ==
+          FV_PERSIST_OK);
+    CHECK(secret_status == FV_DEVICE_SECRET_REVOKED);
+    CHECK(services.ops->read_device_secret(&services, &loaded_secret) ==
+          FV_PERSIST_INVALID);
+    CHECK(services.ops->revoke_device_secret(&services) == FV_PERSIST_OK);
+    CHECK(services.ops->provision_device_secret(&services, &secret) ==
+          FV_PERSIST_INVALID);
 
     fv_vault_header_t header = {
         .sequence = 7u,

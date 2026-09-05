@@ -145,12 +145,31 @@ firmware/build-host/fuse_vault_display_simulator \
 
 In this mode the simulator creates a development-only device secret using the
 operating system random source and stores it separately from vault metadata.
+Provisioning writes the secret record first, reads it back, and writes a
+separate active marker last. Destructive lockout writes a revocation marker;
+after that marker exists the host backend will neither reveal nor replace the
+secret through its API.
 Attempt records use two alternating, atomically replaced slots: submitting a
 secret persists the incremented counter before authentication can begin, and
 the newest valid sequence is recovered after restart. CRC32 detects corruption
 and incomplete records but is not cryptographic authentication. These local
 files contain a plaintext simulated device secret and must never be treated as
 a production vault or copied into device firmware.
+
+A limited host NOR utility tests the invariants needed by the future RP2354A
+internal-flash attempt journal: aligned erase/program operations, the inability
+to change programmed zero bits back to one without erase, and torn programming.
+It is a fault-injection aid, not a hardware simulator, and does not model flash
+timing, XIP/cache effects, wear, or electrical failure.
+
+The portable authenticated journal itself is now implemented and shared with
+the RP2354A build. It uses two erase sectors and append-only 256-byte records,
+keeps the latest valid record safe while rotating sectors, and authenticates
+each record with two 32-byte tags supplied by the platform cryptography layer.
+Host tests interrupt writes at every byte boundary, corrupt the newest record,
+and force sector rotation. Their deterministic tag function is intentionally
+non-cryptographic; hardware flash access and the real device-secret-derived
+dual-family authenticator are the next integration step.
 
 The host vault-header backend accepts only a nonzero crypto-profile identifier
 and nonempty opaque wrapped-key material. Because the real dual-family wrapping

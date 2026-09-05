@@ -33,7 +33,9 @@ pico_sdk_init()
 add_executable(fuse_vault
     src/app.c
     src/main.c
+    src/rp2354_random.c
     src/secret_input.c
+    src/security_journal.c
     src/ui.c
 )
 
@@ -43,11 +45,12 @@ target_include_directories(fuse_vault PRIVATE
 
 target_link_libraries(fuse_vault PRIVATE
     pico_stdlib
+    pico_rand
 )
 
 # Apply strict diagnostics to our code without imposing them on Pico SDK source
 # files, some of which intentionally use supported GNU C extensions.
-set_source_files_properties(src/app.c src/main.c src/secret_input.c src/ui.c PROPERTIES COMPILE_OPTIONS
+set_source_files_properties(src/app.c src/main.c src/rp2354_random.c src/secret_input.c src/security_journal.c src/ui.c PROPERTIES COMPILE_OPTIONS
     "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow"
 )
 
