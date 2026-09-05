@@ -112,6 +112,13 @@ prevents power removal during authentication from providing unlimited free
 guesses. Successful authentication resets the counter only after both wrapping
 layers and the authenticated header validate.
 
+The application state machine enforces this ordering by entering an
+attempt-reservation state and emitting only a persistent-counter command. It
+cannot emit the authentication command until the platform acknowledges that
+write. The host development backend implements this with two alternating,
+sequence-numbered records and atomic file replacement; its CRC is only for
+corruption recovery and is not the production counter-authentication design.
+
 The counter cannot rely solely on the removable card because an attacker could
 restore an older card image. Its journal, rollback resistance, flash-wear
 strategy, interrupted-write handling, and behaviour at the tenth reserved

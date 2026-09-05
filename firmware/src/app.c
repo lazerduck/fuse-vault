@@ -203,10 +203,24 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 break;
             }
             if (event == FV_EVENT_SELECT) {
-                app->state = FV_STATE_VAULT_AUTHENTICATING;
-                return FV_COMMAND_BEGIN_AUTHENTICATION;
+                if (app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
+                    clear_wheels(app->secret_wheels);
+                    app->state = FV_STATE_DESTROYED;
+                    return FV_COMMAND_ERASE_TRANSIENT_SECRET |
+                           FV_COMMAND_DESTROY_DEVICE_SECRET;
+                }
+                ++app->failed_attempts;
+                app->state = FV_STATE_VAULT_RESERVING_ATTEMPT;
+                return FV_COMMAND_STORE_ATTEMPT_COUNTER;
             } else if (event == FV_EVENT_BACK) {
                 return leave_sensitive_mode(app);
+            }
+            break;
+
+        case FV_STATE_VAULT_RESERVING_ATTEMPT:
+            if (event == FV_EVENT_ATTEMPT_COUNTER_STORED) {
+                app->state = FV_STATE_VAULT_AUTHENTICATING;
+                return FV_COMMAND_BEGIN_AUTHENTICATION;
             }
             break;
 
@@ -220,11 +234,16 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
             }
             if (event == FV_EVENT_AUTH_FAILED) {
                 clear_wheels(app->secret_wheels);
-                ++app->failed_attempts;
-                app->state = FV_STATE_VAULT_RECORDING_FAILURE;
+                if (app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
+                    app->state = FV_STATE_DESTROYED;
+                    return FV_COMMAND_ERASE_TRANSIENT_SECRET |
+                           FV_COMMAND_ERASE_SESSION_KEYS |
+                           FV_COMMAND_USB_DETACH |
+                           FV_COMMAND_DESTROY_DEVICE_SECRET;
+                }
+                app->state = FV_STATE_VAULT_SECRET_ENTRY;
                 return FV_COMMAND_ERASE_TRANSIENT_SECRET |
-                       FV_COMMAND_ERASE_SESSION_KEYS |
-                       FV_COMMAND_STORE_ATTEMPT_COUNTER;
+                       FV_COMMAND_ERASE_SESSION_KEYS;
             }
             break;
 
@@ -232,17 +251,6 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
             if (event == FV_EVENT_ATTEMPT_COUNTER_STORED) {
                 app->state = FV_STATE_VAULT_UNLOCKED;
                 return FV_COMMAND_USB_ATTACH_MSC;
-            }
-            break;
-
-        case FV_STATE_VAULT_RECORDING_FAILURE:
-            if (event == FV_EVENT_ATTEMPT_COUNTER_STORED) {
-                if (app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
-                    app->state = FV_STATE_DESTROYED;
-                    return FV_COMMAND_USB_DETACH |
-                           FV_COMMAND_DESTROY_DEVICE_SECRET;
-                }
-                app->state = FV_STATE_VAULT_SECRET_ENTRY;
             }
             break;
 
@@ -354,12 +362,16 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             snprintf(view->lines[3], sizeof(view->lines[3]),
                      "Arrows: adjust  OK: submit");
             break;
+        case FV_STATE_VAULT_RESERVING_ATTEMPT:
+            snprintf(view->title, sizeof(view->title), "Unlock vault");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "Reserving attempt...");
+            snprintf(view->lines[2], sizeof(view->lines[2]), "Do not remove power");
+            break;
         case FV_STATE_VAULT_AUTHENTICATING:
             snprintf(view->title, sizeof(view->title), "Unlock vault");
             snprintf(view->lines[0], sizeof(view->lines[0]), "Authenticating...");
             break;
         case FV_STATE_VAULT_RECORDING_SUCCESS:
-        case FV_STATE_VAULT_RECORDING_FAILURE:
             snprintf(view->title, sizeof(view->title), "Unlock vault");
             snprintf(view->lines[0], sizeof(view->lines[0]), "Saving security state");
             break;
@@ -399,9 +411,9 @@ const char *fv_state_name(fv_state_t state) {
         "provisioning",
         "mode-select",
         "vault-secret-entry",
+        "vault-reserving-attempt",
         "vault-authenticating",
         "vault-recording-success",
-        "vault-recording-failure",
         "vault-unlocked",
         "fido-ready",
         "destroyed",

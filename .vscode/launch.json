@@ -42,6 +42,29 @@
                     "ignoreFailures": true
                 }
             ]
+        },
+        {
+            "name": "Fuse Vault: Debug persistent simulator",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/firmware/build-host/fuse_vault_display_simulator",
+            "args": [
+                "--state-dir",
+                "${workspaceFolder}/firmware/build-host/simulator-state"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "preLaunchTask": "Fuse Vault: Build display simulator",
+            "setupCommands": [
+                {
+                    "description": "Enable GDB pretty-printing",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
         }
     ]
 }

@@ -43,6 +43,18 @@
             "problemMatcher": []
         },
         {
+            "label": "Fuse Vault: Run persistent simulator",
+            "type": "process",
+            "command": "${workspaceFolder}/firmware/build-host/fuse_vault_display_simulator",
+            "args": [
+                "--state-dir",
+                "${workspaceFolder}/firmware/build-host/simulator-state"
+            ],
+            "dependsOn": "Fuse Vault: Build display simulator",
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
             "label": "Fuse Vault: Run first-time setup",
             "type": "process",
             "command": "${workspaceFolder}/firmware/build-host/fuse_vault_display_simulator",

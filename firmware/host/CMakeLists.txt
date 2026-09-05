@@ -39,6 +39,7 @@ if(GTK3_FOUND)
     )
     target_link_libraries(fuse_vault_display_simulator PRIVATE
         fuse_vault_core
+        fuse_vault_host_services
         PkgConfig::GTK3
     )
     target_compile_options(fuse_vault_display_simulator PRIVATE
@@ -57,3 +58,25 @@ target_compile_options(fuse_vault_tests PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
 )
 add_test(NAME fuse_vault_state_machine COMMAND fuse_vault_tests)
+
+add_library(fuse_vault_host_services STATIC
+    host_services.c
+)
+target_include_directories(fuse_vault_host_services PUBLIC
+    .
+    ../include
+)
+target_compile_options(fuse_vault_host_services PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+
+add_executable(fuse_vault_host_services_tests
+    host_services_tests.c
+)
+target_link_libraries(fuse_vault_host_services_tests PRIVATE
+    fuse_vault_host_services
+)
+target_compile_options(fuse_vault_host_services_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_host_services COMMAND fuse_vault_host_services_tests)

@@ -1,5 +1,6 @@
 #include "fuse_vault/app.h"
 #include "fuse_vault/ui.h"
+#include "host_services.h"
 
 #include <gtk/gtk.h>
 #include <stdbool.h>
@@ -13,9 +14,57 @@ enum {
 typedef struct {
     fv_app_t app;
     fv_command_set_t last_commands;
+    fv_platform_services_t services;
+    fv_host_services_context_t services_context;
+    bool persistence_enabled;
     GtkWidget *display;
     GtkWidget *status;
 } simulator_t;
+
+static void secure_clear(void *data, size_t length) {
+    volatile uint8_t *bytes = data;
+    while (length-- > 0u) *bytes++ = 0u;
+}
+
+static fv_command_set_t execute_commands(simulator_t *simulator,
+                                         fv_command_set_t commands) {
+    fv_command_set_t observed = commands;
+    if (!simulator->persistence_enabled) return observed;
+
+    if ((commands & FV_COMMAND_STORE_ATTEMPT_COUNTER) != 0u) {
+        fv_device_state_t state;
+        if (simulator->services.ops->load_device_state(
+                &simulator->services, &state) != FV_PERSIST_OK) {
+            return observed | fv_app_handle(&simulator->app,
+                                             FV_EVENT_FATAL_ERROR);
+        }
+        ++state.sequence;
+        state.failed_attempts = simulator->app.failed_attempts;
+        if (simulator->services.ops->store_device_state(
+                &simulator->services, &state) != FV_PERSIST_OK) {
+            secure_clear(&state, sizeof(state));
+            return observed | fv_app_handle(&simulator->app,
+                                             FV_EVENT_FATAL_ERROR);
+        }
+        secure_clear(&state, sizeof(state));
+        observed |= fv_app_handle(&simulator->app,
+                                  FV_EVENT_ATTEMPT_COUNTER_STORED);
+    }
+
+    if ((commands & FV_COMMAND_DESTROY_DEVICE_SECRET) != 0u) {
+        fv_device_state_t state;
+        if (simulator->services.ops->load_device_state(
+                &simulator->services, &state) == FV_PERSIST_OK) {
+            ++state.sequence;
+            secure_clear(state.device_secret, sizeof(state.device_secret));
+            state.provisioned = false;
+            (void)simulator->services.ops->store_device_state(
+                &simulator->services, &state);
+            secure_clear(&state, sizeof(state));
+        }
+    }
+    return observed;
+}
 
 static gboolean draw_display(GtkWidget *widget, cairo_t *cr, gpointer data) {
     (void)widget;
@@ -47,13 +96,17 @@ static gboolean draw_display(GtkWidget *widget, cairo_t *cr, gpointer data) {
 }
 
 static void refresh(simulator_t *simulator) {
-    char text[160];
+    char text[256];
     (void)snprintf(text, sizeof(text),
                    "State: %s    Commands: 0x%08x\n"
-                   "Test injection: Y success, X failure, C counter stored, "
-                   "O provisioning complete, E eject, K lock, F fault",
+                   "%s\n"
+                   "Test injection: Y success, X failure, O provisioning "
+                   "complete, E eject, K lock, F fault",
                    fv_state_name(simulator->app.state),
-                   (unsigned)simulator->last_commands);
+                   (unsigned)simulator->last_commands,
+                   simulator->persistence_enabled
+                       ? "Attempts use persistent development storage"
+                       : "C confirms a simulated attempt-counter write");
     gtk_label_set_text(GTK_LABEL(simulator->status), text);
     gtk_widget_queue_draw(simulator->display);
 }
@@ -95,22 +148,70 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *key_event,
     if (!key_to_event(key_event->keyval, &event)) {
         return FALSE;
     }
-    simulator->last_commands = fv_app_handle(&simulator->app, event);
+    simulator->last_commands = execute_commands(
+        simulator, fv_app_handle(&simulator->app, event));
     refresh(simulator);
     return TRUE;
 }
 
 int main(int argc, char **argv) {
     bool provisioned = true;
-    if (argc == 2 && strcmp(argv[1], "--unprovisioned") == 0) {
-        provisioned = false;
+    const char *state_directory = NULL;
+    for (int index = 1; index < argc; ++index) {
+        if (strcmp(argv[index], "--unprovisioned") == 0) {
+            provisioned = false;
+        } else if (strcmp(argv[index], "--state-dir") == 0 &&
+                   index + 1 < argc) {
+            state_directory = argv[++index];
+        } else {
+            fprintf(stderr, "usage: %s [--unprovisioned] "
+                    "[--state-dir DIRECTORY]\n", argv[0]);
+            return 2;
+        }
     }
 
     gtk_init(&argc, &argv);
     simulator_t simulator = {0};
-    fv_app_init(&simulator.app, provisioned, 0u);
-    simulator.last_commands = fv_app_handle(&simulator.app,
-                                             FV_EVENT_BOOT_COMPLETED);
+    uint8_t persisted_attempts = 0u;
+    if (state_directory != NULL) {
+        if (!fv_host_services_init(&simulator.services,
+                                   &simulator.services_context,
+                                   state_directory)) {
+            fprintf(stderr, "cannot initialise development state directory\n");
+            return 1;
+        }
+        simulator.persistence_enabled = true;
+        fv_device_state_t state;
+        const fv_persist_result_t load_result =
+            simulator.services.ops->load_device_state(&simulator.services,
+                                                       &state);
+        if (load_result == FV_PERSIST_OK) {
+            provisioned = state.provisioned;
+            persisted_attempts = state.failed_attempts;
+        } else if (load_result == FV_PERSIST_NOT_FOUND && provisioned) {
+            state = (fv_device_state_t) {
+                .sequence = 1u,
+                .failed_attempts = 0u,
+                .provisioned = true,
+            };
+            if (!simulator.services.ops->random_fill(
+                    &simulator.services, state.device_secret,
+                    sizeof(state.device_secret)) ||
+                simulator.services.ops->store_device_state(
+                    &simulator.services, &state) != FV_PERSIST_OK) {
+                secure_clear(&state, sizeof(state));
+                fprintf(stderr, "cannot create development device state\n");
+                return 1;
+            }
+        } else if (load_result != FV_PERSIST_NOT_FOUND) {
+            fprintf(stderr, "development device state is corrupt\n");
+            return 1;
+        }
+        secure_clear(&state, sizeof(state));
+    }
+    fv_app_init(&simulator.app, provisioned, persisted_attempts);
+    simulator.last_commands = execute_commands(
+        &simulator, fv_app_handle(&simulator.app, FV_EVENT_BOOT_COMPLETED));
 
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Fuse Vault display simulator");

@@ -119,6 +119,8 @@ parameters. The canonical encoding is deliberately not treated as a key, and
 the KDF/device-secret construction has not yet been selected or implemented.
 
 In VS Code, run `Fuse Vault: Run display simulator` from **Tasks: Run Task**.
+Use `Fuse Vault: Run persistent simulator` to exercise attempt persistence
+across restarts without manually acknowledging counter writes.
 For breakpoints and stepping, select `Fuse Vault: Debug display simulator` in
 the Run and Debug panel and press F5. The build is configured automatically
 before either action.
@@ -134,9 +136,30 @@ screen appears to inject successful platform provisioning. The confirmed setup
 secret remains transiently available through the canonical setup encoding only
 while the provisioning backend needs it and is cleared on completion or fault.
 
-The core refuses to request USB mass-storage attachment until authentication
-succeeds and the reset attempt counter has been persisted. Failed attempts must
-also be persisted before another attempt is accepted. The initial tests exercise
+Run the graphical simulator with persistent development attempt state using:
+
+```sh
+firmware/build-host/fuse_vault_display_simulator \
+  --state-dir firmware/build-host/simulator-state
+```
+
+In this mode the simulator creates a development-only device secret using the
+operating system random source and stores it separately from vault metadata.
+Attempt records use two alternating, atomically replaced slots: submitting a
+secret persists the incremented counter before authentication can begin, and
+the newest valid sequence is recovered after restart. CRC32 detects corruption
+and incomplete records but is not cryptographic authentication. These local
+files contain a plaintext simulated device secret and must never be treated as
+a production vault or copied into device firmware.
+
+The host vault-header backend accepts only a nonzero crypto-profile identifier
+and nonempty opaque wrapped-key material. Because the real dual-family wrapping
+profile is not implemented yet, the simulator does not create a vault header
+or claim that injected provisioning produced a cryptographic vault.
+
+The core refuses to begin authentication until an incremented attempt counter
+has been persisted, and it refuses to request USB mass-storage attachment until
+successful authentication and persistence of the reset counter. The tests exercise
 provisioning, vault and FIDO mode selection, unlock and lock, persistent attempt
 limits, fault handling, and the MSC attachment boundary.
 
