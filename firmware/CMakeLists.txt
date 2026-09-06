@@ -134,6 +134,7 @@ add_executable(fuse_vault
     src/rp2354_connector.c
     src/rp2354_display.c
     src/rp2354_sd.c
+    src/rp2354_sd_spi.c
     src/rp2354_input.c
     src/rp2354_otp.c
     src/rp2354_security_flash.c
@@ -213,6 +214,8 @@ target_link_libraries(fuse_vault PRIVATE
     hardware_flash
     hardware_gpio
     hardware_spi
+    hardware_pio
+    hardware_dma
     pico_sha256
     pico_mbedtls_crypto
     pico_mbedtls_headers
@@ -242,4 +245,8 @@ endif()
 pico_add_extra_outputs(fuse_vault)
 
 set_source_files_properties(src/authentication_coordinator.c PROPERTIES
+    COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow")
+
+pico_generate_pio_header(fuse_vault ${CMAKE_CURRENT_LIST_DIR}/pio/sd_spi.pio)
+set_source_files_properties(src/rp2354_sd_spi.c PROPERTIES
     COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow")

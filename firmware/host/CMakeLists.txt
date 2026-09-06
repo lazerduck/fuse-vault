@@ -379,3 +379,14 @@ target_compile_options(fuse_vault_rp2354_usb_msc_tests PRIVATE
 )
 add_test(NAME fuse_vault_rp2354_usb_msc
     COMMAND fuse_vault_rp2354_usb_msc_tests)
+
+add_executable(fuse_vault_rp2354_sd_tests
+    ../src/rp2354_sd.c rp2354_sd_tests.c)
+target_include_directories(fuse_vault_rp2354_sd_tests PRIVATE
+    sd_stubs ../boards ../include)
+target_compile_definitions(fuse_vault_rp2354_sd_tests PRIVATE
+    FUSE_VAULT_SD_CARD_DETECT_POLARITY_CONFIRMED=1
+    FUSE_VAULT_SD_CARD_DETECT_ACTIVE_LEVEL=1)
+target_compile_options(fuse_vault_rp2354_sd_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_rp2354_sd COMMAND fuse_vault_rp2354_sd_tests)

@@ -57,16 +57,19 @@ explicitly enables it.
   media, and one runtime composing setup, authentication, encrypted storage,
   USB attachment, lock, eject, and fault handling.
 - TinyUSB MSC descriptors and read/write/sync/eject callbacks.
-- A baseline CRC-checked SD memory-card backend using SPI mode over the existing
-  CLK/CMD/DAT0/DAT3 wiring. The block interface intentionally permits later
-  replacement with faster four-bit PIO SDIO without changing the vault format.
+- A CRC-checked SD memory-card SPI backend using PIO timing and DMA transfers
+  over the existing CLK/CMD/DAT0/DAT3 wiring: 400 kHz initialization, up to 8 MHz
+  data, bulk sector transfers and bounded transport-failure handling. The
+  protocol test exercises initialization, SDHC/SDSC addressing, read/write,
+  CRC failure, transport failure, removal/reinsertion and timeout handling.
+  Physical PIO/DMA timing still requires assembled-board testing.
 - SD absence is not a fatal boot condition. A new device can enter setup and
   accept a later card; a configured device waits with USB locked, initializes
   an inserted card, and validates its authenticated header before password
   entry. Removal, transport failure, or an encrypted-backend error during an
   active session triggers detach and key clearing.
 
-The native suite currently contains 26 checks with GTK available (25 without),
+The native suite currently contains 27 checks with GTK available (26 without),
 including a headless test of the graphical simulator's actual orchestration.
 The simulator now uses the shared device runtime, persistent devices, clickable
 controls and a sample-note panel through encrypted virtual MSC; setup, restart,

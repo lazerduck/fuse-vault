@@ -2,15 +2,15 @@
 #define FUSE_VAULT_RP2354_SD_H
 
 #include "fuse_vault/block_device.h"
+#include "fuse_vault/rp2354_sd_spi.h"
 
 #include <stdbool.h>
 #include <stdint.h>
 
-/* Baseline SD memory-card backend using SPI mode on the board's SD pins.
- * This intentionally favors a small, auditable bring-up path over throughput;
- * the block-device boundary permits a later four-bit PIO SDIO replacement. */
+/* SD memory-card SPI protocol with PIO timing and DMA block transfers. */
 typedef struct {
     fv_block_device_t interface;
+    fv_rp2354_sd_spi_t bus;
     uint64_t blocks;
     bool initialized;
     bool high_capacity;

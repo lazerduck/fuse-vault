@@ -17,11 +17,25 @@ to the TFT rather than recreating the interface with desktop widgets. Platform
 code—not the application core—owns secrets, persistent security state, USB,
 storage, input, and display hardware.
 
-The SD card is wired for four-bit SDIO. The initial auditable bring-up backend
-uses SD memory-card SPI mode over CLK/CMD/DAT0/DAT3 with command CRC7, data
-CRC16, bounded waits, CSD capacity parsing, and single-sector reads/writes.
-Higher layers use only the generic 512-byte block-device interface, so a faster
-PIO four-bit SDIO backend can replace it without changing storage security.
+The SD card uses the standard SD memory-card SPI protocol on the existing
+CLK/CMD/DAT0/DAT3 wiring. PIO0 drives mode-0 SPI timing; two DMA channels move
+transmit and receive bytes, including whole 512-byte payloads. The fixed SPI
+peripheral cannot map CLK=GPIO4, MOSI=GPIO5 and MISO=GPIO6, so PIO preserves the
+PCB wiring. The display continues to use its separate SPI0 peripheral.
+
+Initialization is limited to 400 kHz (divider rounded down in frequency), with
+at least 74 initial clocks after a power-settling delay. After initialization
+and CSD validation, data transfers use at most 8 MHz. Command CRC7, data CRC16,
+capacity parsing and read-back verification remain in place. DMA/PIO waits have
+a 100 ms deadline; a transport failure stops the state machine and DMA before
+returning, invalidates the card and follows the existing storage-fault path.
+Reinitialization resets the transport and returns to the slow clock.
+
+The driver claims one PIO0 state machine, two instruction words and two DMA
+channels, and releases them on deinitialization. Resource exhaustion fails
+initialization. Calls remain synchronous on core 0: PIO/DMA removes CPU-driven
+bit timing and byte copying, but does not add background USB/UI scheduling.
+The candidate clock rates still require logic-analyser and card testing.
 
 PCB revision 1 accidentally connects each USB-presence signal to two GPIOs:
 GPIO2/GPIO16 for USB-A and GPIO3/GPIO17 for USB-C. Firmware treats GPIO2 and

@@ -144,3 +144,28 @@ Configure and run `firmware/host` with CMake. The
 initialization failure, render scheduling/failure, mux-disable ordering,
 connector conflict, card removal, raw I/O failure, one-shot fault latching, and
 application USB-detach/session-erasure commands.
+
+## PIO/DMA SPI transport verification
+
+The SD driver now uses one PIO0 state machine and two DMA channels on the
+existing CLK=GPIO4, CMD/MOSI=GPIO5, DAT0/MISO=GPIO6 and DAT3/CS=GPIO9 wiring.
+The SD protocol remains SPI; this does not enable native four-bit SD mode.
+The fixed SPI0 pin mapping does not match these routed SD signals.
+
+Before claiming measured operation, capture initialization and a sector transfer:
+
+- Confirm mode 0, MSB-first data and at least 74 startup clocks with CS high.
+- Confirm SCK is no more than 400 kHz through initialization/CSD validation,
+  then no more than 8 MHz during normal operation.
+- Confirm CS remains asserted for complete command/data/CRC transactions and
+  changes only after SCK returns low. Probe signal integrity on both directions.
+- Exercise read/write/CRC errors, card removal and reinsertion, busy timeouts,
+  and deliberate transport failure. USB must detach and keys must clear via
+  the storage-fault path. Reinitialization must restart at 400 kHz.
+- Measure actual throughput and button latency during sustained USB writes.
+  Transfers are still synchronous; PIO/DMA does not add concurrent UI scheduling.
+
+The host protocol test uses a scripted transport, not an electrical PIO/DMA
+emulator. It verifies the actual SD command driver, addressing, payload transfer
+boundaries, CRC checks and lifecycle events. Target builds compile the real
+PIO program and DMA implementation; bench evidence remains necessary.

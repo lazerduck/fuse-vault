@@ -555,6 +555,10 @@ measurements, sacrificial secure-boot trials and independent review remain.
 
 ### Stage 9 — FIDO2 as an independent product slice
 
+The [library assessment and integration plan](fido2-integration-plan.md)
+records the inspected upstream revisions, build evidence, provisional CanoKey
+selection, and staged integration gates. FIDO2 remains disabled pending them.
+
 Begin only after storage and device lifecycle are stable. Specify CTAP2/WebAuthn
 scope, resident/non-resident credential storage, user presence and verification,
 PIN retry policy, attestation, reset, backup/sync policy, and firmware-update

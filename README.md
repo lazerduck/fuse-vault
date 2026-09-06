@@ -116,7 +116,7 @@ The current design includes:
 - Raspberry Pi RP2354A microcontroller with 2 MB of stacked flash
 - WiseVision N096-1608TBBIG09-C08 80×160 RGB display
 - Four-way directional control and a back button
-- SD card wired for four-bit SDIO; the bring-up firmware can use SPI mode over
+- SD card wired for native four-bit SD; firmware uses PIO/DMA-driven SPI over
   the same pins as a conservative baseline
 - Male USB-A and USB-C connectors
 - USB ESD protection and power-path diodes
@@ -262,6 +262,7 @@ process will be added before public hardware or firmware releases.
 - [FIDO2 specifications](https://fidoalliance.org/specifications/download/)
 - [V1 product contract](docs/v1-product-contract.md)
 - [Product-readiness checklist](docs/product-readiness.md)
+- [FIDO2 library assessment and integration plan](docs/fido2-integration-plan.md)
 - [Release and OTP artifact workflow](provisioning/README.md)
 
 ## License

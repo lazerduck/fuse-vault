@@ -54,29 +54,24 @@ static void mark_not_ready(fv_rp2354_sd_t *sd, bool operation_failed) {
     sd->blocks = 0u;
 }
 
-static uint8_t spi_transfer(uint8_t output) {
-    uint8_t input = 0u;
-    for (uint8_t mask = 0x80u; mask != 0u; mask >>= 1u) {
-        gpio_put(FUSE_VAULT_SD_CMD_PIN, (output & mask) != 0u);
-        gpio_put(FUSE_VAULT_SD_CLK_PIN, true);
-        input = (uint8_t)((input << 1u) |
-                          (gpio_get(FUSE_VAULT_SD_DAT0_PIN) ? 1u : 0u));
-        gpio_put(FUSE_VAULT_SD_CLK_PIN, false);
-    }
+static uint8_t spi_transfer(fv_rp2354_sd_t *sd, uint8_t output) {
+    uint8_t input = 0xffu;
+    (void)fv_rp2354_sd_spi_transfer(&sd->bus, &output, &input, 1u);
     return input;
 }
 
-static void deselect_card(void) {
+static void deselect_card(fv_rp2354_sd_t *sd) {
     gpio_put(FUSE_VAULT_SD_DAT3_PIN, true);
-    (void)spi_transfer(0xffu);
+    (void)spi_transfer(sd, 0xffu);
 }
 
-static bool wait_byte(uint8_t expected, uint64_t timeout_us,
+static bool wait_byte(fv_rp2354_sd_t *sd, uint8_t expected, uint64_t timeout_us,
                       uint8_t *received) {
     const absolute_time_t deadline = make_timeout_time_us(timeout_us);
     uint8_t value;
     do {
-        value = spi_transfer(0xffu);
+        value = spi_transfer(sd, 0xffu);
+        if (sd->bus.failed) return false;
         if (value == expected) {
             if (received != NULL) *received = value;
             return true;
@@ -86,10 +81,10 @@ static bool wait_byte(uint8_t expected, uint64_t timeout_us,
     return false;
 }
 
-static bool select_card(void) {
+static bool select_card(fv_rp2354_sd_t *sd) {
     gpio_put(FUSE_VAULT_SD_DAT3_PIN, false);
-    (void)spi_transfer(0xffu);
-    return wait_byte(0xffu, SD_COMMAND_TIMEOUT_US, NULL);
+    (void)spi_transfer(sd, 0xffu);
+    return wait_byte(sd, 0xffu, SD_COMMAND_TIMEOUT_US, NULL);
 }
 
 static uint8_t crc7(const uint8_t *data, size_t length) {
@@ -125,7 +120,7 @@ static bool crc_implementation_valid(void) {
            crc7(cmd8, sizeof(cmd8)) == 0x87u;
 }
 
-static uint8_t send_command(uint8_t command, uint32_t argument,
+static uint8_t send_command(fv_rp2354_sd_t *sd, uint8_t command, uint32_t argument,
                             uint8_t *extra, size_t extra_length) {
     uint8_t packet[6] = {
         (uint8_t)(0x40u | command),
@@ -136,46 +131,48 @@ static uint8_t send_command(uint8_t command, uint32_t argument,
         0u,
     };
     packet[5] = crc7(packet, 5u);
-    if (!select_card()) {
-        deselect_card();
+    if (!select_card(sd)) {
+        deselect_card(sd);
         return 0xffu;
     }
-    for (size_t index = 0u; index < sizeof(packet); ++index) {
-        (void)spi_transfer(packet[index]);
+    if (!fv_rp2354_sd_spi_transfer(&sd->bus, packet, NULL, sizeof(packet))) {
+        return 0xffu;
     }
     uint8_t response = 0xffu;
     for (unsigned attempt = 0u; attempt < 16u; ++attempt) {
-        response = spi_transfer(0xffu);
+        response = spi_transfer(sd, 0xffu);
         if ((response & 0x80u) == 0u) break;
     }
     if ((response & 0x80u) == 0u) {
         for (size_t index = 0u; index < extra_length; ++index) {
-            extra[index] = spi_transfer(0xffu);
+            extra[index] = spi_transfer(sd, 0xffu);
         }
     }
-    return response;
+    return sd->bus.failed ? 0xffu : response;
 }
 
-static bool command_only(uint8_t command, uint32_t argument,
+static bool command_only(fv_rp2354_sd_t *sd, uint8_t command, uint32_t argument,
                          uint8_t expected) {
-    const uint8_t response = send_command(command, argument, NULL, 0u);
-    deselect_card();
+    const uint8_t response = send_command(sd, command, argument, NULL, 0u);
+    deselect_card(sd);
     return response == expected;
 }
 
-static bool read_register(uint8_t command, uint8_t *output, size_t length) {
-    if (send_command(command, 0u, NULL, 0u) != 0u ||
-        !wait_byte(SD_DATA_TOKEN, SD_COMMAND_TIMEOUT_US, NULL)) {
-        deselect_card();
+static bool read_register(fv_rp2354_sd_t *sd, uint8_t command, uint8_t *output, size_t length) {
+    if (send_command(sd, command, 0u, NULL, 0u) != 0u ||
+        !wait_byte(sd, SD_DATA_TOKEN, SD_COMMAND_TIMEOUT_US, NULL)) {
+        deselect_card(sd);
         return false;
     }
-    for (size_t index = 0u; index < length; ++index) {
-        output[index] = spi_transfer(0xffu);
+    if (!fv_rp2354_sd_spi_transfer(&sd->bus, NULL, output, length)) {
+        deselect_card(sd);
+        return false;
     }
-    const uint16_t stored_crc = (uint16_t)spi_transfer(0xffu) << 8u |
-                                spi_transfer(0xffu);
-    deselect_card();
-    return stored_crc == crc16(output, length);
+    const uint8_t crc_high = spi_transfer(sd, 0xffu);
+    const uint8_t crc_low = spi_transfer(sd, 0xffu);
+    const uint16_t stored_crc = (uint16_t)((uint16_t)crc_high << 8u) | crc_low;
+    deselect_card(sd);
+    return !sd->bus.failed && stored_crc == crc16(output, length);
 }
 
 static bool parse_capacity(const uint8_t csd[16], uint64_t *blocks) {
@@ -208,16 +205,23 @@ static bool initialize_card(fv_rp2354_sd_t *sd) {
     sd->blocks = 0u;
     sd->removal_pending = false;
     if (!card_detected(sd)) return false;
-    if (!crc_implementation_valid()) return false;
-    deselect_card();
-    for (unsigned index = 0u; index < 10u; ++index) {
-        (void)spi_transfer(0xffu);
+    if (sd->bus.failed) {
+        fv_rp2354_sd_spi_deinit(&sd->bus);
+        if (!fv_rp2354_sd_spi_init(&sd->bus)) return false;
     }
-    if (!command_only(SD_CMD0, 0u, SD_R1_IDLE)) return false;
+    if (!fv_rp2354_sd_spi_set_speed(&sd->bus, FV_SD_SPI_INIT_HZ)) return false;
+    /* Allow power and pull-ups to settle before the initial >=74 clocks. */
+    sleep_ms(2u);
+    if (!crc_implementation_valid()) return false;
+    deselect_card(sd);
+    for (unsigned index = 0u; index < 10u; ++index) {
+        (void)spi_transfer(sd, 0xffu);
+    }
+    if (!command_only(sd, SD_CMD0, 0u, SD_R1_IDLE)) return false;
 
     uint8_t r7[4] = {0};
-    const uint8_t cmd8 = send_command(SD_CMD8, 0x000001aau, r7, sizeof(r7));
-    deselect_card();
+    const uint8_t cmd8 = send_command(sd, SD_CMD8, 0x000001aau, r7, sizeof(r7));
+    deselect_card(sd);
     const bool version_two = cmd8 == SD_R1_IDLE;
     if (version_two && (r7[2] != 0x01u || r7[3] != 0xaau)) return false;
     if (!version_two && (cmd8 & SD_R1_ILLEGAL_COMMAND) == 0u) return false;
@@ -225,10 +229,10 @@ static bool initialize_card(fv_rp2354_sd_t *sd) {
     const absolute_time_t deadline = make_timeout_time_us(SD_INIT_TIMEOUT_US);
     bool ready = false;
     do {
-        if (!command_only(SD_CMD55, 0u, SD_R1_IDLE)) break;
-        const uint8_t response = send_command(
+        if (!command_only(sd, SD_CMD55, 0u, SD_R1_IDLE)) break;
+        const uint8_t response = send_command(sd,
             SD_CMD41, version_two ? UINT32_C(0x40000000) : 0u, NULL, 0u);
-        deselect_card();
+        deselect_card(sd);
         if (response == 0u) {
             ready = true;
             break;
@@ -238,32 +242,33 @@ static bool initialize_card(fv_rp2354_sd_t *sd) {
     if (!ready) return false;
 
     uint8_t ocr[4] = {0};
-    if (send_command(SD_CMD58, 0u, ocr, sizeof(ocr)) != 0u) {
-        deselect_card();
+    if (send_command(sd, SD_CMD58, 0u, ocr, sizeof(ocr)) != 0u) {
+        deselect_card(sd);
         return false;
     }
-    deselect_card();
+    deselect_card(sd);
     sd->high_capacity = (ocr[0] & 0x40u) != 0u;
-    if (!sd->high_capacity && !command_only(SD_CMD16, FV_BLOCK_SIZE, 0u)) {
+    if (!sd->high_capacity && !command_only(sd, SD_CMD16, FV_BLOCK_SIZE, 0u)) {
         return false;
     }
 
     /* CRC checking is mandatory on our side. Ask the card to validate command
      * and write CRC too; older cards may legally reject CMD59 in SPI mode. */
-    const uint8_t crc_response = send_command(SD_CMD59, 1u, NULL, 0u);
-    deselect_card();
+    const uint8_t crc_response = send_command(sd, SD_CMD59, 1u, NULL, 0u);
+    deselect_card(sd);
     if (crc_response != 0u &&
         (crc_response & SD_R1_ILLEGAL_COMMAND) == 0u) {
         return false;
     }
 
     uint8_t csd[16];
-    if (!read_register(SD_CMD9, csd, sizeof(csd)) ||
+    if (!read_register(sd, SD_CMD9, csd, sizeof(csd)) ||
         !parse_capacity(csd, &sd->blocks)) {
         memset(csd, 0, sizeof(csd));
         return false;
     }
     memset(csd, 0, sizeof(csd));
+    if (!fv_rp2354_sd_spi_set_speed(&sd->bus, FV_SD_SPI_DATA_HZ)) return false;
     sd->initialized = true;
     return true;
 }
@@ -287,19 +292,22 @@ static fv_block_result_t read_one(fv_rp2354_sd_t *sd, uint64_t block,
     if (!address_for_block(sd, block, &address)) {
         return FV_BLOCK_ERROR_OUT_OF_RANGE;
     }
-    if (send_command(SD_CMD17, address, NULL, 0u) != 0u ||
-        !wait_byte(SD_DATA_TOKEN, SD_COMMAND_TIMEOUT_US, NULL)) {
-        deselect_card();
+    if (send_command(sd, SD_CMD17, address, NULL, 0u) != 0u ||
+        !wait_byte(sd, SD_DATA_TOKEN, SD_COMMAND_TIMEOUT_US, NULL)) {
+        deselect_card(sd);
         mark_not_ready(sd, true);
         return FV_BLOCK_ERROR_IO;
     }
-    for (size_t index = 0u; index < FV_BLOCK_SIZE; ++index) {
-        output[index] = spi_transfer(0xffu);
+    if (!fv_rp2354_sd_spi_transfer(&sd->bus, NULL, output, FV_BLOCK_SIZE)) {
+        deselect_card(sd);
+        mark_not_ready(sd, true);
+        return FV_BLOCK_ERROR_IO;
     }
-    const uint16_t stored_crc = (uint16_t)spi_transfer(0xffu) << 8u |
-                                spi_transfer(0xffu);
-    deselect_card();
-    if (stored_crc != crc16(output, FV_BLOCK_SIZE)) {
+    const uint8_t crc_high = spi_transfer(sd, 0xffu);
+    const uint8_t crc_low = spi_transfer(sd, 0xffu);
+    const uint16_t stored_crc = (uint16_t)((uint16_t)crc_high << 8u) | crc_low;
+    deselect_card(sd);
+    if (sd->bus.failed || stored_crc != crc16(output, FV_BLOCK_SIZE)) {
         memset(output, 0, FV_BLOCK_SIZE);
         mark_not_ready(sd, true);
         return FV_BLOCK_ERROR_INTEGRITY;
@@ -313,31 +321,33 @@ static fv_block_result_t write_one(fv_rp2354_sd_t *sd, uint64_t block,
     if (!address_for_block(sd, block, &address)) {
         return FV_BLOCK_ERROR_OUT_OF_RANGE;
     }
-    if (send_command(SD_CMD24, address, NULL, 0u) != 0u) {
-        deselect_card();
+    if (send_command(sd, SD_CMD24, address, NULL, 0u) != 0u) {
+        deselect_card(sd);
         mark_not_ready(sd, true);
         return FV_BLOCK_ERROR_IO;
     }
-    (void)spi_transfer(0xffu);
-    (void)spi_transfer(SD_DATA_TOKEN);
-    for (size_t index = 0u; index < FV_BLOCK_SIZE; ++index) {
-        (void)spi_transfer(input[index]);
+    (void)spi_transfer(sd, 0xffu);
+    (void)spi_transfer(sd, SD_DATA_TOKEN);
+    if (!fv_rp2354_sd_spi_transfer(&sd->bus, input, NULL, FV_BLOCK_SIZE)) {
+        deselect_card(sd);
+        mark_not_ready(sd, true);
+        return FV_BLOCK_ERROR_IO;
     }
     const uint16_t data_crc = crc16(input, FV_BLOCK_SIZE);
-    (void)spi_transfer((uint8_t)(data_crc >> 8u));
-    (void)spi_transfer((uint8_t)data_crc);
-    const uint8_t response = (uint8_t)(spi_transfer(0xffu) & 0x1fu);
+    (void)spi_transfer(sd, (uint8_t)(data_crc >> 8u));
+    (void)spi_transfer(sd, (uint8_t)data_crc);
+    const uint8_t response = (uint8_t)(spi_transfer(sd, 0xffu) & 0x1fu);
     const bool completed = response == SD_WRITE_ACCEPTED &&
-        wait_byte(0xffu, SD_WRITE_TIMEOUT_US, NULL);
-    deselect_card();
+        wait_byte(sd, 0xffu, SD_WRITE_TIMEOUT_US, NULL);
+    deselect_card(sd);
     if (!completed) {
         mark_not_ready(sd, true);
         return FV_BLOCK_ERROR_IO;
     }
     uint8_t status[1] = {0xffu};
-    const uint8_t r1 = send_command(SD_CMD13, 0u, status, sizeof(status));
-    deselect_card();
-    if (r1 != 0u || status[0] != 0u) {
+    const uint8_t r1 = send_command(sd, SD_CMD13, 0u, status, sizeof(status));
+    deselect_card(sd);
+    if (sd->bus.failed || r1 != 0u || status[0] != 0u) {
         mark_not_ready(sd, true);
         return FV_BLOCK_ERROR_IO;
     }
@@ -403,12 +413,12 @@ static fv_block_result_t sync_blocks(fv_block_device_t *device) {
         mark_not_ready(sd, false);
         return FV_BLOCK_ERROR_NOT_READY;
     }
-    if (!select_card()) {
-        deselect_card();
+    if (!select_card(sd)) {
+        deselect_card(sd);
         mark_not_ready(sd, true);
         return FV_BLOCK_ERROR_IO;
     }
-    deselect_card();
+    deselect_card(sd);
     return FV_BLOCK_OK;
 }
 
@@ -465,6 +475,7 @@ bool fv_rp2354_sd_init(fv_rp2354_sd_t *sd) {
     sd->detect_configured = true;
 #endif
 
+    if (!fv_rp2354_sd_spi_init(&sd->bus)) return false;
     sd->physical_present = card_detected(sd);
     if (sd->physical_present && !initialize_card(sd)) {
         sd->failure_pending = true;
@@ -489,7 +500,7 @@ void fv_rp2354_sd_poll(fv_rp2354_sd_t *sd) {
     if (sd->initialized && !present) {
         mark_not_ready(sd, false);
         sd->physical_present = false;
-        deselect_card();
+        deselect_card(sd);
     } else if (!sd->initialized && !present) {
         sd->physical_present = false;
     } else if (!sd->initialized && present && !sd->physical_present) {
@@ -527,5 +538,6 @@ void fv_rp2354_sd_deinit(fv_rp2354_sd_t *sd) {
     sd->insertion_pending = false;
     sd->removal_pending = false;
     sd->failure_pending = false;
-    deselect_card();
+    if (sd->bus.initialized) deselect_card(sd);
+    fv_rp2354_sd_spi_deinit(&sd->bus);
 }

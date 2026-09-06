@@ -1,0 +1,10 @@
+; Mode 0, MSB first, eight-bit autopull/autopush. Four PIO cycles per bit.
+; The OUT instruction stalls with SCK low when the TX FIFO is empty.
+; Matches the CPHA0 timing in Raspberry Pi pico-examples/pio/spi/spi.pio
+; Copyright (c) 2020 Raspberry Pi (Trading) Ltd. SPDX-License-Identifier: BSD-3-Clause
+.program fv_sd_spi
+.side_set 1
+.wrap_target
+    out pins, 1 side 0 [1]
+    in pins, 1  side 1 [1]
+.wrap
