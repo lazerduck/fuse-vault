@@ -10,7 +10,10 @@ static void secure_clear(void *data, size_t length) {
     while (length-- > 0u) *bytes++ = 0u;
 }
 
+static void begin_secret_entry(fv_app_t *app);
+
 static fv_command_set_t enter_fault(fv_app_t *app) {
+    app->session_unlocked = false;
     fv_secret_entry_clear(&app->secret_entry);
     fv_secret_entry_clear(&app->setup_secret_entry);
     app->state = FV_STATE_FAULT;
@@ -29,6 +32,10 @@ static fv_command_set_t complete_boot(fv_app_t *app) {
     }
     app->state = app->provisioned ? FV_STATE_MODE_SELECT
                                   : FV_STATE_SETUP_REQUIRED;
+    if (app->provisioned && app->fido_available) {
+        begin_secret_entry(app);
+        app->state = FV_STATE_VAULT_SECRET_ENTRY;
+    }
     return FV_COMMAND_NONE;
 }
 
@@ -47,7 +54,12 @@ static void begin_secret_entry(fv_app_t *app) {
 
 static fv_command_set_t leave_sensitive_mode(fv_app_t *app) {
     fv_secret_entry_clear(&app->secret_entry);
+    app->session_unlocked = false;
     app->state = FV_STATE_MODE_SELECT;
+    if (app->fido_available) {
+        begin_secret_entry(app);
+        app->state = FV_STATE_VAULT_SECRET_ENTRY;
+    }
     return FV_COMMAND_USB_DETACH |
            FV_COMMAND_ERASE_TRANSIENT_SECRET |
            FV_COMMAND_ERASE_SESSION_KEYS;
@@ -256,6 +268,10 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 app->provisioned = true;
                 app->failed_attempts = 0u;
                 app->state = FV_STATE_MODE_SELECT;
+                if (app->fido_available) {
+                    begin_secret_entry(app);
+                    app->state = FV_STATE_VAULT_SECRET_ENTRY;
+                }
                 return FV_COMMAND_ERASE_TRANSIENT_SECRET |
                        FV_COMMAND_ERASE_SESSION_KEYS;
             }
@@ -274,13 +290,18 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                     ? FV_MODE_FIDO
                     : FV_MODE_VAULT;
             } else if (event == FV_EVENT_SELECT) {
-                if (app->selected_mode == FV_MODE_VAULT) {
+                if (!app->session_unlocked) {
                     begin_secret_entry(app);
                     app->state = FV_STATE_VAULT_SECRET_ENTRY;
+                } else if (app->selected_mode == FV_MODE_VAULT) {
+                    app->state = FV_STATE_VAULT_UNLOCKED;
+                    return FV_COMMAND_USB_ATTACH_MSC;
                 } else if (app->fido_available) {
                     app->state = FV_STATE_FIDO_READY;
                     return FV_COMMAND_USB_ATTACH_FIDO;
                 }
+            } else if (event == FV_EVENT_BACK || event == FV_EVENT_LOCK_REQUESTED) {
+                return leave_sensitive_mode(app);
             }
             break;
 
@@ -337,6 +358,11 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
 
         case FV_STATE_VAULT_RECORDING_SUCCESS:
             if (event == FV_EVENT_ATTEMPT_COUNTER_STORED) {
+                app->session_unlocked = true;
+                if (app->fido_available) {
+                    app->state = FV_STATE_MODE_SELECT;
+                    return FV_COMMAND_NONE;
+                }
                 app->state = FV_STATE_VAULT_UNLOCKED;
                 return FV_COMMAND_USB_ATTACH_MSC;
             }
@@ -351,7 +377,8 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
             break;
 
         case FV_STATE_FIDO_READY:
-            if (event == FV_EVENT_BACK || event == FV_EVENT_LOCK_REQUESTED) {
+            if (event == FV_EVENT_BACK || event == FV_EVENT_LOCK_REQUESTED ||
+                event == FV_EVENT_USB_EJECTED) {
                 return leave_sensitive_mode(app);
             }
             break;
@@ -460,27 +487,27 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
                      app->selected_mode == FV_MODE_VAULT ? ">" : " ");
             snprintf(view->lines[1], sizeof(view->lines[1]), "%s FIDO2 %s",
                      app->selected_mode == FV_MODE_FIDO ? ">" : " ",
-                     app->fido_available ? "key" : "(planned)");
+                     app->fido_available ? "" : "(planned)");
             snprintf(view->lines[3], sizeof(view->lines[3]), "Up/down + select");
             break;
         case FV_STATE_VAULT_SECRET_ENTRY:
-            snprintf(view->title, sizeof(view->title), "Unlock vault");
+            snprintf(view->title, sizeof(view->title), "Unlock device");
             fv_secret_entry_render(&app->secret_entry, view);
             snprintf(view->lines[3], sizeof(view->lines[3]), "Failures: %u/%u",
                      (unsigned)app->failed_attempts,
                      (unsigned)FV_MAX_UNLOCK_ATTEMPTS);
             break;
         case FV_STATE_VAULT_RESERVING_ATTEMPT:
-            snprintf(view->title, sizeof(view->title), "Unlock vault");
+            snprintf(view->title, sizeof(view->title), "Unlock device");
             snprintf(view->lines[0], sizeof(view->lines[0]), "Reserving attempt...");
             snprintf(view->lines[2], sizeof(view->lines[2]), "Do not remove power");
             break;
         case FV_STATE_VAULT_AUTHENTICATING:
-            snprintf(view->title, sizeof(view->title), "Unlock vault");
+            snprintf(view->title, sizeof(view->title), "Unlock device");
             snprintf(view->lines[0], sizeof(view->lines[0]), "Authenticating...");
             break;
         case FV_STATE_VAULT_RECORDING_SUCCESS:
-            snprintf(view->title, sizeof(view->title), "Unlock vault");
+            snprintf(view->title, sizeof(view->title), "Unlock device");
             snprintf(view->lines[0], sizeof(view->lines[0]), "Saving security state");
             break;
         case FV_STATE_VAULT_UNLOCKED:
@@ -491,8 +518,9 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             break;
         case FV_STATE_FIDO_READY:
             snprintf(view->title, sizeof(view->title), "FIDO2 mode");
-            snprintf(view->lines[0], sizeof(view->lines[0]), "Authenticator active");
-            snprintf(view->lines[3], sizeof(view->lines[3]), "Back: disconnect");
+            snprintf(view->lines[0], sizeof(view->lines[0]), app->fido_waiting ? (app->fido_reset_pending ? "Erase all FIDO credentials?" : "Approve FIDO request?") : "Ready for authentication");
+            snprintf(view->lines[1], sizeof(view->lines[1]), app->fido_waiting ? "Select: approve" : "Device unlock verified");
+            snprintf(view->lines[3], sizeof(view->lines[3]), app->fido_waiting ? "Back: cancel" : "Back: lock");
             break;
         case FV_STATE_DESTROYED:
             snprintf(view->title, sizeof(view->title), "Vault destroyed");

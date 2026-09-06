@@ -37,6 +37,8 @@ add_library(fuse_vault_core STATIC
     ../src/device_runtime.c
     ../src/display.c
     ../src/encrypted_block.c
+    ../src/fido_store.c
+    ../src/fido_verification.c
     ../src/input.c
     ../src/input_bindings.c
     ../src/journal_authenticator.c
@@ -390,3 +392,52 @@ target_compile_definitions(fuse_vault_rp2354_sd_tests PRIVATE
 target_compile_options(fuse_vault_rp2354_sd_tests PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
 add_test(NAME fuse_vault_rp2354_sd COMMAND fuse_vault_rp2354_sd_tests)
+
+include(../third_party/fido.cmake)
+
+add_executable(fuse_vault_fido_probe_tests fido_probe_tests.c ../src/rp2354_usb_msc.c)
+target_include_directories(fuse_vault_fido_probe_tests PRIVATE . ../include)
+target_compile_definitions(fuse_vault_fido_probe_tests PRIVATE
+    FUSE_VAULT_ENABLE_FIDO2=1 FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED=1
+    FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED=1)
+target_compile_options(fuse_vault_fido_probe_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+target_link_libraries(fuse_vault_fido_probe_tests PRIVATE fuse_vault_fido_probe)
+add_test(NAME fuse_vault_fido_probe COMMAND fuse_vault_fido_probe_tests)
+
+set(FUSE_VAULT_MBEDTLS_SOURCE "" CACHE PATH "Mbed TLS 3.6 source for upstream FIDO engine host tests")
+if(FUSE_VAULT_MBEDTLS_SOURCE)
+    set(ENABLE_PROGRAMS OFF CACHE BOOL "" FORCE)
+    set(ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+    set(MBEDTLS_CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../mbedtls_config.h" CACHE FILEPATH "" FORCE)
+    add_subdirectory(${FUSE_VAULT_MBEDTLS_SOURCE} ${CMAKE_CURRENT_BINARY_DIR}/fido-mbedtls EXCLUDE_FROM_ALL)
+    foreach(fv_mbed_target mbedcrypto mbedx509 mbedtls)
+        target_compile_definitions(${fv_mbed_target} PRIVATE FUSE_VAULT_ENABLE_FIDO2=1)
+    endforeach()
+    include(../third_party/pico_fido/engine.cmake)
+    target_compile_definitions(fuse_vault_fido_engine PRIVATE FUSE_VAULT_ENABLE_FIDO2=1)
+    target_link_libraries(fuse_vault_fido_engine PUBLIC mbedcrypto mbedx509)
+    add_executable(fuse_vault_fido_device_tests fido_device_tests.c)
+    target_link_libraries(fuse_vault_fido_device_tests PRIVATE fuse_vault_fido_engine
+        fuse_vault_host_services fuse_vault_core)
+    target_link_options(fuse_vault_fido_device_tests PRIVATE -Wl,--gc-sections)
+    add_executable(fuse_vault_fido_engine_tests fido_engine_tests.c)
+    target_link_libraries(fuse_vault_fido_engine_tests PRIVATE fuse_vault_fido_engine OpenSSL::Crypto)
+    target_link_options(fuse_vault_fido_engine_tests PRIVATE -Wl,--gc-sections)
+    add_test(NAME fuse_vault_fido_engine COMMAND fuse_vault_fido_engine_tests)
+    find_package(Python3 COMPONENTS Interpreter QUIET)
+    if(Python3_Interpreter_FOUND)
+        execute_process(COMMAND ${Python3_EXECUTABLE} -c "import fido2, cryptography"
+            RESULT_VARIABLE FV_FIDO_PYTHON_AVAILABLE OUTPUT_QUIET ERROR_QUIET)
+        if(FV_FIDO_PYTHON_AVAILABLE EQUAL 0)
+            add_test(NAME fuse_vault_fido_device_reference
+                COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/fido_device_reference_tests.py
+                $<TARGET_FILE:fuse_vault_fido_device_tests>)
+            add_test(NAME fuse_vault_fido_reference
+                COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_CURRENT_SOURCE_DIR}/fido_engine_reference_tests.py
+                $<TARGET_FILE:fuse_vault_fido_engine_tests>)
+        endif()
+    endif()
+endif()

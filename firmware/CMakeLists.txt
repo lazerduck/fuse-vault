@@ -26,6 +26,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(FUSE_VAULT_RELEASE_BUILD
     "Build a production candidate with all evidence gates enforced" OFF)
+option(FUSE_VAULT_ENABLE_FIDO2
+    "Enable development Pico FIDO authenticator (hardware validation pending)" OFF)
+if(FUSE_VAULT_RELEASE_BUILD AND FUSE_VAULT_ENABLE_FIDO2)
+    message(FATAL_ERROR "Pico FIDO requires hardware validation and is forbidden in release builds")
+endif()
 option(FUSE_VAULT_ENABLE_DISPLAY
     "Enable the ST7735S display" ON)
 option(FUSE_VAULT_COMPILE_UNVALIDATED_USB_MSC
@@ -108,6 +113,12 @@ endif()
 set(PICO_MBEDTLS_CONFIG_FILE
     "${CMAKE_CURRENT_LIST_DIR}/mbedtls_config.h")
 pico_sdk_init()
+if(FUSE_VAULT_ENABLE_FIDO2)
+    include(third_party/fido.cmake)
+    include(third_party/pico_fido/engine.cmake)
+    target_link_libraries(fuse_vault_fido_engine PUBLIC pico_mbedtls_crypto pico_mbedtls_headers)
+    target_compile_definitions(fuse_vault_fido_engine PUBLIC FUSE_VAULT_ENABLE_FIDO2=1)
+endif()
 
 add_executable(fuse_vault
     src/block_slice.c
@@ -123,6 +134,8 @@ add_executable(fuse_vault
     src/device_runtime.c
     src/display.c
     src/encrypted_block.c
+    src/fido_store.c
+    src/fido_verification.c
     src/input.c
     src/input_bindings.c
     src/journal_authenticator.c
@@ -156,7 +169,11 @@ if(FUSE_VAULT_RELEASE_BUILD)
 endif()
 
 target_compile_definitions(fuse_vault PRIVATE
+    FUSE_VAULT_ENABLE_FIDO2=$<BOOL:${FUSE_VAULT_ENABLE_FIDO2}>
     FUSE_VAULT_ENABLE_DISPLAY=$<BOOL:${FUSE_VAULT_ENABLE_DISPLAY}>)
+if(FUSE_VAULT_ENABLE_FIDO2)
+    target_link_libraries(fuse_vault PRIVATE fuse_vault_fido_engine)
+endif()
 
 if(FUSE_VAULT_COMPILE_UNVALIDATED_USB_MSC)
     message(WARNING
@@ -250,3 +267,16 @@ set_source_files_properties(src/authentication_coordinator.c PROPERTIES
 pico_generate_pio_header(fuse_vault ${CMAKE_CURRENT_LIST_DIR}/pio/sd_spi.pio)
 set_source_files_properties(src/rp2354_sd_spi.c PROPERTIES
     COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow")
+
+# The CTAP/crypto call chain cannot safely use the SDK's 2 KiB scratch stack.
+if(FUSE_VAULT_ENABLE_FIDO2)
+    if(NOT COMMAND pico_add_linker_script_override_path)
+        message(FATAL_ERROR "FIDO2 requires Pico SDK 2.3+ linker include overrides")
+    endif()
+    target_compile_definitions(fuse_vault PRIVATE PICO_STACK_SIZE=65536 PICO_USE_STACK_GUARDS=1)
+    target_compile_options(fuse_vault PRIVATE -fstack-usage)
+    target_compile_options(fuse_vault_fido_engine PRIVATE -fstack-usage)
+    pico_add_linker_script_override_path(fuse_vault ${CMAKE_CURRENT_LIST_DIR}/linker/fido
+        FILES sections_stack.incl section_end.incl)
+    pico_set_linker_script_var(fuse_vault HEAP_LIMIT "ORIGIN(RAM) + LENGTH(RAM) - 65536")
+endif()

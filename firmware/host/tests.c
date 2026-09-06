@@ -448,20 +448,28 @@ static void test_attempt_limit_destroys_secret(void) {
 }
 
 static void test_fido_mode(void) {
-    fv_app_t app = boot_provisioned();
-    CHECK(fv_app_handle(&app, FV_EVENT_DOWN) == FV_COMMAND_NONE);
-    CHECK(app.selected_mode == FV_MODE_VAULT);
+    fv_app_t app;
+    fv_app_init(&app, true, 0, FV_ENTRY_METHOD_WHEELS);
     fv_app_set_fido_available(&app, true);
+    CHECK(fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED) == FV_COMMAND_NONE);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
+    CHECK(!app.session_unlocked);
+    (void)reserve_and_begin_authentication(&app);
+    CHECK(has_command(fv_app_handle(&app, FV_EVENT_AUTH_SUCCEEDED),
+                      FV_COMMAND_STORE_ATTEMPT_COUNTER));
+    CHECK(fv_app_handle(&app, FV_EVENT_ATTEMPT_COUNTER_STORED) == FV_COMMAND_NONE);
+    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.session_unlocked);
     CHECK(fv_app_handle(&app, FV_EVENT_DOWN) == FV_COMMAND_NONE);
     CHECK(app.selected_mode == FV_MODE_FIDO);
-
     fv_command_set_t commands = fv_app_handle(&app, FV_EVENT_SELECT);
     CHECK(app.state == FV_STATE_FIDO_READY);
     CHECK(has_command(commands, FV_COMMAND_USB_ATTACH_FIDO));
-
     commands = fv_app_handle(&app, FV_EVENT_BACK);
-    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
+    CHECK(!app.session_unlocked);
     CHECK(has_command(commands, FV_COMMAND_USB_DETACH));
+    CHECK(has_command(commands, FV_COMMAND_ERASE_SESSION_KEYS));
 }
 
 static void test_fault_closes_security_boundary(void) {

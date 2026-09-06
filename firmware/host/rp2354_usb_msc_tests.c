@@ -50,6 +50,7 @@ bool tusb_init(void) {
 
 void tud_connect(void) { ++connect_calls; }
 void tud_disconnect(void) { ++disconnect_calls; }
+bool tud_deinit(uint8_t rhport) { assert(rhport == 0); return true; }
 void tud_task(void) { ++task_calls; }
 
 void tud_msc_set_sense(uint8_t lun, uint8_t sense_key, uint8_t add_sense_code,

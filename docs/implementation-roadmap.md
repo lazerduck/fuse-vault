@@ -75,12 +75,12 @@ The durable trust domains are intended to be:
 | USB storage exposure | `USB_ATTACH_MSC`, detach/eject states and ordering | State-machine command assertions only | TinyUSB/other device stack, descriptors, SCSI callbacks, readiness/eject semantics, encrypted block adapter, connector mux policy | USB-A/USB-C mux, VBUS sensing, signal integrity and OS interoperability |
 | Lock/eject/disconnect | State machine requests detach and erasure on Back, lock, eject, and fault | Session-object and state transition clearing | Physical disconnect detection, quiesce/sync protocol, USB detach completion barrier, plaintext cache inventory | Cable removal during writes and host-specific eject behaviour |
 | Destructive lockout | One-way OTP revocation path and journal-authenticator deinit | OTP file lifecycle and app tenth-failure states | Precise commit/ack protocol, UI/power-failure semantics, validation that every future boot refuses all secret use | OTP revocation and permission enforcement on real locked silicon |
-| FIDO mode | Menu/state and attach/detach commands | State transitions only | FIDO2/CTAP2 implementation, credential store, PIN/user-verification policy, user-presence UI, attestation/update policy, independent key hierarchy | USB HID interoperability and secure physical-presence validation |
+| FIDO mode | Pico FIDO engine, unlock gate, HID transport, encrypted snapshots and journal anchor | Independent client signatures, runtime/store lifecycle, rollback/failure tests and sanitizers | Release/conformance review and performance tuning | USB/browser interoperability, physical approval, power cuts and memory/timing measurements |
 
-The `FIDO_READY` transition does not authenticate the vault secret. That
-is acceptable only if the eventual FIDO design deliberately defines its own user
-presence/verification policy and separate keys. It must not be mistaken for an
-implemented authenticator or inherit a vault-unlocked session implicitly.
+The FIDO integration now requires the existing device unlock before mode
+selection. Its bounded, RP-bound verification cache deliberately reuses that
+unlock; FIDO storage has separate derivation domains within the shared encrypted
+storage mechanism. See the [current integration contract](fido2-integration-plan.md).
 
 ## Security invariants
 
@@ -117,8 +117,10 @@ These are release gates, not aspirations:
     firmware and boot paths permanently refuse root reads and vault/FIDO use.
     “Destroyed” means cryptographic inaccessibility, not that programmed root bits
     have physically become zero.
-12. Vault and FIDO keys, authorization state, persistent records, and USB modes
-    are domain-separated. Authorization in one mode grants nothing in the other.
+12. Vault and FIDO keys and persistent regions are domain-separated and USB
+    modes are exclusive. The existing device unlock authorizes mode selection;
+    FIDO verification reuses it only within the bounded, RP-bound cache. FIDO
+    host commands cannot unlock or expose storage.
 13. Missing, unknown, out-of-range, downgraded, inconsistent, or unauthenticated
     metadata fails locked without fallback defaults.
 14. Ordinary builds cannot program fresh OTP roots. Provisioning builds and
@@ -137,7 +139,7 @@ These are release gates, not aspirations:
 | Derived storage keys | Future encrypted-block session | Same as VMK, plus key-rotation/profile exit | Missing |
 | Plaintext sectors/caches | Future encrypted adapter, USB transfer buffers, filesystem/MSC stack | After transfer; all buffers on detach/fault | Missing and must include DMA/PIO/USB buffers |
 | Journal operational keys | Boot-lifetime dual journal authenticator | Revocation, fault, reset; may remain while locked for attempt accounting | Deinit exists on destructive command; broader fault-path ownership needs consolidation |
-| FIDO private/working keys | Future independent FIDO service | Per-operation/session policy and destruction | Missing |
+| FIDO private/working keys | VMK-derived FIDO engine/storage domains | Cleared on mode exit, lock, fault and revocation; RP-bound UV cache | Host-tested, hardware validation pending |
 
 All sensitive clears should converge on one reviewed, compiler-resistant primitive.
 Tests should assert clearing on every state transition and injected failure, while
@@ -553,26 +555,25 @@ signed-recovery policy, staged picotool OTP inputs, artifact hashes and a receip
 are implemented. Real keys, reproducibility/SBOM work, parser fuzzing, target
 measurements, sacrificial secure-boot trials and independent review remain.
 
-### Stage 9 — FIDO2 as an independent product slice
+### Stage 9 — FIDO2 with shared device unlock
 
-The [library assessment and integration plan](fido2-integration-plan.md)
-records the inspected upstream revisions, build evidence, provisional CanoKey
-selection, and staged integration gates. FIDO2 remains disabled pending them.
+The [integration contract and validation](fido2-integration-plan.md) describes the
+implemented Pico FIDO engine, encrypted SD snapshots, internal journal anchor,
+USB dispatch, physical-approval UI and shared device-unlock verification. The
+feature is opt-in and remains release-gated pending physical-device validation.
 
-Begin only after storage and device lifecycle are stable. Specify CTAP2/WebAuthn
-scope, resident/non-resident credential storage, user presence and verification,
-PIN retry policy, attestation, reset, backup/sync policy, and firmware-update
-interaction. Use separate derivation domains and records from the vault.
+Host tests now traverse provisioning, unlock, HID, encrypted persistence and
+independently verified registration/login, including lock, expiry, RP binding,
+delete/reset and interrupted writes. The RP2354 builds link with the full engine
+and a dedicated guarded stack.
 
-Acceptance criteria:
+Remaining acceptance criteria:
 
-- Relevant FIDO conformance/interoperability tests pass on supported operating
-  systems and browsers.
-- Vault unlock never unlocks FIDO and FIDO verification never unlocks storage.
-- FIDO operations cannot access vault keys/blocks; vault operations cannot access
-  FIDO private keys.
-- Lockout, reset, provisioning, update, and destruction interactions are explicit,
-  power-loss tested, and accurately presented to the user.
+- Physical browser/OS interoperability and FIDO conformance/security review.
+- Measured USB/crypto latency, stack/heap margins, SD throughput and flash wear.
+- Real power-cut, media-removal, connector-conflict, held-button, cancel/reset
+  and host suspend/reconnect tests.
+- Confirmed release identities, firmware anti-rollback and distribution policy.
 
 ## Deferred and out-of-scope claims
 

@@ -4,6 +4,8 @@
 
 #include "fuse_vault/crypto_stack.h"
 #include "fuse_vault/device_runtime.h"
+#include "fuse_vault/fido_store.h"
+#include "fuse_vault/fido_verification.h"
 #include "fuse_vault/virtual_msc.h"
 
 #include <stdio.h>
@@ -40,7 +42,9 @@ static bool detach_usb(void *context) {
     return true;
 }
 
-static bool attach_fido(void *context) {
+static bool attach_fido(void *context, const fv_volume_master_key_t *vmk,
+    const fv_media_layout_t *layout, const fv_encryption_stack_descriptor_t *stack) {
+    (void)vmk; (void)layout; (void)stack;
     (void)context;
     return false;
 }
@@ -80,13 +84,38 @@ static void cleanup(const char *directory) {
     CHECK(rmdir(directory) == 0);
 }
 
+static bool interrupt_snapshot(void *context) {
+    unsigned *remaining = context;
+    if (*remaining == 0) return false;
+    --*remaining; return true;
+}
+static fv_persist_result_t reject_anchor(fv_platform_services_t *s, const fv_security_state_t *state) {
+    (void)s; (void)state; return FV_PERSIST_IO_ERROR;
+}
+static void verification_cache(void) {
+    fv_fido_verification_t v;
+    uint8_t first[32] = {1}, second[32] = {2};
+    fv_fido_verification_begin(&v, 100);
+    CHECK(!fv_fido_verification_use(&v, 30100, first));
+    fv_fido_verification_begin(&v, UINT32_MAX - 1000u);
+    CHECK(fv_fido_verification_use(&v, 10, first));
+    CHECK(fv_fido_verification_use(&v, 598998u, first));
+    CHECK(!fv_fido_verification_use(&v, 598999u, first));
+    fv_fido_verification_begin(&v, 100);
+    CHECK(fv_fido_verification_use(&v, 101, NULL));
+    CHECK(fv_fido_verification_use(&v, 102, first));
+    CHECK(!fv_fido_verification_use(&v, 103, second));
+    CHECK(!v.valid);
+}
+
 static void end_to_end_runtime(void) {
     char directory[] = "/tmp/fuse-vault-runtime-XXXXXX";
     CHECK(mkdtemp(directory) != NULL);
 
     fv_platform_services_t services;
     fv_host_services_context_t services_context;
-    CHECK(fv_host_services_init(&services, &services_context, directory));
+    CHECK(fv_host_services_init_sized(&services, &services_context, directory,
+        4096u, FV_MEDIA_DEFAULT_FIDO_BLOCKS));
 
     const fv_credential_costs_t costs = {
         .pbkdf2_iterations = 1u,
@@ -124,8 +153,8 @@ static void end_to_end_runtime(void) {
 
     fv_platform_services_t restarted_services;
     fv_host_services_context_t restarted_context;
-    CHECK(fv_host_services_init(&restarted_services, &restarted_context,
-                                directory));
+    CHECK(fv_host_services_init_sized(&restarted_services, &restarted_context,
+                                directory, 4096u, FV_MEDIA_DEFAULT_FIDO_BLOCKS));
     fv_security_state_t persisted;
     CHECK(restarted_services.ops->load_security_state(&restarted_services,
                                                       &persisted) ==
@@ -161,6 +190,70 @@ static void end_to_end_runtime(void) {
     CHECK(usb.msc.attached);
     CHECK(usb.attach_count == 1u);
 
+    /* The private store uses the unlocked VMK and the selected storage stack.
+     * An old but authentic SD snapshot must not match the internal journal. */
+    fv_fido_store_t *fido = calloc(1, sizeof(*fido));
+    CHECK(fido != NULL);
+    CHECK(fv_fido_store_open(fido, &restarted_services,
+        &restarted_context.vault_device, &runtime.media_layout,
+        &runtime.authentication.vmk, &setup_app.selected_encryption_stack));
+    CHECK(memcmp(fido->root_key, runtime.authentication.vmk.bytes, 32) != 0);
+    memset(fido->image, 0x51, sizeof(fido->image));
+    CHECK(fv_fido_store_commit(fido, fido->image, sizeof(fido->image)));
+    size_t snapshot_size = (size_t)runtime.media_layout.fido_blocks * FV_BLOCK_SIZE;
+    uint8_t *old_media = malloc(snapshot_size);
+    CHECK(old_media != NULL);
+    fv_block_device_t *raw = &restarted_context.vault_device;
+    CHECK(raw->ops->read(raw, runtime.media_layout.fido_start,
+        (uint32_t)runtime.media_layout.fido_blocks, old_media) == FV_BLOCK_OK);
+    memset(fido->image, 0x72, sizeof(fido->image));
+    CHECK(fv_fido_store_commit(fido, fido->image, sizeof(fido->image)));
+    fv_fido_store_close(fido);
+    CHECK(fv_fido_store_open(fido, &restarted_services, raw, &runtime.media_layout,
+        &runtime.authentication.vmk, &setup_app.selected_encryption_stack));
+    for (size_t i = 0; i < sizeof(fido->image); ++i) CHECK(fido->image[i] == 0x72);
+    fv_fido_store_close(fido);
+    fv_volume_master_key_t wrong_key = runtime.authentication.vmk;
+    wrong_key.bytes[0] ^= 0x80;
+    CHECK(!fv_fido_store_open(fido, &restarted_services, raw, &runtime.media_layout,
+        &wrong_key, &setup_app.selected_encryption_stack));
+    fv_volume_master_key_clear(&wrong_key);
+    const unsigned cut_points[] = {0, 1, 63, 127};
+    for (unsigned cut = 0; cut < sizeof(cut_points) / sizeof(cut_points[0]); ++cut) {
+        CHECK(fv_fido_store_open(fido, &restarted_services, raw, &runtime.media_layout,
+            &runtime.authentication.vmk, &setup_app.selected_encryption_stack));
+        unsigned remaining = cut_points[cut];
+        fido->progress = interrupt_snapshot; fido->progress_context = &remaining;
+        memset(fido->image, 0x33, sizeof(fido->image));
+        CHECK(!fv_fido_store_commit(fido, fido->image, sizeof(fido->image)));
+        fv_fido_store_close(fido);
+        CHECK(fv_fido_store_open(fido, &restarted_services, raw, &runtime.media_layout,
+            &runtime.authentication.vmk, &setup_app.selected_encryption_stack));
+        for (size_t i = 0; i < sizeof(fido->image); ++i) CHECK(fido->image[i] == 0x72);
+        fv_fido_store_close(fido);
+    }
+    fv_platform_service_ops_t failed_ops = *restarted_services.ops;
+    failed_ops.store_security_state = reject_anchor;
+    fv_platform_services_t failed_services = restarted_services;
+    failed_services.ops = &failed_ops;
+    CHECK(fv_fido_store_open(fido, &failed_services, raw, &runtime.media_layout,
+        &runtime.authentication.vmk, &setup_app.selected_encryption_stack));
+    memset(fido->image, 0x44, sizeof(fido->image));
+    CHECK(!fv_fido_store_commit(fido, fido->image, sizeof(fido->image)));
+    fv_fido_store_close(fido);
+    CHECK(fv_fido_store_open(fido, &restarted_services, raw, &runtime.media_layout,
+        &runtime.authentication.vmk, &setup_app.selected_encryption_stack));
+    for (size_t i = 0; i < sizeof(fido->image); ++i) CHECK(fido->image[i] == 0x72);
+    fv_fido_store_close(fido);
+    CHECK(raw->ops->write(raw, runtime.media_layout.fido_start,
+        (uint32_t)runtime.media_layout.fido_blocks, old_media) == FV_BLOCK_OK);
+    CHECK(raw->ops->sync(raw) == FV_BLOCK_OK);
+    CHECK(!fv_fido_store_open(fido, &restarted_services, raw, &runtime.media_layout,
+        &runtime.authentication.vmk, &setup_app.selected_encryption_stack));
+    CHECK(!fido->ready);
+    free(old_media);
+    free(fido);
+
     uint8_t plaintext[FV_BLOCK_SIZE] = {0};
     uint8_t recovered[FV_BLOCK_SIZE] = {0};
     memcpy(plaintext, "runtime-coordinator plaintext", 29u);
@@ -182,6 +275,7 @@ static void end_to_end_runtime(void) {
 }
 
 int main(void) {
+    verification_cache();
     end_to_end_runtime();
     puts("Device runtime end-to-end tests passed.");
     return EXIT_SUCCESS;

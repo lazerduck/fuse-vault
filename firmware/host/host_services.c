@@ -416,7 +416,9 @@ static fv_persist_result_t host_load_security_state(
         .sequence = recovered.sequence,
         .failed_attempts = recovered.failed_attempts,
         .provisioned = recovered.provisioned,
+        .fido_initialized = recovered.fido_initialized,
     };
+    memcpy(state->fido_digest, recovered.fido_digest, sizeof(state->fido_digest));
     fv_host_services_context_t *context=services->context;
     memcpy(context->current_vault_id,recovered.vault_id,FV_VAULT_ID_SIZE);
     context->current_vault_id_valid=true;
@@ -435,6 +437,8 @@ static fv_persist_result_t host_store_security_state(
     fv_journal_state_t next={.sequence=state->sequence,
         .previous_sequence=recovered==FV_JOURNAL_OK?previous.sequence:0u,
         .failed_attempts=state->failed_attempts,.provisioned=state->provisioned};
+    next.fido_initialized = state->fido_initialized;
+    memcpy(next.fido_digest, state->fido_digest, sizeof(next.fido_digest));
     memcpy(next.vault_id,context->current_vault_id,FV_VAULT_ID_SIZE);
     fv_journal_result_t appended=(recovered==FV_JOURNAL_OK||recovered==FV_JOURNAL_EMPTY)
         ?fv_security_journal_append(&journal,&next):recovered;
@@ -488,7 +492,7 @@ static fv_persist_result_t host_store_vault_header(
         &context->vault_device, &roots, header->vault_id, &layout);
     if (media_result == FV_MEDIA_BLANK) {
         media_result = fv_media_format(&context->vault_device, &roots,
-                                       header->vault_id, 16u, &layout);
+                                       header->vault_id, context->fido_blocks, &layout);
     }
     fv_block_slice_t header_slice;
     if (media_result != FV_MEDIA_OK ||
@@ -517,9 +521,9 @@ static const fv_platform_service_ops_t HOST_OPS = {
     .store_vault_header = host_store_vault_header,
 };
 
-bool fv_host_services_init(fv_platform_services_t *services,
+bool fv_host_services_init_sized(fv_platform_services_t *services,
                            fv_host_services_context_t *context,
-                           const char *directory) {
+                           const char *directory, uint64_t media_blocks, uint64_t fido_blocks) {
     if (services == NULL || context == NULL || directory == NULL ||
         directory[0] == '\0') return false;
     const size_t length = strlen(directory);
@@ -530,13 +534,14 @@ bool fv_host_services_init(fv_platform_services_t *services,
     struct stat status;
     if (stat(directory, &status) != 0 || !S_ISDIR(status.st_mode) ||
         (status.st_mode & (S_IRWXG | S_IRWXO)) != 0u) return false;
+    context->fido_blocks = fido_blocks;
     char media_path[FV_HOST_PATH_CAPACITY];
     const int media_result = snprintf(media_path, sizeof(media_path),
                                       "%s/vault-media.bin", directory);
     if (media_result < 0 || (size_t)media_result >= sizeof(media_path) ||
         !fv_host_file_block_device_init(&context->vault_device,
                                         &context->vault_device_context,
-                                        media_path, 256u)) return false;
+                                        media_path, media_blocks)) return false;
     const int journal_result=snprintf(context->journal_path,sizeof(context->journal_path),
                                       "%s/security-journal.bin",directory);
     if(journal_result<0||(size_t)journal_result>=sizeof(context->journal_path))return false;
@@ -557,4 +562,9 @@ bool fv_host_services_init(fv_platform_services_t *services,
     services->ops = &HOST_OPS;
     services->context = context;
     return true;
+}
+
+bool fv_host_services_init(fv_platform_services_t *services,
+    fv_host_services_context_t *context, const char *directory) {
+    return fv_host_services_init_sized(services, context, directory, 256u, 16u);
 }

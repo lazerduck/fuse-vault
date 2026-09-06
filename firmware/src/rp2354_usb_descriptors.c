@@ -1,5 +1,6 @@
 #include "pico/unique_id.h"
 #include "tusb.h"
+#include "fuse_vault/rp2354_usb_msc.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -31,6 +32,16 @@ static const tusb_desc_device_t DEVICE = {
 };
 
 uint8_t const *tud_descriptor_device_cb(void) {
+#if FUSE_VAULT_ENABLE_FIDO2
+    /* Distinct development PID avoids cached MSC descriptors in HID mode.
+     * The prototype cannot be enabled in production builds. */
+    static tusb_desc_device_t fido_device;
+    if (fv_rp2354_usb_is_fido()) {
+        fido_device = DEVICE;
+        fido_device.idProduct = 0x4012u;
+        return (const uint8_t *)&fido_device;
+    }
+#endif
     return (const uint8_t *)&DEVICE;
 }
 
@@ -42,8 +53,23 @@ static const uint8_t CONFIGURATION[] = {
     TUD_MSC_DESCRIPTOR(INTERFACE_MSC, 0, 0x01, 0x81, 64),
 };
 
+#if FUSE_VAULT_ENABLE_FIDO2
+static const uint8_t FIDO_REPORT[] = { TUD_HID_REPORT_DESC_FIDO_U2F(64) };
+static const uint8_t FIDO_CONFIGURATION[] = {
+    TUD_CONFIG_DESCRIPTOR(1, 1, 0, TUD_CONFIG_DESC_LEN + TUD_HID_INOUT_DESC_LEN, 0, 100),
+    TUD_HID_INOUT_DESCRIPTOR(0, 0, HID_ITF_PROTOCOL_NONE, sizeof(FIDO_REPORT),
+                            0x01, 0x81, 64, 5),
+};
+uint8_t const *tud_hid_descriptor_report_cb(uint8_t instance) {
+    return instance == 0 && fv_rp2354_usb_is_fido() ? FIDO_REPORT : NULL;
+}
+#endif
+
 uint8_t const *tud_descriptor_configuration_cb(uint8_t index) {
     (void)index;
+#if FUSE_VAULT_ENABLE_FIDO2
+    if (fv_rp2354_usb_is_fido()) return FIDO_CONFIGURATION;
+#endif
     return CONFIGURATION;
 }
 
@@ -59,7 +85,8 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t language_id) {
         length = 1u;
     } else {
         if (index == 1u) ascii = "Fuse Vault";
-        else if (index == 2u) ascii = "Encrypted Storage";
+        else if (index == 2u) ascii = fv_rp2354_usb_is_fido()
+            ? "Fuse Vault FIDO Probe" : "Encrypted Storage";
         else if (index == 3u) {
             pico_get_unique_board_id_string(serial, sizeof(serial));
             ascii = serial;

@@ -139,7 +139,9 @@ static fv_persist_result_t load_security_state(
         .sequence = recovered.sequence,
         .failed_attempts = recovered.failed_attempts,
         .provisioned = recovered.provisioned,
+        .fido_initialized = recovered.fido_initialized,
     };
+    memcpy(state->fido_digest, recovered.fido_digest, sizeof(state->fido_digest));
     memcpy(context->current_vault_id, recovered.vault_id,
            FV_VAULT_ID_SIZE);
     context->current_vault_id_valid = true;
@@ -182,6 +184,8 @@ static fv_persist_result_t store_security_state(
         .failed_attempts = state->failed_attempts,
         .provisioned = state->provisioned,
     };
+    next.fido_initialized = state->fido_initialized;
+    memcpy(next.fido_digest, state->fido_digest, sizeof(next.fido_digest));
     memcpy(next.vault_id, context->current_vault_id, FV_VAULT_ID_SIZE);
     const fv_journal_result_t append_result =
         fv_security_journal_append(&journal, &next);

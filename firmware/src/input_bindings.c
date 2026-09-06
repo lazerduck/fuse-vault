@@ -52,6 +52,7 @@ void fv_input_map_for_app(const fv_app_t *app, fv_input_map_t *map) {
             bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
             break;
         case FV_STATE_MODE_SELECT:
+            bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
             bind(map, FV_INPUT_UP, FV_EVENT_UP, true);
             bind(map, FV_INPUT_DOWN, FV_EVENT_DOWN, true);
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);

@@ -385,3 +385,54 @@ firmware/
 
 See [`docs/product-readiness.md`](../docs/product-readiness.md) for the current
 release checklist.
+
+## Pico FIDO device integration
+
+The optional FIDO build connects the upstream CTAP2 engine to device unlock,
+physical confirmation, the existing USB owner and encrypted SD storage. After
+normal provisioning, unlock the device and select **FIDO2**. There is no separate
+FIDO PIN. Select approves a request; Back cancels or locks the device.
+
+The unlock can supply FIDO verification for the first site within 30 seconds,
+then for that site for at most ten minutes. A different site or expiry requires
+the same device unlock again. Storage and FIDO remain exclusive USB modes.
+
+```sh
+cmake -S firmware -B firmware/build-fido \
+  -DPICO_SDK_PATH=/path/to/pico-sdk -DFUSE_VAULT_ENABLE_FIDO2=ON
+cmake --build firmware/build-fido -j4
+```
+
+The enabled build requires Pico SDK 2.3's linker override API and reserves a
+64 KiB guarded main-SRAM stack. Existing electrical bring-up gates still apply.
+The feature defaults off and remains forbidden in release builds pending actual
+hardware, interoperability and security validation. No physical device has been
+tested. Development HID PID `0x4012` avoids the MSC descriptor-cache collision;
+it is not a production USB identity.
+
+FIDO's private SD region uses the same encrypted-block implementation and selected
+stack as the vault, with separate keys derived from the unlocked VMK. Two snapshot
+banks and an authenticated internal-journal digest protect committed state from
+SD replay. FIDO reset deletes FIDO credentials only; whole-device root revocation
+also destroys access to FIDO data. Journal v2 migration requires keeping the
+firmware rollback protection policy intact.
+
+Host validation, including the independent FIDO client, is available with:
+
+```sh
+cmake -S firmware/host -B /tmp/fuse-vault-fido-host \
+  -DFUSE_VAULT_MBEDTLS_SOURCE=/path/to/pico-sdk/lib/mbedtls
+cmake --build /tmp/fuse-vault-fido-host -j4
+ctest --test-dir /tmp/fuse-vault-fido-host --output-on-failure
+```
+
+When the selected Python interpreter has `fido2` and `cryptography`, CMake adds
+`fuse_vault_fido_device_reference` (complete simulated device path) and
+`fuse_vault_fido_reference` (engine ClientPIN regression fixture). The fixtures'
+auto-approved presence is test-only. Tests verify signatures independently,
+restart persistence, lock/verification limits, deletion/reset, failed writes and
+old-media rejection. Sanitizer testing covers these paths; hardware timings,
+watermarks and power-cut behavior are still unmeasured.
+
+See the [integration status and hardware checklist](../docs/fido2-integration-plan.md)
+and [pinned sources/local adaptations](third_party/pico_fido/README.fuse-vault.md).

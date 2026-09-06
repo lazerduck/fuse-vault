@@ -71,7 +71,8 @@ static fv_journal_result_t decode_record(
     const uint8_t record[FV_JOURNAL_RECORD_SIZE],
     fv_journal_state_t *state) {
     if (memcmp(record, JOURNAL_MAGIC, sizeof(JOURNAL_MAGIC)) != 0 ||
-        read_u32(record + 8u) != JOURNAL_FORMAT_VERSION ||
+        (read_u32(record + 8u) != JOURNAL_FORMAT_VERSION &&
+         read_u32(record + 8u) != 2u) ||
         read_u32(record + 12u) != FV_JOURNAL_RECORD_SIZE ||
         record[49] > 1u) return FV_JOURNAL_AUTHENTICATION_ERROR;
 
@@ -92,6 +93,11 @@ static fv_journal_result_t decode_record(
         .failed_attempts = record[48],
         .provisioned = record[49] == 1u,
     };
+    if (read_u32(record + 8u) == 2u) {
+        if (record[50] != 1u) return FV_JOURNAL_AUTHENTICATION_ERROR;
+        state->fido_initialized = true;
+        memcpy(state->fido_digest, record + 51u, 32u);
+    }
     memcpy(state->vault_id, record + 32u, FV_VAULT_ID_SIZE);
     return state->sequence == 0u ? FV_JOURNAL_SEQUENCE_ERROR : FV_JOURNAL_OK;
 }
@@ -133,7 +139,7 @@ static bool encode_record(fv_security_journal_t *journal,
                           uint8_t record[FV_JOURNAL_RECORD_SIZE]) {
     memset(record, 0xff, FV_JOURNAL_RECORD_SIZE);
     memcpy(record, JOURNAL_MAGIC, sizeof(JOURNAL_MAGIC));
-    write_u32(record + 8u, JOURNAL_FORMAT_VERSION);
+    write_u32(record + 8u, state->fido_initialized ? 2u : JOURNAL_FORMAT_VERSION);
     write_u32(record + 12u, FV_JOURNAL_RECORD_SIZE);
     write_u64(record + 16u, state->sequence);
     write_u64(record + 24u, state->previous_sequence);
@@ -141,6 +147,10 @@ static bool encode_record(fv_security_journal_t *journal,
     record[48] = state->failed_attempts;
     record[49] = state->provisioned ? 1u : 0u;
     memset(record + 50u, 0, FV_JOURNAL_AUTHENTICATED_SIZE - 50u);
+    if (state->fido_initialized) {
+        record[50] = 1u;
+        memcpy(record + 51u, state->fido_digest, 32u);
+    }
     return journal->authenticator->ops->compute_tags(
         journal->authenticator, record, FV_JOURNAL_AUTHENTICATED_SIZE,
         record + TAG_A_OFFSET, record + TAG_B_OFFSET);
@@ -185,7 +195,8 @@ fv_journal_result_t fv_security_journal_append(
         if (state->sequence != 1u || state->previous_sequence != 0u) {
             return FV_JOURNAL_SEQUENCE_ERROR;
         }
-    } else if (state->sequence != latest.sequence + 1u ||
+    } else if ((latest.fido_initialized && !state->fido_initialized) ||
+               state->sequence != latest.sequence + 1u ||
                state->previous_sequence != latest.sequence ||
                memcmp(state->vault_id, latest.vault_id,
                       FV_VAULT_ID_SIZE) != 0) {

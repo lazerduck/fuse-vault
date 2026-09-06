@@ -179,8 +179,12 @@ void fv_device_runtime_execute(fv_device_runtime_t *runtime,
             }
         }
         if ((commands & FV_COMMAND_USB_ATTACH_FIDO) != 0u) {
-            if (runtime->usb_ops->attach_fido == NULL ||
-                !runtime->usb_ops->attach_fido(runtime->usb_context)) {
+            if (!runtime->authentication.vmk_valid ||
+                !runtime->encrypted_ready || !runtime->app->session_unlocked ||
+                runtime->usb_ops->attach_fido == NULL ||
+                !runtime->usb_ops->attach_fido(runtime->usb_context,
+                    &runtime->authentication.vmk, &runtime->media_layout,
+                    &runtime->encrypted.pipeline.descriptor)) {
                 next |= fail(runtime);
             }
         }

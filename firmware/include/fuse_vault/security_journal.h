@@ -61,6 +61,8 @@ typedef struct {
     uint8_t vault_id[FV_VAULT_ID_SIZE];
     uint8_t failed_attempts;
     bool provisioned;
+    bool fido_initialized;
+    uint8_t fido_digest[32];
 } fv_journal_state_t;
 
 typedef struct {

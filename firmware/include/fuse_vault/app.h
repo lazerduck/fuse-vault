@@ -134,6 +134,9 @@ typedef struct {
     uint8_t failed_attempts;
     bool provisioned;
     bool fido_available;
+    bool session_unlocked;
+    bool fido_waiting;
+    bool fido_reset_pending;
 } fv_app_t;
 
 typedef struct {

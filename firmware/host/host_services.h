@@ -18,10 +18,15 @@ typedef struct {
     fv_journal_flash_t journal_flash;
     uint8_t current_vault_id[FV_VAULT_ID_SIZE];
     bool current_vault_id_valid;
+    uint64_t fido_blocks;
 } fv_host_services_context_t;
 
 bool fv_host_services_init(fv_platform_services_t *services,
                            fv_host_services_context_t *context,
                            const char *directory);
+
+bool fv_host_services_init_sized(fv_platform_services_t *services,
+    fv_host_services_context_t *context, const char *directory,
+    uint64_t media_blocks, uint64_t fido_blocks);
 
 #endif

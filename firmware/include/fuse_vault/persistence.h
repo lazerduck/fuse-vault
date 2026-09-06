@@ -65,6 +65,8 @@ typedef struct {
     uint64_t sequence;
     uint8_t failed_attempts;
     bool provisioned;
+    bool fido_initialized;
+    uint8_t fido_digest[32];
 } fv_security_state_t;
 
 typedef struct {

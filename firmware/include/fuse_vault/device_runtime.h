@@ -13,7 +13,9 @@ typedef struct fv_device_runtime fv_device_runtime_t;
 typedef struct {
     bool (*attach_msc)(void *context, fv_block_device_t *plaintext_blocks);
     bool (*detach_usb)(void *context);
-    bool (*attach_fido)(void *context);
+    bool (*attach_fido)(void *context, const fv_volume_master_key_t *vmk,
+                        const fv_media_layout_t *layout,
+                        const fv_encryption_stack_descriptor_t *stack);
 } fv_runtime_usb_ops_t;
 
 struct fv_device_runtime {
