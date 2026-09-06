@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/raspberrypi/picotool/master/json/schemas/permissions-schema.json",
+  "59": {
+    "no_key_state": 0,
+    "key_r": 0,
+    "key_w": 0,
+    "lock_bl": 3,
+    "lock_ns": 3,
+    "lock_s": 0
+  },
+  "60": {
+    "no_key_state": 0,
+    "key_r": 0,
+    "key_w": 0,
+    "lock_bl": 3,
+    "lock_ns": 3,
+    "lock_s": 1
+  }
+}

@@ -7,6 +7,9 @@
 #define KEYPAD_MIN_LENGTH 4u
 #define WORD_LIST_SIZE 64u
 
+_Static_assert(WORD_LIST_SIZE == 4u * 4u * 4u,
+               "word picker requires three balanced four-way choices");
+
 _Static_assert(FV_SECRET_DIRECTION_MAX <= FV_SECRET_ENCODING_SIZE - 5u,
                "direction sequence exceeds canonical encoding");
 _Static_assert(FV_SECRET_KEYPAD_MAX <= FV_SECRET_ENCODING_SIZE - 5u,
@@ -43,6 +46,10 @@ void fv_secret_entry_begin(fv_secret_entry_t *entry, fv_entry_method_t method) {
     if (entry == NULL) return;
     fv_secret_entry_clear(entry);
     entry->method = method;
+    if (method == FV_ENTRY_METHOD_WORD_LIST) {
+        memset(entry->state.word_list.words, FV_SECRET_WORD_EMPTY,
+               sizeof(entry->state.word_list.words));
+    }
 }
 
 static fv_secret_event_result_t handle_wheels(fv_wheel_entry_t *wheels,
@@ -110,17 +117,62 @@ static fv_secret_event_result_t handle_keypad(fv_keypad_entry_t *keypad,
     return FV_SECRET_EVENT_CHANGED;
 }
 
+static bool words_complete(const fv_word_entry_t *word_list) {
+    for (unsigned i = 0u; i < FV_SECRET_WORD_COUNT; ++i) {
+        if (word_list->words[i] >= WORD_LIST_SIZE) return false;
+    }
+    return true;
+}
+
 static fv_secret_event_result_t handle_words(fv_word_entry_t *word_list,
                                               fv_event_t event) {
-    uint8_t *word = &word_list->words[word_list->selected];
-    if (event == FV_EVENT_LEFT) word_list->selected = word_list->selected == 0u
-        ? FV_SECRET_WORD_COUNT - 1u : (uint8_t)(word_list->selected - 1u);
-    else if (event == FV_EVENT_RIGHT) word_list->selected =
-        (uint8_t)((word_list->selected + 1u) % FV_SECRET_WORD_COUNT);
-    else if (event == FV_EVENT_UP) *word = (uint8_t)((*word + 1u) % WORD_LIST_SIZE);
-    else if (event == FV_EVENT_DOWN) *word = *word == 0u ? WORD_LIST_SIZE - 1u : (uint8_t)(*word - 1u);
-    else if (event == FV_EVENT_SELECT) return FV_SECRET_EVENT_COMPLETE;
+    if (event == FV_EVENT_BACK) {
+        if (word_list->depth > 0u) {
+            --word_list->depth;
+            word_list->prefix /= 4u;
+        } else if (!word_list->reviewing && words_complete(word_list)) {
+            /* Cancel an edit without discarding the previously selected word. */
+            word_list->reviewing = true;
+        } else if (word_list->reviewing || word_list->selected > 0u) {
+            if (word_list->reviewing) word_list->selected = FV_SECRET_WORD_COUNT - 1u;
+            else --word_list->selected;
+            word_list->words[word_list->selected] = FV_SECRET_WORD_EMPTY;
+            word_list->reviewing = false;
+        } else return FV_SECRET_EVENT_IGNORED;
+        return FV_SECRET_EVENT_CHANGED;
+    }
+    if (event == FV_EVENT_SELECT) {
+        return word_list->reviewing && words_complete(word_list)
+            ? FV_SECRET_EVENT_COMPLETE : FV_SECRET_EVENT_IGNORED;
+    }
+    uint8_t choice;
+    if (event == FV_EVENT_UP) choice = 0u;
+    else if (event == FV_EVENT_RIGHT) choice = 1u;
+    else if (event == FV_EVENT_DOWN) choice = 2u;
+    else if (event == FV_EVENT_LEFT) choice = 3u;
     else return FV_SECRET_EVENT_IGNORED;
+
+    if (word_list->reviewing) {
+        word_list->selected = choice;
+        word_list->reviewing = false;
+    } else if (word_list->depth < 2u) {
+        word_list->prefix = (uint8_t)(word_list->prefix * 4u + choice);
+        ++word_list->depth;
+    } else {
+        word_list->words[word_list->selected] =
+            (uint8_t)(word_list->prefix * 4u + choice);
+        word_list->prefix = 0u;
+        word_list->depth = 0u;
+        if (words_complete(word_list)) word_list->reviewing = true;
+        else {
+            for (uint8_t i = 0u; i < FV_SECRET_WORD_COUNT; ++i) {
+                if (word_list->words[i] == FV_SECRET_WORD_EMPTY) {
+                    word_list->selected = i;
+                    break;
+                }
+            }
+        }
+    }
     return FV_SECRET_EVENT_CHANGED;
 }
 
@@ -152,7 +204,11 @@ bool fv_secret_entry_encode(const fv_secret_entry_t *entry,
         case FV_ENTRY_METHOD_WHEELS: length = FV_SECRET_WHEEL_COUNT; values = entry->state.wheels.values; break;
         case FV_ENTRY_METHOD_DIRECTIONS: length = entry->state.directions.length; values = entry->state.directions.values; break;
         case FV_ENTRY_METHOD_KEYPAD: length = entry->state.keypad.length; values = entry->state.keypad.digits; break;
-        case FV_ENTRY_METHOD_WORD_LIST: length = FV_SECRET_WORD_COUNT; values = entry->state.word_list.words; break;
+        case FV_ENTRY_METHOD_WORD_LIST:
+            if (!words_complete(&entry->state.word_list)) return false;
+            length = FV_SECRET_WORD_COUNT;
+            values = entry->state.word_list.words;
+            break;
         case FV_ENTRY_METHOD_COUNT: return false;
     }
     encoding->bytes[3] = (uint8_t)secret_method;
@@ -179,36 +235,90 @@ static void keypad_row(const fv_keypad_entry_t *keypad, unsigned row, char *outp
 
 void fv_secret_entry_render(const fv_secret_entry_t *entry, fv_ui_view_t *view) {
     if (entry == NULL || view == NULL) return;
+    memset(view->lines, 0, sizeof(view->lines));
+    view->direction_icons = false;
+    view->word_picker = false;
+    view->secret_controls = true;
+    view->select_enabled = true;
+    snprintf(view->back_action, sizeof(view->back_action), "Back");
+    snprintf(view->select_action, sizeof(view->select_action), "Done");
     switch (entry->method) {
         case FV_ENTRY_METHOD_WHEELS: {
             const fv_wheel_entry_t *w = &entry->state.wheels;
             snprintf(view->lines[0], FV_UI_TEXT_CAPACITY,
                 w->selected == 0u ? "[%02u]  %02u   %02u" : w->selected == 1u ? " %02u  [%02u]  %02u" : " %02u   %02u  [%02u]",
                 (unsigned)w->values[0], (unsigned)w->values[1], (unsigned)w->values[2]);
-            snprintf(view->lines[2], FV_UI_TEXT_CAPACITY, "Arrows adjust; OK done");
+            snprintf(view->lines[2], FV_UI_TEXT_CAPACITY, "\003\001 Slot  \004\002 Value");
             break;
         }
         case FV_ENTRY_METHOD_DIRECTIONS: {
             const fv_direction_entry_t *d = &entry->state.directions;
-            char sequence[FV_SECRET_DIRECTION_MAX + 1u];
+            view->direction_icons = true;
+            view->select_enabled = d->length >= DIRECTION_MIN_LENGTH;
+            snprintf(view->back_action, sizeof(view->back_action),
+                     d->length > 0u ? "Delete" : "Back");
+            snprintf(view->lines[0], FV_UI_TEXT_CAPACITY, "%u/%u arrows  Min %u",
+                     (unsigned)d->length, (unsigned)FV_SECRET_DIRECTION_MAX,
+                     (unsigned)DIRECTION_MIN_LENGTH);
+            /* Printable fallback for the terminal; the display draws arrow bitmaps. */
             static const char symbols[] = "URDL";
-            for (uint8_t i = 0u; i < d->length; ++i) sequence[i] = symbols[d->values[i]];
-            sequence[d->length] = '\0';
-            snprintf(view->lines[0], FV_UI_TEXT_CAPACITY, "Sequence: %s", sequence);
-            snprintf(view->lines[1], FV_UI_TEXT_CAPACITY, "Length: %u/%u (min 6)", (unsigned)d->length, (unsigned)FV_SECRET_DIRECTION_MAX);
-            snprintf(view->lines[2], FV_UI_TEXT_CAPACITY, "Arrows add; Back deletes");
+            for (uint8_t i = 0u; i < d->length; ++i) {
+                view->lines[1u + i / 8u][i % 8u] = symbols[d->values[i]];
+            }
             break;
         }
-        case FV_ENTRY_METHOD_KEYPAD:
+        case FV_ENTRY_METHOD_KEYPAD: {
+            const fv_keypad_entry_t *k = &entry->state.keypad;
+            const uint8_t value = keypad_value(k->selected);
+            snprintf(view->back_action, sizeof(view->back_action),
+                     k->length > 0u ? "Delete" : "Back");
+            snprintf(view->select_action, sizeof(view->select_action),
+                     value == 10u ? "Delete" : value == 11u ? "Done" : "Add");
+            view->select_enabled = value == 10u ? k->length > 0u :
+                value == 11u ? k->length >= KEYPAD_MIN_LENGTH :
+                k->length < FV_SECRET_KEYPAD_MAX;
             keypad_row(&entry->state.keypad, 0u, view->lines[0]);
             keypad_row(&entry->state.keypad, 1u, view->lines[1]);
             keypad_row(&entry->state.keypad, 2u, view->lines[2]);
             break;
+        }
         case FV_ENTRY_METHOD_WORD_LIST: {
             const fv_word_entry_t *w = &entry->state.word_list;
-            snprintf(view->lines[0], FV_UI_TEXT_CAPACITY, "Word %u/4: [%s]", (unsigned)w->selected + 1u, words[w->words[w->selected]]);
-            snprintf(view->lines[1], FV_UI_TEXT_CAPACITY, "%s %s %s %s", words[w->words[0]], words[w->words[1]], words[w->words[2]], words[w->words[3]]);
-            snprintf(view->lines[2], FV_UI_TEXT_CAPACITY, "L/R slot; U/D word; OK done");
+            static const char icons[4] = {'\004', '\001', '\002', '\003'};
+            char (*choices)[12] = view->word_choices;
+            view->word_picker = true;
+            view->select_enabled = w->reviewing && words_complete(w);
+            snprintf(view->back_action, sizeof(view->back_action), "%s",
+                     w->depth > 0u ? "Undo" : w->reviewing ? "Delete" :
+                     words_complete(w) ? "Cancel" : w->selected > 0u ? "Delete" : "Back");
+            if (w->reviewing) {
+                snprintf(view->lines[0], FV_UI_TEXT_CAPACITY, "Review: arrows edit");
+            } else {
+                snprintf(view->lines[0], FV_UI_TEXT_CAPACITY, "Word %u/4  Pick %u/3",
+                         (unsigned)w->selected + 1u, (unsigned)w->depth + 1u);
+            }
+            for (unsigned choice = 0u; choice < 4u; ++choice) {
+                if (w->reviewing) {
+                    snprintf(choices[choice], sizeof(choices[choice]), "%c %u %s",
+                             icons[choice], choice + 1u, words[w->words[choice]]);
+                } else {
+                    unsigned size = 16u >> (2u * w->depth);
+                    unsigned start = ((unsigned)w->prefix * 4u + choice) * size;
+                    if (size == 1u) {
+                        snprintf(choices[choice], sizeof(choices[choice]), "%c %s",
+                                 icons[choice], words[start]);
+                    } else {
+                        /* Exact, distinct prefixes avoid overlapping letter ranges. */
+                        snprintf(choices[choice], sizeof(choices[choice]), "%c %.3s-%.3s",
+                                 icons[choice], words[start], words[start + size - 1u]);
+                    }
+                }
+            }
+            for (unsigned row = 0u; row < 2u; ++row) {
+                snprintf(view->lines[row + 1u], FV_UI_TEXT_CAPACITY, "%-13s%s",
+                         choices[row == 0u ? 0u : 3u],
+                         choices[row == 0u ? 1u : 2u]);
+            }
             break;
         }
         case FV_ENTRY_METHOD_COUNT: break;

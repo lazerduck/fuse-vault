@@ -7,7 +7,8 @@
 #include <string.h>
 
 #define TAG_OFFSET 224u
-static const uint8_t MAGIC[8] = {'F','V','H','D','R','0','1',0};
+#define STACK_OFFSET 184u
+static const uint8_t MAGIC[8] = {'F','V','H','D','R','0','2',0};
 static const uint8_t DOMAIN[] = "fuse-vault/v1/vault-header/auth";
 
 static void clear(void *p, size_t n) { volatile uint8_t *b=p; while(n--) *b++=0; }
@@ -30,7 +31,9 @@ fv_vault_header_store_result_t fv_vault_header_serialize(const fv_vault_header_t
     if(!h||!r||!o||!fv_vault_header_valid(h)) { if(o) clear(o,FV_VAULT_HEADER_RECORD_SIZE); return FV_VAULT_HEADER_STORE_INVALID; }
     memset(o,0,FV_VAULT_HEADER_RECORD_SIZE); memcpy(o,MAGIC,8); put16(o+8,FV_VAULT_HEADER_FORMAT_VERSION); put16(o+10,FV_VAULT_HEADER_ENCODING_VERSION);
     put16(o+12,FV_VAULT_HEADER_RECORD_SIZE); put64(o+16,h->sequence); memcpy(o+24,h->vault_id,16); put32(o+40,(uint32_t)h->entry_method); put32(o+44,(uint32_t)h->crypto_profile);
-    put32(o+48,h->branch_a_cost); put32(o+52,h->branch_b_cost); memcpy(o+56,h->branch_a_salt,16); memcpy(o+72,h->branch_b_salt,16); put16(o+88,h->wrapped_vmk_length); memcpy(o+92,h->wrapped_vmk,FV_WRAPPED_VMK_CAPACITY);
+    put32(o+48,h->branch_a_cost); put32(o+52,h->branch_b_cost); memcpy(o+56,h->branch_a_salt,16); memcpy(o+72,h->branch_b_salt,16); put16(o+88,h->wrapped_vmk_length); memcpy(o+92,h->wrapped_vmk,h->wrapped_vmk_length);
+    put16(o+STACK_OFFSET,h->encryption_stack.format_version); o[STACK_OFFSET+2u]=h->encryption_stack.layer_count; o[STACK_OFFSET+3u]=h->encryption_stack.reserved;
+    for(size_t x=0u;x<FV_ENCRYPTION_STACK_MAX_LAYERS;x++){put16(o+STACK_OFFSET+4u+x*4u,h->encryption_stack.layers[x].algorithm_id);put16(o+STACK_OFFSET+6u+x*4u,h->encryption_stack.layers[x].algorithm_version);}
     if(!tag(r,o,o+TAG_OFFSET)){clear(o,FV_VAULT_HEADER_RECORD_SIZE);return FV_VAULT_HEADER_STORE_IO_ERROR;} return FV_VAULT_HEADER_STORE_OK;
 }
 
@@ -38,10 +41,12 @@ fv_vault_header_store_result_t fv_vault_header_parse(const uint8_t i[FV_VAULT_HE
     if (h) clear(h, sizeof(*h));
     if (!i || !r || !h) return FV_VAULT_HEADER_STORE_INVALID;
     uint8_t t[32]; bool auth=tag(r,i,t)&&equal(t,i+TAG_OFFSET,32); clear(t,sizeof(t));
-    if(!auth||memcmp(i,MAGIC,8)!=0||get16(i+8)!=1u||get16(i+10)!=1u||get16(i+12)!=FV_VAULT_HEADER_RECORD_SIZE||get16(i+14)!=0u||get16(i+90)!=0u) return FV_VAULT_HEADER_STORE_INVALID;
-    /* Bytes 220..223 are reserved; all reserved bytes must remain canonical. */
-    if(i[220]!=0u||i[221]!=0u||i[222]!=0u||i[223]!=0u)return FV_VAULT_HEADER_STORE_INVALID;
-    h->sequence=get64(i+16); memcpy(h->vault_id,i+24,16); h->entry_method=(fv_secret_method_t)get32(i+40); h->crypto_profile=(fv_crypto_profile_t)get32(i+44); h->branch_a_cost=get32(i+48); h->branch_b_cost=get32(i+52); memcpy(h->branch_a_salt,i+56,16); memcpy(h->branch_b_salt,i+72,16); h->wrapped_vmk_length=get16(i+88); memcpy(h->wrapped_vmk,i+92,128);
+    if(!auth||memcmp(i,MAGIC,8)!=0||get16(i+8)!=FV_VAULT_HEADER_FORMAT_VERSION||get16(i+10)!=FV_VAULT_HEADER_ENCODING_VERSION||get16(i+12)!=FV_VAULT_HEADER_RECORD_SIZE||get16(i+14)!=0u||get16(i+90)!=0u) return FV_VAULT_HEADER_STORE_INVALID;
+    /* Unused wrapped-key capacity and bytes 204..223 are canonical zero. */
+    for(size_t x=92u+FV_CREDENTIAL_ENVELOPE_SIZE;x<STACK_OFFSET;x++)if(i[x]!=0u)return FV_VAULT_HEADER_STORE_INVALID;
+    for(size_t x=STACK_OFFSET+20u;x<TAG_OFFSET;x++)if(i[x]!=0u)return FV_VAULT_HEADER_STORE_INVALID;
+    h->sequence=get64(i+16); memcpy(h->vault_id,i+24,16); h->entry_method=(fv_secret_method_t)get32(i+40); h->crypto_profile=(fv_crypto_profile_t)get32(i+44); h->branch_a_cost=get32(i+48); h->branch_b_cost=get32(i+52); memcpy(h->branch_a_salt,i+56,16); memcpy(h->branch_b_salt,i+72,16); h->wrapped_vmk_length=get16(i+88); if(h->wrapped_vmk_length<=FV_WRAPPED_VMK_CAPACITY)memcpy(h->wrapped_vmk,i+92,h->wrapped_vmk_length);
+    h->encryption_stack.format_version=get16(i+STACK_OFFSET);h->encryption_stack.layer_count=i[STACK_OFFSET+2u];h->encryption_stack.reserved=i[STACK_OFFSET+3u];for(size_t x=0u;x<FV_ENCRYPTION_STACK_MAX_LAYERS;x++){h->encryption_stack.layers[x].algorithm_id=get16(i+STACK_OFFSET+4u+x*4u);h->encryption_stack.layers[x].algorithm_version=get16(i+STACK_OFFSET+6u+x*4u);}
     if(!fv_vault_header_valid(h)||(expected&&!equal(expected,h->vault_id,16))){clear(h,sizeof(*h));return FV_VAULT_HEADER_STORE_INVALID;} return FV_VAULT_HEADER_STORE_OK;
 }
 

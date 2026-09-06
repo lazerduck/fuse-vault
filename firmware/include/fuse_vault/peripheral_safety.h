@@ -19,6 +19,7 @@ typedef struct {
     bool (*configure_presence_inputs)(void *context);
     bool (*read_usb_a_present)(void *context, bool *present);
     bool (*read_usb_c_present)(void *context, bool *present);
+    bool (*route_connector)(void *context, fv_connector_state_t connector);
 } fv_connector_ops_t;
 
 typedef struct {
@@ -27,7 +28,9 @@ typedef struct {
     fv_peripheral_fault_fn fault;
     void *fault_context;
     fv_connector_state_t state;
+    fv_connector_state_t routed_state;
     bool initialized;
+    bool routed;
     bool faulted;
 } fv_connector_safety_t;
 
@@ -36,6 +39,8 @@ bool fv_connector_safety_init(fv_connector_safety_t *safety,
                               fv_peripheral_fault_fn fault,
                               void *fault_context);
 bool fv_connector_safety_poll(fv_connector_safety_t *safety);
+bool fv_connector_safety_route(fv_connector_safety_t *safety);
+bool fv_connector_safety_disable(fv_connector_safety_t *safety);
 void fv_connector_safety_fault(fv_connector_safety_t *safety);
 
 typedef struct {

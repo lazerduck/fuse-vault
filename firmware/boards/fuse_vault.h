@@ -14,12 +14,38 @@ pico_board_cmake_set(PICO_PLATFORM, rp2350-arm-s)
 #define FUSE_VAULT_BOARD
 #define FUSE_VAULT_BOARD_REVISION 1
 
-/* These gates remain zero until the named facts have been checked against a
- * deterministic schematic export and an assembled board. Code must not infer
- * electrical behavior merely from the pin-number aliases below. */
-#define FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED 0
+/* Evidence gates record which electrical facts have been established. Code
+ * must not infer unrelated behavior merely from the pin-number aliases below. */
+#ifndef FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED
+#define FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED 1
+#endif
+#ifndef FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED
+#define FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED 1
+#endif
+#ifndef FUSE_VAULT_SD_CARD_DETECT_POLARITY_CONFIRMED
 #define FUSE_VAULT_SD_CARD_DETECT_POLARITY_CONFIRMED 0
+#endif
+#ifndef FUSE_VAULT_DISPLAY_CONTROLLER_CONFIRMED
 #define FUSE_VAULT_DISPLAY_CONTROLLER_CONFIRMED 0
+#endif
+
+/* A production build cannot use the bench-only CMake overrides. These checks
+ * become satisfiable only when measured values have been reviewed into this
+ * board definition. */
+#if defined(FUSE_VAULT_RELEASE_BUILD) && FUSE_VAULT_RELEASE_BUILD
+#if !FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED
+#error "Release requires a confirmed USB mux truth table"
+#endif
+#if !FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED
+#error "Release requires confirmed USB connector-presence polarity"
+#endif
+#if !FUSE_VAULT_SD_CARD_DETECT_POLARITY_CONFIRMED
+#error "Release requires confirmed SD card-detect polarity"
+#endif
+#if !FUSE_VAULT_DISPLAY_CONTROLLER_CONFIRMED
+#error "Release requires a confirmed display controller/profile"
+#endif
+#endif
 
 /* RP2354A uses the 60-pin, 30-GPIO RP2350 A package. */
 #define PICO_RP2350A 1
@@ -38,7 +64,22 @@ pico_board_cmake_set(PICO_PLATFORM, rp2350-arm-s)
 #define FUSE_VAULT_USB_A_PRESENT_DUPLICATE_PIN 16
 #define FUSE_VAULT_USB_C_PRESENT_DUPLICATE_PIN 17
 
-/* --- SD card: four-bit SDIO, initially implemented using PIO --- */
+/* FSUSB42MUX OE# and SEL each have 10 kOhm pull-downs. The manufacturer truth
+ * table makes OE low enabled; PCB revision 1 routes SEL-low HSD1 to USB-C. */
+#define FUSE_VAULT_USB_MUX_ENABLE_LEVEL 0
+#define FUSE_VAULT_USB_MUX_SELECT_USB_C_LEVEL 0
+
+/* Full schematic supplied 2026-09-06: VBUS through 100 kOhm to sense,
+ * with 120 kOhm from sense to GND (about 2.73 V at 5 V VBUS).
+ * Keep optional bench overrides available for diagnostic builds. */
+#ifndef FUSE_VAULT_USB_A_PRESENT_LEVEL
+#define FUSE_VAULT_USB_A_PRESENT_LEVEL 1
+#endif
+#ifndef FUSE_VAULT_USB_C_PRESENT_LEVEL
+#define FUSE_VAULT_USB_C_PRESENT_LEVEL 1
+#endif
+
+/* --- SD card: four-bit wiring, initial driver uses SPI mode --- */
 #define FUSE_VAULT_SD_CLK_PIN 4
 #define FUSE_VAULT_SD_CMD_PIN 5
 #define FUSE_VAULT_SD_DAT0_PIN 6
@@ -46,6 +87,10 @@ pico_board_cmake_set(PICO_PLATFORM, rp2350-arm-s)
 #define FUSE_VAULT_SD_DAT2_PIN 8
 #define FUSE_VAULT_SD_DAT3_PIN 9
 #define FUSE_VAULT_SD_CARD_DETECT_PIN 24
+/* R2 pulls SD_CD high. The socket symbol does not specify switch state;
+ * the reported low-when-empty behavior remains pending a continuity test. */
+/* Define FUSE_VAULT_SD_CARD_DETECT_ACTIVE_LEVEL as 0 or 1 in the same reviewed
+ * change that enables FUSE_VAULT_SD_CARD_DETECT_POLARITY_CONFIRMED. */
 
 /* --- Active-low navigation controls with external pull-ups --- */
 #define FUSE_VAULT_NAV_UP_PIN 10
@@ -57,6 +102,9 @@ pico_board_cmake_set(PICO_PLATFORM, rp2350-arm-s)
 #define FUSE_VAULT_NAV_ACTIVE_LOW 1
 
 /* --- TFT display --- */
+/* Horizontal 160x80 mounting, flex through PCB. Q1 AO3401A is a
+ * high-side P-channel backlight switch: gate low enables LEDA. */
+#define FUSE_VAULT_TFT_BACKLIGHT_ENABLE_LEVEL 0
 #define FUSE_VAULT_TFT_BACKLIGHT_PIN 18
 #define FUSE_VAULT_TFT_RESET_PIN 19
 #define FUSE_VAULT_TFT_DATA_COMMAND_PIN 20

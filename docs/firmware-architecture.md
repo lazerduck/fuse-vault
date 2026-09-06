@@ -69,34 +69,34 @@ in `entry_method.h`; vault headers continue to encode these IDs as little-endian
 zero, are rejected.
 
 The provisioning coordinator consumes the confirmed setup encoding and keeps
-all roots, envelope inputs, and the generated VMK in a caller-owned workspace
-that is securely cleared before every return. Fresh device roots are committed
-and read back before envelope creation; the vault header is then stored and
-verified before the provisioned security-state marker is published last. A
-failure after root activation revokes the roots, including ambiguous failures
-where the storage operation may have committed before reporting an error. This
-makes partially written metadata fail closed. The persistent host simulator is
-the first command-loop integration; the RP2354 build includes the portable
-coordinator, while its command loop awaits the SD-backed redundant vault-header
-service described in `rp2354-storage.md`.
+envelope inputs and the generated VMK in a caller-owned workspace that is
+securely cleared before every return. It reuses active roots or
+creates them automatically during first setup when the OTP layout is empty, then stores
+and verifies the SD vault header before publishing the first provisioned journal
+record. Recoverable media failures never burn the independent OTP revocation
+marker. Media inspection and destructive confirmation occur before password
+entry. The host and RP2354 builds execute this coordinator through the same
+device runtime and persistence-service contract.
 
 At restart, `boot_recovery.c` is the single production-facing boundary for
 recovering the entry method. The platform service first establishes record
 integrity, then the boundary validates the full vault-header structure and
 converts the stable identifier back to `fv_entry_method_t`. The persistent host
-simulator supplies its redundant file-backed implementation. The RP2354 command
-loop intentionally supplies no implementation until the physical SD header
-backend exists, so any provisioned hardware reaches the fault state instead of
-falling back to wheels. This boundary does not authenticate the entered
-credential or unwrap the VMK.
+simulator supplies its redundant file-backed implementation. On RP2354,
+journal recovery binds the expected vault ID before the authenticated SD header
+is accepted; missing or inconsistent records fail locked instead of falling
+back to wheels. This boundary does not authenticate the entered credential or
+unwrap the VMK.
 
 Authentication has a separate portable coordinator using the same service
 boundary. It accepts work only in `VAULT_AUTHENTICATING`, a state reachable
 only after the attempt reservation is durable. Its caller-owned workspace is
 always cleared. A successful unwrap transfers the VMK into a session object,
 which owns it until an erase-session-keys command clears it on lock, eject, or
-fault. The display simulator executes this complete command chain; hardware
-remains disconnected and fail-closed while the SD header backend is absent.
+fault. The display simulator and RP2354 entry point execute this complete
+command chain. The target uses the SD-backed service and encrypted adapter,
+while USB attachment remains fail-closed until the remaining connector-presence
+polarity evidence gate is confirmed.
 
 Screen transition and textual rendering logic currently remain together in
 `app.c`. They are deterministic and host-tested, but should move into a static

@@ -7,14 +7,20 @@
 #define FV_ROOTS_FORMAT_MARKER UINT16_C(0x4656)
 #define FV_ROOTS_ACTIVE_MARKER UINT16_C(0xa55a)
 #define FV_ROOTS_REVOKED_MARKER UINT16_C(0xdead)
-#define FV_ROOTS_TOTAL_ROWS 35u
+#define FV_OTP_PAGE_ROWS 64u
+#define FV_ROOTS_TOTAL_ROWS (FV_OTP_PAGE_ROWS * 2u)
+#define FV_REVOCATION_INDEX FV_OTP_PAGE_ROWS
 
-_Static_assert(FV_DEVICE_ROOTS_REVOKED_ROW <
+_Static_assert(FV_DEVICE_ROOTS_ACTIVE_ROW <
                    (FV_DEVICE_ROOTS_OTP_PAGE + 1u) * 64u,
                "Device-root layout must fit inside one OTP page");
 _Static_assert(FV_DEVICE_ROOTS_OTP_PAGE >= 3u &&
                    FV_DEVICE_ROOTS_OTP_PAGE <= 60u,
                "Device roots must use an RP2350 user-data OTP page");
+_Static_assert(FV_DEVICE_REVOCATION_OTP_PAGE >= 3u &&
+                   FV_DEVICE_REVOCATION_OTP_PAGE <= 60u &&
+                   FV_DEVICE_REVOCATION_OTP_PAGE != FV_DEVICE_ROOTS_OTP_PAGE,
+               "Revocation must use a separate RP2350 user-data OTP page");
 
 static void secure_clear(void *data, size_t length) {
     volatile uint8_t *bytes = (volatile uint8_t *)data;
@@ -35,12 +41,19 @@ static bool all_zero(const uint16_t *rows, size_t count) {
 
 static fv_device_roots_result_t inspect_rows(
     const uint16_t rows[FV_ROOTS_TOTAL_ROWS]) {
-    if (rows[34] == FV_ROOTS_REVOKED_MARKER) return FV_DEVICE_ROOTS_REVOKED;
-    if (rows[34] != 0u) return FV_DEVICE_ROOTS_INVALID;
+    if (rows[FV_REVOCATION_INDEX] == FV_ROOTS_REVOKED_MARKER) {
+        return FV_DEVICE_ROOTS_REVOKED;
+    }
+    if (rows[FV_REVOCATION_INDEX] != 0u) return FV_DEVICE_ROOTS_INVALID;
     if (all_zero(rows, FV_ROOTS_TOTAL_ROWS)) return FV_DEVICE_ROOTS_EMPTY;
     if (rows[32] != FV_ROOTS_FORMAT_MARKER ||
         rows[33] != FV_ROOTS_ACTIVE_MARKER ||
         all_zero(rows, 16u) || all_zero(rows + 16u, 16u)) {
+        return FV_DEVICE_ROOTS_INVALID;
+    }
+    if (!all_zero(rows + 34u, FV_OTP_PAGE_ROWS - 34u) ||
+        !all_zero(rows + FV_REVOCATION_INDEX + 1u,
+                  FV_OTP_PAGE_ROWS - 1u)) {
         return FV_DEVICE_ROOTS_INVALID;
     }
     return FV_DEVICE_ROOTS_ACTIVE;
@@ -49,7 +62,10 @@ static fv_device_roots_result_t inspect_rows(
 static bool read_all(fv_device_roots_storage_t *storage,
                      uint16_t rows[FV_ROOTS_TOTAL_ROWS]) {
     return storage->ops->read_ecc_rows(storage, FV_DEVICE_ROOTS_FIRST_ROW,
-                                       rows, FV_ROOTS_TOTAL_ROWS);
+                                       rows, FV_OTP_PAGE_ROWS) &&
+           storage->ops->read_ecc_rows(storage, FV_DEVICE_ROOTS_REVOKED_ROW,
+                                       rows + FV_REVOCATION_INDEX,
+                                       FV_OTP_PAGE_ROWS);
 }
 
 fv_device_roots_result_t fv_device_roots_status(

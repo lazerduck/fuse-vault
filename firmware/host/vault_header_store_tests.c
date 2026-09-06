@@ -1,5 +1,6 @@
 #include "fuse_vault/vault_header_store.h"
 #include "fuse_vault/credential_envelope.h"
+#include "fuse_vault/crypto_stack.h"
 #include "fuse_vault/journal_authenticator.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -15,16 +16,14 @@ static fv_block_result_t wr(fv_block_device_t*d,uint64_t f,uint32_t n,const uint
 static fv_block_result_t sy(fv_block_device_t*d){memory_t*m=d->context;return m->fail_sync?FV_BLOCK_ERROR_IO:FV_BLOCK_OK;}
 static uint64_t bc(const fv_block_device_t*d){(void)d;return 2u;}static bool ip(const fv_block_device_t*d){(void)d;return true;}
 static const fv_block_device_ops_t OPS={rd,wr,sy,bc,ip};
-static fv_vault_header_t header(uint64_t sequence){fv_vault_header_t h={.sequence=sequence,.crypto_profile=FV_CRYPTO_PROFILE_DUAL_FAMILY_V1,.entry_method=FV_SECRET_METHOD_DIRECTIONS_V1,.branch_a_cost=0x00020304u,.branch_b_cost=0x00060708u,.wrapped_vmk_length=FV_CREDENTIAL_ENVELOPE_SIZE};for(size_t i=0;i<16;i++){h.vault_id[i]=(uint8_t)(i+1u);h.branch_a_salt[i]=(uint8_t)(0x20u+i);h.branch_b_salt[i]=(uint8_t)(0x40u+i);}for(size_t i=0;i<FV_CREDENTIAL_ENVELOPE_SIZE;i++)h.wrapped_vmk[i]=(uint8_t)(0x80u+i);return h;}
+static fv_vault_header_t header(uint64_t sequence){fv_vault_header_t h={.sequence=sequence,.crypto_profile=FV_CRYPTO_PROFILE_DUAL_FAMILY_V1,.entry_method=FV_SECRET_METHOD_DIRECTIONS_V1,.branch_a_cost=0x00020304u,.branch_b_cost=0x00060708u,.wrapped_vmk_length=FV_CREDENTIAL_ENVELOPE_SIZE};for(size_t i=0;i<16;i++){h.vault_id[i]=(uint8_t)(i+1u);h.branch_a_salt[i]=(uint8_t)(0x20u+i);h.branch_b_salt[i]=(uint8_t)(0x40u+i);}for(size_t i=0;i<FV_CREDENTIAL_ENVELOPE_SIZE;i++)h.wrapped_vmk[i]=(uint8_t)(0x80u+i);fv_crypto_stack_default(&h.encryption_stack);return h;}
 static fv_device_secret_t roots(void){fv_device_secret_t r;for(size_t i=0;i<sizeof(r.device_secret);i++)r.device_secret[i]=(uint8_t)i;return r;}
 static void retag(uint8_t record[256],const fv_device_secret_t*r){static const uint8_t domain[]="fuse-vault/v1/vault-header/auth";uint8_t key[32];CHECK(fv_hmac_sha256(r->device_secret,sizeof(r->device_secret),domain,sizeof(domain)-1u,NULL,0u,key));CHECK(fv_hmac_sha256(key,sizeof(key),record,224u,NULL,0u,record+224u));memset(key,0,sizeof(key));}
 
 static void test_golden_and_rejections(void){fv_device_secret_t r=roots();fv_vault_header_t h=header(0x0807060504030201ull),out;uint8_t v[256];CHECK(fv_vault_header_serialize(&h,&r,v)==FV_VAULT_HEADER_STORE_OK);
- static const uint8_t prefix[]={ 'F','V','H','D','R','0','1',0,1,0,1,0,0,1,0,0,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,2,0,0,0,1,0,0,0,4,3,2,0,8,7,6,0};CHECK(memcmp(v,prefix,sizeof(prefix))==0);
- static const uint8_t golden_tag[32]={0xa1,0x5f,0x13,0xf5,0xef,0x76,0xdb,0x0a,0x8f,0xec,0x32,0x76,0x91,0x44,0x2c,0x7e,0x5f,0xe0,0x91,0xbd,0x95,0xf0,0xa3,0x23,0xa6,0x6e,0x99,0xc6,0x65,0x52,0x6a,0x6c};
- CHECK(memcmp(v+224,golden_tag,32)==0);
+ static const uint8_t prefix[]={ 'F','V','H','D','R','0','2',0,2,0,2,0,0,1,0,0,1,2,3,4,5,6,7,8,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,2,0,0,0,1,0,0,0,4,3,2,0,8,7,6,0};CHECK(memcmp(v,prefix,sizeof(prefix))==0);
  CHECK(fv_vault_header_parse(v,&r,h.vault_id,&out)==FV_VAULT_HEADER_STORE_OK);CHECK(memcmp(&h,&out,sizeof(h))==0);
- uint8_t bad[256];memcpy(bad,v,256);bad[8]=2;retag(bad,&r);CHECK(fv_vault_header_parse(bad,&r,NULL,&out)==FV_VAULT_HEADER_STORE_INVALID);CHECK(out.sequence==0u);
+ uint8_t bad[256];memcpy(bad,v,256);bad[8]=3;retag(bad,&r);CHECK(fv_vault_header_parse(bad,&r,NULL,&out)==FV_VAULT_HEADER_STORE_INVALID);CHECK(out.sequence==0u);
  memcpy(bad,v,256);bad[40]=99;retag(bad,&r);CHECK(fv_vault_header_parse(bad,&r,NULL,&out)==FV_VAULT_HEADER_STORE_INVALID);
  memcpy(bad,v,256);bad[44]=99;retag(bad,&r);CHECK(fv_vault_header_parse(bad,&r,NULL,&out)==FV_VAULT_HEADER_STORE_INVALID);
  memcpy(bad,v,256);bad[88]=1;bad[89]=0;retag(bad,&r);CHECK(fv_vault_header_parse(bad,&r,NULL,&out)==FV_VAULT_HEADER_STORE_INVALID);

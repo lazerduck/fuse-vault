@@ -19,12 +19,17 @@ static bool display_present(void *context, const fv_ui_view_t *view) {
 }
 static const fv_display_ops_t display_ops = { display_init, display_present };
 
-typedef struct { unsigned sequence[8]; unsigned count; bool disable_ok; bool inputs_ok; bool a; bool c; } connector_fake_t;
+typedef struct { unsigned sequence[32]; unsigned count; bool disable_ok; bool inputs_ok; bool route_ok; bool a; bool c; } connector_fake_t;
 static bool mux_disable(void *context) { connector_fake_t *f=context; f->sequence[f->count++]=1u; return f->disable_ok; }
 static bool inputs(void *context) { connector_fake_t *f=context; f->sequence[f->count++]=2u; return f->inputs_ok; }
 static bool read_a(void *context, bool *present) { connector_fake_t *f=context; f->sequence[f->count++]=3u; *present=f->a; return true; }
 static bool read_c(void *context, bool *present) { connector_fake_t *f=context; f->sequence[f->count++]=4u; *present=f->c; return true; }
-static const fv_connector_ops_t connector_ops = { mux_disable, inputs, read_a, read_c };
+static bool route(void *context, fv_connector_state_t connector) { connector_fake_t *f=context; f->sequence[f->count++]=connector == FV_CONNECTOR_USB_A ? 5u : 6u; return f->route_ok; }
+static const fv_connector_ops_t connector_ops = {
+    .disable_mux=mux_disable, .configure_presence_inputs=inputs,
+    .read_usb_a_present=read_a, .read_usb_c_present=read_c,
+    .route_connector=route,
+};
 
 typedef struct { fv_app_t *app; unsigned calls; fv_command_set_t commands; } fault_sink_t;
 static void app_fault(void *context) {
@@ -65,11 +70,15 @@ static void test_display(void) {
 
 static void test_connector_order_and_fault(void) {
     fv_app_t app; fv_app_init(&app, true, 0u, FV_ENTRY_METHOD_WHEELS); (void)fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
-    fault_sink_t sink={.app=&app}; connector_fake_t fake={.disable_ok=true,.inputs_ok=true,.a=true};
+    fault_sink_t sink={.app=&app}; connector_fake_t fake={.disable_ok=true,.inputs_ok=true,.route_ok=true,.a=true};
     fv_connector_safety_t safety;
     CHECK(fv_connector_safety_init(&safety, &connector_ops, &fake, app_fault, &sink));
     CHECK(fake.sequence[0] == 1u && fake.sequence[1] == 2u);
     CHECK(safety.state == FV_CONNECTOR_USB_A);
+    CHECK(fv_connector_safety_route(&safety));
+    CHECK(safety.routed && safety.routed_state == FV_CONNECTOR_USB_A);
+    CHECK(fake.sequence[4] == 1u && fake.sequence[5] == 5u);
+    CHECK(!fv_connector_safety_route(&safety));
     fake.c=true; CHECK(!fv_connector_safety_poll(&safety));
     CHECK(fake.sequence[fake.count - 1u] == 1u);
     CHECK(sink.calls == 1u && app.state == FV_STATE_FAULT);
@@ -79,6 +88,22 @@ static void test_connector_order_and_fault(void) {
     connector_fake_t failed={.disable_ok=false,.inputs_ok=true}; sink.calls=0u;
     CHECK(!fv_connector_safety_init(&safety, &connector_ops, &failed, app_fault, &sink));
     CHECK(failed.sequence[0] == 1u && failed.count == 2u); /* retry stays disabled */
+
+    connector_fake_t no_connector={.disable_ok=true,.inputs_ok=true,.route_ok=true};
+    sink.calls=0u;
+    CHECK(fv_connector_safety_init(&safety, &connector_ops, &no_connector,
+                                   app_fault, &sink));
+    CHECK(!fv_connector_safety_route(&safety));
+    CHECK(!safety.faulted && sink.calls == 0u);
+
+    connector_fake_t route_failed={.disable_ok=true,.inputs_ok=true,
+        .route_ok=false,.c=true};
+    CHECK(fv_connector_safety_init(&safety, &connector_ops, &route_failed,
+                                   app_fault, &sink));
+    CHECK(!fv_connector_safety_route(&safety));
+    CHECK(safety.faulted && sink.calls == 1u);
+    fv_connector_safety_fault(&safety);
+    CHECK(sink.calls == 1u);
 }
 
 static void test_removal_and_io_failure(void) {

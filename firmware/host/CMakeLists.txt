@@ -6,6 +6,16 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+option(FUSE_VAULT_ENABLE_SANITIZERS
+    "Build host verification with AddressSanitizer and UndefinedBehaviorSanitizer" OFF)
+if(FUSE_VAULT_ENABLE_SANITIZERS)
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+        message(FATAL_ERROR "Fuse Vault sanitizer verification requires GCC or Clang")
+    endif()
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+
 add_library(fuse_vault_ascon STATIC
     ../third_party/ascon_aead128_ref/aead.c
 )
@@ -19,13 +29,18 @@ add_library(fuse_vault_core STATIC
     ../src/app.c
     ../src/boot_recovery.c
     ../src/credential_envelope.c
+    ../src/crypto_stack.c
+    ../src/crypto_pipeline.c
     ../src/device_roots.c
+    ../src/device_services.c
     ../src/device_provisioning.c
+    ../src/device_runtime.c
     ../src/display.c
     ../src/encrypted_block.c
     ../src/input.c
     ../src/input_bindings.c
     ../src/journal_authenticator.c
+    ../src/media_layout.c
     ../src/provisioning_coordinator.c
     ../src/peripheral_safety.c
     ../src/secret_input.c
@@ -77,6 +92,19 @@ else()
 endif()
 
 enable_testing()
+if(GTK3_FOUND)
+    add_executable(fuse_vault_display_simulator_tests display_simulator_tests.c)
+    target_link_libraries(fuse_vault_display_simulator_tests PRIVATE
+        fuse_vault_core fuse_vault_host_services PkgConfig::GTK3)
+    target_compile_options(fuse_vault_display_simulator_tests PRIVATE
+        -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+    add_test(NAME fuse_vault_display_simulator
+        COMMAND fuse_vault_display_simulator_tests)
+endif()
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME fuse_vault_otp_policy_consistency
+    COMMAND ${Python3_EXECUTABLE}
+        ${CMAKE_CURRENT_LIST_DIR}/../../tools/verify_otp_policy.py)
 add_executable(fuse_vault_tests
     tests.c
 )
@@ -186,7 +214,6 @@ add_test(NAME fuse_vault_otp_file_semantics COMMAND fuse_vault_otp_file_tests)
 
 add_executable(fuse_vault_device_provisioning_tests
     device_provisioning_tests.c
-    nor_flash.c
 )
 target_link_libraries(fuse_vault_device_provisioning_tests PRIVATE
     fuse_vault_core
@@ -292,3 +319,63 @@ target_compile_options(fuse_vault_peripheral_safety_tests PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
 add_test(NAME fuse_vault_stage4_peripheral_safety
     COMMAND fuse_vault_peripheral_safety_tests)
+
+add_executable(fuse_vault_crypto_stack_tests crypto_stack_tests.c)
+target_link_libraries(fuse_vault_crypto_stack_tests PRIVATE fuse_vault_core)
+target_compile_options(fuse_vault_crypto_stack_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_crypto_stack_registry
+    COMMAND fuse_vault_crypto_stack_tests)
+
+add_executable(fuse_vault_crypto_pipeline_tests crypto_pipeline_tests.c)
+target_link_libraries(fuse_vault_crypto_pipeline_tests PRIVATE fuse_vault_core)
+target_compile_options(fuse_vault_crypto_pipeline_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_crypto_pipeline
+    COMMAND fuse_vault_crypto_pipeline_tests)
+
+add_executable(fuse_vault_media_layout_tests media_layout_tests.c)
+target_link_libraries(fuse_vault_media_layout_tests PRIVATE fuse_vault_core)
+target_compile_options(fuse_vault_media_layout_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_media_layout
+    COMMAND fuse_vault_media_layout_tests)
+
+add_executable(fuse_vault_device_runtime_tests device_runtime_tests.c)
+target_link_libraries(fuse_vault_device_runtime_tests PRIVATE
+    fuse_vault_core fuse_vault_host_services)
+target_compile_options(fuse_vault_device_runtime_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_device_runtime
+    COMMAND fuse_vault_device_runtime_tests)
+
+add_executable(fuse_vault_device_services_tests
+    device_services_tests.c
+    file_block_device.c
+    nor_flash.c
+    otp_file.c
+)
+target_link_libraries(fuse_vault_device_services_tests PRIVATE fuse_vault_core)
+target_include_directories(fuse_vault_device_services_tests PRIVATE .)
+target_compile_options(fuse_vault_device_services_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_device_services
+    COMMAND fuse_vault_device_services_tests)
+
+add_executable(fuse_vault_rp2354_usb_msc_tests
+    ../src/rp2354_usb_msc.c
+    rp2354_usb_msc_tests.c
+)
+target_include_directories(fuse_vault_rp2354_usb_msc_tests PRIVATE
+    .
+    ../include
+)
+target_compile_definitions(fuse_vault_rp2354_usb_msc_tests PRIVATE
+    FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED=1
+    FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED=1
+)
+target_compile_options(fuse_vault_rp2354_usb_msc_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror
+)
+add_test(NAME fuse_vault_rp2354_usb_msc
+    COMMAND fuse_vault_rp2354_usb_msc_tests)

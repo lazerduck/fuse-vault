@@ -41,11 +41,9 @@ bool fv_rp2354_otp_init(fv_device_roots_storage_t *storage) {
     *storage = (fv_device_roots_storage_t) {
         .ops = &OTP_OPS,
         .context = NULL,
-#ifdef FUSE_VAULT_ENABLE_OTP_PROVISIONING
+        /* First setup may create roots only in a completely EMPTY layout.
+         * Active, partial, revoked and unreadable layouts are never replaced. */
         .root_programming_enabled = true,
-#else
-        .root_programming_enabled = false,
-#endif
     };
     return true;
 }

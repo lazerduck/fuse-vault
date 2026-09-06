@@ -48,9 +48,9 @@ The V1 software layout reserves user-data OTP page 60:
 | 35–63 | Reserved and left blank |
 
 Pages 61–63 contain Raspberry Pi lock metadata and are explicitly excluded.
-Root creation is compiled out of ordinary firmware unless
-`FUSE_VAULT_ENABLE_OTP_PROVISIONING` is deliberately enabled and the CMake
-confirmation value is exactly `I_UNDERSTAND_OTP_WRITES_ARE_PERMANENT`.
+Ordinary firmware creates roots during first setup only when the complete
+root/revocation layout is empty. Existing active roots are reused; partial,
+invalid, revoked and unreadable layouts never trigger regeneration.
 Revocation remains available to production firmware because destructive
 lockout must be able to set its one-way marker. Reads, writes, and read-back
 verification use the Boot ROM OTP API in ECC mode rather than direct register

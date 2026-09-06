@@ -78,13 +78,15 @@ static void test_lifecycle(void) {
     CHECK(fv_device_roots_provision(&storage, &roots) == FV_DEVICE_ROOTS_INVALID);
     CHECK(fv_device_roots_revoke(&storage) == FV_DEVICE_ROOTS_OK);
     CHECK(fv_device_roots_status(&storage) == FV_DEVICE_ROOTS_REVOKED);
+    CHECK(fv_device_roots_provision(&storage, &roots) == FV_DEVICE_ROOTS_INVALID);
+    CHECK(fv_device_roots_status(&storage) == FV_DEVICE_ROOTS_REVOKED);
     memset(&recovered, 0xa5, sizeof(recovered));
     CHECK(fv_device_roots_read(&storage, &recovered) == FV_DEVICE_ROOTS_REVOKED);
     const fv_device_secret_t zero = {0};
     CHECK(memcmp(&recovered, &zero, sizeof(zero)) == 0);
 }
 
-static void test_production_cannot_provision(void) {
+static void test_disabled_storage_cannot_provision(void) {
     fv_device_roots_storage_t storage;
     mock_otp_t otp;
     fixture(&storage, &otp, false);
@@ -92,6 +94,24 @@ static void test_production_cannot_provision(void) {
     CHECK(fv_device_roots_provision(&storage, &roots) ==
           FV_DEVICE_ROOTS_NOT_PERMITTED);
     CHECK(fv_device_roots_status(&storage) == FV_DEVICE_ROOTS_EMPTY);
+}
+
+static void test_reserved_rows_fail_closed(void) {
+    fv_device_roots_storage_t storage;
+    mock_otp_t otp;
+    const fv_device_secret_t roots = sample_roots();
+
+    fixture(&storage, &otp, true);
+    otp.rows[FV_DEVICE_ROOTS_ACTIVE_ROW + 1u] = 1u;
+    CHECK(fv_device_roots_status(&storage) == FV_DEVICE_ROOTS_INVALID);
+    CHECK(fv_device_roots_provision(&storage, &roots) ==
+          FV_DEVICE_ROOTS_INVALID);
+
+    fixture(&storage, &otp, true);
+    otp.rows[FV_DEVICE_ROOTS_REVOKED_ROW + 1u] = 1u;
+    CHECK(fv_device_roots_status(&storage) == FV_DEVICE_ROOTS_INVALID);
+    CHECK(fv_device_roots_provision(&storage, &roots) ==
+          FV_DEVICE_ROOTS_INVALID);
 }
 
 static void test_every_interrupted_provision_fails_closed(void) {
@@ -107,12 +127,18 @@ static void test_every_interrupted_provision_fails_closed(void) {
         const fv_device_roots_result_t status = fv_device_roots_status(&storage);
         CHECK(status == (completed == 0u ? FV_DEVICE_ROOTS_EMPTY
                                         : FV_DEVICE_ROOTS_INVALID));
+        if (completed != 0u) {
+            otp.failure_enabled = false;
+            CHECK(fv_device_roots_provision(&storage, &roots) ==
+                  FV_DEVICE_ROOTS_INVALID);
+        }
     }
 }
 
 int main(void) {
     test_lifecycle();
-    test_production_cannot_provision();
+    test_disabled_storage_cannot_provision();
+    test_reserved_rows_fail_closed();
     test_every_interrupted_provision_fails_closed();
     puts("All device-root lifecycle tests passed.");
     return EXIT_SUCCESS;

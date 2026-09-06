@@ -3,6 +3,7 @@
 
 #include "fuse_vault/block_device.h"
 #include "fuse_vault/credential_envelope.h"
+#include "fuse_vault/crypto_pipeline.h"
 
 #define FV_ENCRYPTED_BLOCK_FORMAT_VERSION 1u
 #define FV_ENCRYPTED_BLOCK_PHYSICAL_BLOCKS_PER_LOGICAL 4u
@@ -24,6 +25,7 @@ typedef struct {
     uint8_t epoch[FV_ENCRYPTED_BLOCK_EPOCH_SIZE];
     uint64_t next_counter;
     uint64_t logical_blocks;
+    fv_crypto_pipeline_t pipeline;
     bool ready;
 } fv_encrypted_block_t;
 
@@ -31,6 +33,7 @@ bool fv_encrypted_block_init(fv_encrypted_block_t *encrypted,
                              fv_block_device_t *untrusted,
                              const fv_volume_master_key_t *vmk,
                              const uint8_t vault_id[FV_VAULT_ID_SIZE],
+                             const fv_encryption_stack_descriptor_t *stack,
                              fv_encrypted_block_random_fill_fn random_fill,
                              void *random_context);
 void fv_encrypted_block_lock(fv_encrypted_block_t *encrypted);

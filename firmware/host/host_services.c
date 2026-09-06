@@ -3,6 +3,7 @@
 #include "host_services.h"
 #include "fuse_vault/journal_authenticator.h"
 #include "fuse_vault/vault_header_store.h"
+#include "fuse_vault/media_layout.h"
 
 #include <errno.h>
 #include <fcntl.h>
@@ -449,8 +450,19 @@ static fv_persist_result_t host_load_vault_header(
     fv_persist_result_t rr = host_read_device_secret(services, &roots);
     if (rr != FV_PERSIST_OK) return rr;
     fv_host_services_context_t *context = services->context;
+    fv_media_layout_t layout;
+    fv_block_slice_t header_slice;
+    const fv_media_result_t media_result = fv_media_load(
+        &context->vault_device, &roots, NULL, &layout);
+    if (media_result != FV_MEDIA_OK ||
+        !fv_media_open_header(&layout, &context->vault_device, &header_slice)) {
+        secure_clear(&roots, sizeof(roots));
+        return media_result == FV_MEDIA_BLANK ? FV_PERSIST_NOT_FOUND
+            : media_result == FV_MEDIA_IO_ERROR ? FV_PERSIST_IO_ERROR
+                                                : FV_PERSIST_INVALID;
+    }
     const fv_vault_header_store_result_t result = fv_vault_header_store_load(
-        &context->vault_device, &roots, NULL, header);
+        &header_slice.interface, &roots, layout.vault_id, header);
     if (result == FV_VAULT_HEADER_STORE_OK) {
         memcpy(context->current_vault_id,header->vault_id,FV_VAULT_ID_SIZE);
         context->current_vault_id_valid=true;
@@ -471,8 +483,22 @@ static fv_persist_result_t host_store_vault_header(
     fv_host_services_context_t *context = services->context;
     memcpy(context->current_vault_id,header->vault_id,FV_VAULT_ID_SIZE);
     context->current_vault_id_valid=true;
+    fv_media_layout_t layout;
+    fv_media_result_t media_result = fv_media_load(
+        &context->vault_device, &roots, header->vault_id, &layout);
+    if (media_result == FV_MEDIA_BLANK) {
+        media_result = fv_media_format(&context->vault_device, &roots,
+                                       header->vault_id, 16u, &layout);
+    }
+    fv_block_slice_t header_slice;
+    if (media_result != FV_MEDIA_OK ||
+        !fv_media_open_header(&layout, &context->vault_device, &header_slice)) {
+        secure_clear(&roots, sizeof(roots));
+        return media_result == FV_MEDIA_IO_ERROR ? FV_PERSIST_IO_ERROR
+                                                 : FV_PERSIST_INVALID;
+    }
     const fv_vault_header_store_result_t result = fv_vault_header_store_update(
-        &context->vault_device, &roots, header);
+        &header_slice.interface, &roots, header);
     secure_clear(&roots, sizeof(roots));
     return result == FV_VAULT_HEADER_STORE_OK ? FV_PERSIST_OK
         : result == FV_VAULT_HEADER_STORE_IO_ERROR ? FV_PERSIST_IO_ERROR
@@ -510,7 +536,7 @@ bool fv_host_services_init(fv_platform_services_t *services,
     if (media_result < 0 || (size_t)media_result >= sizeof(media_path) ||
         !fv_host_file_block_device_init(&context->vault_device,
                                         &context->vault_device_context,
-                                        media_path, 66u)) return false;
+                                        media_path, 256u)) return false;
     const int journal_result=snprintf(context->journal_path,sizeof(context->journal_path),
                                       "%s/security-journal.bin",directory);
     if(journal_result<0||(size_t)journal_result>=sizeof(context->journal_path))return false;

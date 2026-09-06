@@ -21,6 +21,9 @@ static const key_binding_t bindings[] = {
     {'x', FV_EVENT_AUTH_FAILED, "authentication failed"},
     {'c', FV_EVENT_ATTEMPT_COUNTER_STORED, "attempt counter stored"},
     {'o', FV_EVENT_PROVISIONING_SUCCEEDED, "provisioning succeeded"},
+    {'m', FV_EVENT_MEDIA_FOUND, "SD media found"},
+    {'p', FV_EVENT_MEDIA_PREPARED, "SD media prepared"},
+    {'n', FV_EVENT_MEDIA_FAILED, "SD media failed"},
     {'e', FV_EVENT_USB_EJECTED, "USB ejected"},
     {'k', FV_EVENT_LOCK_REQUESTED, "lock"},
     {'f', FV_EVENT_STORAGE_FAILED, "storage failure"},
@@ -40,6 +43,8 @@ static void print_commands(fv_command_set_t commands) {
         {FV_COMMAND_ERASE_SESSION_KEYS, "erase-session-keys"},
         {FV_COMMAND_DESTROY_DEVICE_SECRET, "destroy-device-secret"},
         {FV_COMMAND_STORE_ATTEMPT_COUNTER, "store-attempt-counter"},
+        {FV_COMMAND_INSPECT_MEDIA, "inspect-media"},
+        {FV_COMMAND_PREPARE_MEDIA, "prepare-media"},
     };
 
     if (commands == FV_COMMAND_NONE) {

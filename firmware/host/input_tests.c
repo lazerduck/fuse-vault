@@ -104,6 +104,31 @@ static void test_direction_sequences_do_not_repeat(void) {
     CHECK(log.count == 1u && log.events[0] == FV_EVENT_RIGHT);
 }
 
+static void test_word_picker_requires_separate_presses(void) {
+    const fv_state_t states[] = {FV_STATE_SETUP_SECRET_ENTRY,
+        FV_STATE_SETUP_SECRET_CONFIRM, FV_STATE_VAULT_SECRET_ENTRY};
+    for (unsigned state = 0u; state < 3u; ++state) {
+        fv_app_t app;
+        fv_app_init(&app, false, 0u, FV_ENTRY_METHOD_WORD_LIST);
+        app.state = states[state];
+        app.selected_entry_method = FV_ENTRY_METHOD_WORD_LIST;
+        for (unsigned button = 0u; button < FV_INPUT_COUNT; ++button) {
+            fv_input_controller_t controller = controller_for(&app);
+            event_log_t log = {0};
+            uint32_t mask = FV_INPUT_BIT(button);
+            update(&controller, mask, 1u, &log);
+            update(&controller, mask, 21u, &log);
+            update(&controller, mask, 1000u, &log);
+            CHECK(log.count == 1u);
+            update(&controller, 0u, 1001u, &log);
+            update(&controller, 0u, 1021u, &log);
+            update(&controller, mask, 1022u, &log);
+            update(&controller, mask, 1042u, &log);
+            CHECK(log.count == 2u);
+        }
+    }
+}
+
 static void test_changed_binding_requires_release(void) {
     fv_app_t app;
     fv_app_init(&app, false, 0u, FV_ENTRY_METHOD_WHEELS);
@@ -151,6 +176,7 @@ int main(void) {
     test_debounce_edges_and_non_repeat();
     test_repeat_and_state_bindings();
     test_direction_sequences_do_not_repeat();
+    test_word_picker_requires_separate_presses();
     test_changed_binding_requires_release();
     test_screen_change_blocks_unchanged_held_binding();
     puts("All input-controller tests passed.");

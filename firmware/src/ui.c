@@ -41,6 +41,12 @@ static uint8_t glyph_row(char character, unsigned row) {
     if (character >= 'A' && character <= 'Z') return letters[character - 'A'][row];
     if (character >= '0' && character <= '9') return digits[character - '0'][row];
     switch (character) {
+        case '\001': { static const uint8_t g[7] = {4,2,1,31,1,2,4}; return g[row]; }
+        case '\002': { static const uint8_t g[7] = {4,4,4,21,14,4,0}; return g[row]; }
+        case '\003': { static const uint8_t g[7] = {4,8,16,31,16,8,4}; return g[row]; }
+        case '\004': { static const uint8_t g[7] = {0,4,14,21,4,4,4}; return g[row]; }
+        case '\005': { static const uint8_t g[7] = {8,16,31,17,1,1,14}; return g[row]; }
+        case '\006': { static const uint8_t g[7] = {1,1,5,9,31,8,4}; return g[row]; }
         case '>': { static const uint8_t g[7] = {16,8,4,2,4,8,16}; return g[row]; }
         case '<': { static const uint8_t g[7] = {1,2,4,8,4,2,1}; return g[row]; }
         case '[': { static const uint8_t g[7] = {14,8,8,8,8,8,14}; return g[row]; }
@@ -84,23 +90,77 @@ static void text(fv_framebuffer_t *framebuffer, unsigned x, unsigned y,
     }
 }
 
-void fv_ui_draw(const fv_app_t *app, fv_framebuffer_t *framebuffer) {
-    if (app == NULL || framebuffer == NULL) return;
-
-    fv_ui_view_t view;
-    fv_app_render(app, &view);
+void fv_ui_draw_view(const fv_ui_view_t *view,
+                     fv_framebuffer_t *framebuffer) {
+    if (view == NULL || framebuffer == NULL) return;
     for (unsigned y = 0u; y < FV_DISPLAY_HEIGHT; ++y) {
         for (unsigned x = 0u; x < FV_DISPLAY_WIDTH; ++x) {
             framebuffer->pixels[y][x] = COLOR_BACKGROUND;
         }
     }
 
-    text(framebuffer, 4u, 3u, view.title, COLOR_TEXT);
+    text(framebuffer, 4u, 3u, view->title, COLOR_TEXT);
     horizontal_line(framebuffer, 13u, COLOR_ACCENT);
     for (size_t index = 0u; index < FV_UI_LINE_COUNT; ++index) {
-        text(framebuffer, 4u, 19u + (unsigned)index * 11u,
-             view.lines[index], COLOR_TEXT);
+        if (view->word_picker && (index == 1u || index == 2u)) continue;
+        if (view->direction_icons && (index == 1u || index == 2u)) {
+            for (unsigned i = 0u; i < 8u; ++i) {
+                const char value = view->lines[index][i];
+                const char icon = value == 'U' ? '\004' : value == 'R' ? '\001' :
+                                  value == 'D' ? '\002' : value == 'L' ? '\003' : ' ';
+                unsigned x = 5u + i * 19u;
+                unsigned y = 28u + ((unsigned)index - 1u) * 16u;
+                for (unsigned row = 0u; row < 7u; ++row) {
+                    uint8_t bits = glyph_row(icon, row);
+                    for (unsigned col = 0u; col < 5u; ++col) {
+                        if ((bits & (uint8_t)(1u << (4u - col))) == 0u) continue;
+                        for (unsigned dy = 0u; dy < 2u; ++dy)
+                            for (unsigned dx = 0u; dx < 2u; ++dx)
+                                set_pixel(framebuffer, x + col * 2u + dx,
+                                          y + row * 2u + dy, COLOR_ACCENT);
+                    }
+                }
+                if (value == '\0') {
+                    for (unsigned dx = 0u; dx < 10u; ++dx)
+                        set_pixel(framebuffer, x + dx, y + 13u, COLOR_MUTED);
+                }
+            }
+        } else {
+            unsigned y = view->direction_icons && index == 3u ? 60u :
+                         19u + (unsigned)index * 11u;
+            if (view->word_picker && index == 3u) y = 60u;
+            text(framebuffer, 4u, y, view->lines[index], COLOR_TEXT);
+        }
+    }
+    if (view->word_picker) {
+        for (unsigned choice = 0u; choice < 4u; ++choice) {
+            const char *label = view->word_choices[choice];
+            unsigned width = (unsigned)strlen(label) * 6u;
+            unsigned x = choice == 3u ? 4u : choice == 1u ?
+                         FV_DISPLAY_WIDTH - 4u - width : (FV_DISPLAY_WIDTH - width) / 2u;
+            unsigned y = choice == 0u ? 28u : choice == 2u ? 50u : 39u;
+            text(framebuffer, x, y, label, COLOR_TEXT);
+        }
+        for (unsigned offset = 0u; offset < 5u; ++offset) {
+            set_pixel(framebuffer, 77u + offset, 42u, COLOR_ACCENT);
+            set_pixel(framebuffer, 79u, 40u + offset, COLOR_ACCENT);
+        }
     }
     horizontal_line(framebuffer, 67u, COLOR_MUTED);
-    text(framebuffer, 4u, 71u, "ARROWS ENTER BACK", COLOR_MUTED);
+    if (view->secret_controls) {
+        text(framebuffer, 4u, 71u, "\005", COLOR_ACCENT);
+        text(framebuffer, 13u, 71u, view->back_action, COLOR_TEXT);
+        fv_pixel_t select_color = view->select_enabled ? COLOR_TEXT : COLOR_MUTED;
+        text(framebuffer, 94u, 71u, "\006", view->select_enabled ? COLOR_ACCENT : COLOR_MUTED);
+        text(framebuffer, 103u, 71u, view->select_action, select_color);
+    } else {
+        text(framebuffer, 4u, 71u, "ARROWS ENTER BACK", COLOR_MUTED);
+    }
+}
+
+void fv_ui_draw(const fv_app_t *app, fv_framebuffer_t *framebuffer) {
+    if (app == NULL || framebuffer == NULL) return;
+    fv_ui_view_t view;
+    fv_app_render(app, &view);
+    fv_ui_draw_view(&view, framebuffer);
 }

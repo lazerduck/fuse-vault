@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "policy_id": "fuse-vault-rp2354a-otp-v1",
+  "status": "candidate",
+  "target": {
+    "mcu": "RP2354A",
+    "execution_domain": "ARM Secure"
+  },
+  "device_identity": {
+    "root_page": 60,
+    "root_a_rows": [3840, 3855],
+    "root_b_rows": [3856, 3871],
+    "format_row": 3872,
+    "format_value": "0x4656",
+    "active_row": 3873,
+    "active_value": "0xa55a",
+    "reserved_rows": [3874, 3903]
+  },
+  "revocation": {
+    "page": 59,
+    "row": 3776,
+    "value": "0xdead",
+    "reserved_rows": [3777, 3839],
+    "software_write_scope": "revocation row only"
+  },
+  "page_permissions": {
+    "59": {
+      "lock0_byte": "0x00",
+      "lock1_byte": "0x3c",
+      "raw_lock0_majority": "0x000000",
+      "raw_lock1_majority": "0x3c3c3c",
+      "bootloader": "inaccessible",
+      "nonsecure": "inaccessible",
+      "secure": "read_write"
+    },
+    "60": {
+      "lock0_byte": "0x00",
+      "lock1_byte": "0x3d",
+      "raw_lock0_majority": "0x000000",
+      "raw_lock1_majority": "0x3d3d3d",
+      "bootloader": "inaccessible",
+      "nonsecure": "inaccessible",
+      "secure": "read_only"
+    }
+  },
+  "secure_boot": {
+    "secure_boot_enable": true,
+    "debug_disable": true,
+    "secure_debug_disable": true,
+    "boot_architecture": "ARM",
+    "boot_keys": [
+      {
+        "slot": 0,
+        "role": "release",
+        "state": "valid",
+        "public_key_sha256": null
+      },
+      {
+        "slot": 1,
+        "role": "offline_recovery",
+        "state": "valid",
+        "public_key_sha256": null
+      },
+      {
+        "slot": 2,
+        "role": "unused",
+        "state": "permanently_invalid",
+        "public_key_sha256": null
+      },
+      {
+        "slot": 3,
+        "role": "unused",
+        "state": "permanently_invalid",
+        "public_key_sha256": null
+      }
+    ],
+    "recovery": {
+      "usb_picoboot": "enabled_signed_images_only",
+      "usb_mass_storage": "enabled_signed_images_only",
+      "uart_boot": "disabled",
+      "reason": "retain signed USB recovery through the hardware-default USB-C route"
+    },
+    "rollback": {
+      "required": true,
+      "initial_version": 1,
+      "rows": [78, 81],
+      "release_rule": "every production image has a nondecreasing rollback version"
+    },
+    "glitch_detector": "pending_sacrificial_silicon_characterization"
+  },
+  "provisioning_order": [
+    "verify_blank_and_record_chip_identity",
+    "program_and_read_back_device_roots",
+    "program_and_read_back_format_marker",
+    "program_and_read_back_active_marker",
+    "program_and_verify_release_and_recovery_boot_key_hashes",
+    "mark_boot_key_slots_0_and_1_valid_and_slots_2_and_3_invalid",
+    "boot_and_verify_a_signed_rollback_versioned_image",
+    "apply_and_verify_pages_59_and_60_permissions",
+    "disable_uart_boot_and_permanently_disable_debug",
+    "enable_secure_boot_last",
+    "cold_boot_and_run_release_acceptance"
+  ],
+  "release_evidence": {
+    "release_key_hash_recorded": false,
+    "recovery_key_hash_recorded": false,
+    "permission_words_verified_on_sacrificial_rp2354a": false,
+    "power_cut_campaign_passed": false,
+    "signed_update_and_recovery_passed": false,
+    "debug_lockout_verified": false,
+    "independent_manifest_reviewed": false
+  }
+}

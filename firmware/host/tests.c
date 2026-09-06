@@ -54,6 +54,19 @@ static fv_app_t boot_provisioned(void) {
     return app;
 }
 
+static void enter_setup_method_selection(fv_app_t *app) {
+    fv_command_set_t commands = fv_app_handle(app, FV_EVENT_SELECT);
+    CHECK(has_command(commands, FV_COMMAND_INSPECT_MEDIA));
+    CHECK(app->state == FV_STATE_SETUP_MEDIA_CHECKING);
+    CHECK(fv_app_handle(app, FV_EVENT_MEDIA_FOUND) == FV_COMMAND_NONE);
+    CHECK(app->state == FV_STATE_SETUP_MEDIA_CONFIRM);
+    commands = fv_app_handle(app, FV_EVENT_SELECT);
+    CHECK(has_command(commands, FV_COMMAND_PREPARE_MEDIA));
+    CHECK(app->state == FV_STATE_SETUP_MEDIA_INITIALIZING);
+    CHECK(fv_app_handle(app, FV_EVENT_MEDIA_PREPARED) == FV_COMMAND_NONE);
+    CHECK(app->state == FV_STATE_SETUP_METHOD_SELECT);
+}
+
 static fv_command_set_t reserve_and_begin_authentication(fv_app_t *app) {
     fv_command_set_t commands = fv_app_handle(app, FV_EVENT_SELECT);
     CHECK(has_command(commands, FV_COMMAND_STORE_ATTEMPT_COUNTER));
@@ -73,8 +86,18 @@ static void test_boot_paths(void) {
     CHECK(fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED) == FV_COMMAND_NONE);
     CHECK(app.state == FV_STATE_SETUP_REQUIRED);
 
-    CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
-    CHECK(app.state == FV_STATE_SETUP_METHOD_SELECT);
+    fv_app_init(&app, true, 2u, FV_ENTRY_METHOD_KEYPAD);
+    CHECK(fv_app_handle(&app, FV_EVENT_BOOT_MEDIA_REQUIRED) == FV_COMMAND_NONE);
+    CHECK(app.state == FV_STATE_BOOT_MEDIA_REQUIRED);
+    fv_ui_view_t waiting_view;
+    fv_app_render(&app, &waiting_view);
+    CHECK(strstr(waiting_view.lines[0], "Insert vault SD") != NULL);
+    CHECK(fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED) == FV_COMMAND_NONE);
+    CHECK(app.state == FV_STATE_MODE_SELECT);
+
+    fv_app_init(&app, false, 0u, FV_ENTRY_METHOD_WHEELS);
+    (void)fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
+    enter_setup_method_selection(&app);
     CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
     CHECK(app.state == FV_STATE_SETUP_SECRET_ENTRY);
 
@@ -83,7 +106,12 @@ static void test_boot_paths(void) {
     CHECK(app.state == FV_STATE_SETUP_SECRET_CONFIRM);
     (void)fv_app_handle(&app, FV_EVENT_UP);
     (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_SETUP_STACK_SELECT);
+    (void)fv_app_handle(&app, FV_EVENT_DOWN);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
     CHECK(app.state == FV_STATE_SETUP_POLICY_CONFIRM);
+    CHECK(app.selected_encryption_stack.layers[0].algorithm_id ==
+          FV_ENCRYPTION_ALGORITHM_CHACHA20);
 
     fv_secret_encoding_t setup_encoding;
     CHECK(fv_setup_secret_encode(&app, &setup_encoding));
@@ -103,11 +131,28 @@ static void test_boot_paths(void) {
     CHECK(has_command(commands, FV_COMMAND_DESTROY_DEVICE_SECRET));
 }
 
+static void test_setup_media_loss_is_recoverable(void) {
+    fv_app_t app;
+    fv_app_init(&app, false, 0u, FV_ENTRY_METHOD_WHEELS);
+    (void)fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
+    enter_setup_method_selection(&app);
+    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    (void)fv_app_handle(&app, FV_EVENT_UP);
+    CHECK(app.secret_entry.state.wheels.values[0] == 1u);
+    const fv_command_set_t commands =
+        fv_app_handle(&app, FV_EVENT_STORAGE_FAILED);
+    CHECK(app.state == FV_STATE_SETUP_MEDIA_ERROR);
+    CHECK(has_command(commands, FV_COMMAND_USB_DETACH));
+    CHECK(has_command(commands, FV_COMMAND_ERASE_TRANSIENT_SECRET));
+    CHECK(app.secret_entry.state.wheels.values[0] == 0u);
+    CHECK(!app.provisioned);
+}
+
 static void test_setup_rejects_mismatched_confirmation(void) {
     fv_app_t app;
     fv_app_init(&app, false, 0u, FV_ENTRY_METHOD_WHEELS);
     (void)fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
-    (void)fv_app_handle(&app, FV_EVENT_SELECT);
+    enter_setup_method_selection(&app);
     (void)fv_app_handle(&app, FV_EVENT_SELECT);
 
     (void)fv_app_handle(&app, FV_EVENT_UP);
@@ -231,19 +276,89 @@ static void test_all_modular_entry_methods(void) {
     CHECK(encoding.bytes[4] == 4u);
 
     fv_secret_entry_begin(&entry, FV_ENTRY_METHOD_WORD_LIST);
-    (void)fv_secret_entry_handle(&entry, FV_EVENT_UP);
-    (void)fv_secret_entry_handle(&entry, FV_EVENT_RIGHT);
-    (void)fv_secret_entry_handle(&entry, FV_EVENT_DOWN);
+    for (unsigned slot = 0u; slot < FV_SECRET_WORD_COUNT; ++slot) {
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_UP);
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_RIGHT);
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_DOWN);
+    }
     CHECK(fv_secret_entry_handle(&entry, FV_EVENT_SELECT) == FV_SECRET_EVENT_COMPLETE);
     CHECK(fv_secret_entry_encode(&entry, &encoding));
     CHECK(encoding.bytes[3] == FV_SECRET_METHOD_WORD_LIST_V1);
     CHECK(encoding.bytes[4] == FV_SECRET_WORD_COUNT);
-    CHECK(encoding.bytes[5] == 1u);
-    CHECK(encoding.bytes[6] == 63u);
+    for (unsigned slot = 0u; slot < FV_SECRET_WORD_COUNT; ++slot)
+        CHECK(encoding.bytes[5u + slot] == 6u);
 
     fv_secret_entry_clear(&entry);
     const uint8_t *bytes = (const uint8_t *)&entry;
     for (size_t index = 0u; index < sizeof(entry); ++index) CHECK(bytes[index] == 0u);
+}
+
+static void test_balanced_word_picker(void) {
+    static const fv_event_t choices[4] = {
+        FV_EVENT_UP, FV_EVENT_RIGHT, FV_EVENT_DOWN, FV_EVENT_LEFT,
+    };
+    fv_secret_encoding_t encoding;
+    fv_secret_entry_t entry;
+    fv_ui_view_t view = {0};
+    /* Every stable word ID is reachable in exactly three presses, in every slot. */
+    for (unsigned word = 0u; word < 64u; ++word) {
+        fv_secret_entry_begin(&entry, FV_ENTRY_METHOD_WORD_LIST);
+        for (unsigned slot = 0u; slot < FV_SECRET_WORD_COUNT; ++slot) {
+            CHECK(entry.state.word_list.words[slot] == FV_SECRET_WORD_EMPTY);
+            CHECK(!fv_secret_entry_encode(&entry, &encoding));
+            for (unsigned step = 0u; step < 3u; ++step) {
+                CHECK(fv_secret_entry_handle(&entry, FV_EVENT_SELECT) == FV_SECRET_EVENT_IGNORED);
+                fv_secret_entry_render(&entry, &view);
+                CHECK(!view.select_enabled);
+                CHECK(fv_secret_entry_handle(&entry, choices[(word >> (4u - step * 2u)) & 3u])
+                      == FV_SECRET_EVENT_CHANGED);
+            }
+            CHECK(entry.state.word_list.words[slot] == word);
+        }
+        CHECK(entry.state.word_list.reviewing);
+        CHECK(fv_secret_entry_handle(&entry, FV_EVENT_SELECT) == FV_SECRET_EVENT_COMPLETE);
+        CHECK(fv_secret_entry_encode(&entry, &encoding));
+        CHECK(encoding.bytes[3] == FV_SECRET_METHOD_WORD_LIST_V1);
+        CHECK(encoding.bytes[4] == FV_SECRET_WORD_COUNT);
+        for (unsigned slot = 0u; slot < FV_SECRET_WORD_COUNT; ++slot)
+            CHECK(encoding.bytes[5u + slot] == word);
+    }
+    /* Undo within the tree, cancel an edit, and replace any reviewed slot. */
+    for (unsigned slot = 0u; slot < FV_SECRET_WORD_COUNT; ++slot) {
+        (void)fv_secret_entry_handle(&entry, choices[slot]);
+        CHECK(entry.state.word_list.selected == slot);
+        CHECK(!entry.state.word_list.reviewing);
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_DOWN);
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_RIGHT);
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_BACK);
+        CHECK(entry.state.word_list.depth == 1u && entry.state.word_list.prefix == 2u);
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_BACK);
+        CHECK(entry.state.word_list.depth == 0u && entry.state.word_list.prefix == 0u);
+        (void)fv_secret_entry_handle(&entry, FV_EVENT_BACK);
+        CHECK(entry.state.word_list.reviewing && entry.state.word_list.words[slot] == 63u);
+        (void)fv_secret_entry_handle(&entry, choices[slot]);
+        for (unsigned step = 0u; step < 3u; ++step)
+            (void)fv_secret_entry_handle(&entry, FV_EVENT_UP);
+        CHECK(entry.state.word_list.reviewing && entry.state.word_list.words[slot] == 0u);
+    }
+    for (unsigned remaining = FV_SECRET_WORD_COUNT; remaining > 0u; --remaining) {
+        CHECK(fv_secret_entry_handle(&entry, FV_EVENT_BACK) == FV_SECRET_EVENT_CHANGED);
+        CHECK(entry.state.word_list.selected == remaining - 1u);
+        CHECK(entry.state.word_list.words[remaining - 1u] == FV_SECRET_WORD_EMPTY);
+        CHECK(!fv_secret_entry_encode(&entry, &encoding));
+    }
+    CHECK(fv_secret_entry_handle(&entry, FV_EVENT_BACK) == FV_SECRET_EVENT_IGNORED);
+    /* Empty or partial input must never consume an unlock attempt. */
+    fv_app_t app;
+    fv_app_init(&app, true, 0u, FV_ENTRY_METHOD_WORD_LIST);
+    app.state = FV_STATE_VAULT_SECRET_ENTRY;
+    fv_secret_entry_begin(&app.secret_entry, FV_ENTRY_METHOD_WORD_LIST);
+    for (unsigned press = 0u; press < 12u; ++press) {
+        CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
+        CHECK(app.failed_attempts == 0u && app.state == FV_STATE_VAULT_SECRET_ENTRY);
+        (void)fv_app_handle(&app, FV_EVENT_UP);
+    }
+    CHECK(has_command(fv_app_handle(&app, FV_EVENT_SELECT), FV_COMMAND_STORE_ATTEMPT_COUNTER));
 }
 
 static void enter_test_secret(fv_app_t *app, fv_entry_method_t method) {
@@ -263,8 +378,8 @@ static void enter_test_secret(fv_app_t *app, fv_entry_method_t method) {
     } else if (method == FV_ENTRY_METHOD_WORD_LIST) {
         for (unsigned slot = 0u; slot < FV_SECRET_WORD_COUNT; ++slot) {
             (void)fv_app_handle(app, FV_EVENT_UP);
-            if (slot + 1u < FV_SECRET_WORD_COUNT)
-                (void)fv_app_handle(app, FV_EVENT_RIGHT);
+            (void)fv_app_handle(app, FV_EVENT_RIGHT);
+            (void)fv_app_handle(app, FV_EVENT_DOWN);
         }
         (void)fv_app_handle(app, FV_EVENT_SELECT);
     }
@@ -277,7 +392,7 @@ static void test_new_methods_work_in_setup_and_unlock(void) {
         fv_app_t setup;
         fv_app_init(&setup, false, 0u, FV_ENTRY_METHOD_WHEELS);
         (void)fv_app_handle(&setup, FV_EVENT_BOOT_COMPLETED);
-        (void)fv_app_handle(&setup, FV_EVENT_SELECT);
+        enter_setup_method_selection(&setup);
         for (fv_entry_method_t selected = FV_ENTRY_METHOD_WHEELS;
              selected < method; selected = (fv_entry_method_t)(selected + 1))
             (void)fv_app_handle(&setup, FV_EVENT_DOWN);
@@ -286,6 +401,8 @@ static void test_new_methods_work_in_setup_and_unlock(void) {
         enter_test_secret(&setup, method);
         CHECK(setup.state == FV_STATE_SETUP_SECRET_CONFIRM);
         enter_test_secret(&setup, method);
+        CHECK(setup.state == FV_STATE_SETUP_STACK_SELECT);
+        (void)fv_app_handle(&setup, FV_EVENT_SELECT);
         CHECK(setup.state == FV_STATE_SETUP_POLICY_CONFIRM);
 
         fv_app_t unlock;
@@ -332,6 +449,9 @@ static void test_attempt_limit_destroys_secret(void) {
 
 static void test_fido_mode(void) {
     fv_app_t app = boot_provisioned();
+    CHECK(fv_app_handle(&app, FV_EVENT_DOWN) == FV_COMMAND_NONE);
+    CHECK(app.selected_mode == FV_MODE_VAULT);
+    fv_app_set_fido_available(&app, true);
     CHECK(fv_app_handle(&app, FV_EVENT_DOWN) == FV_COMMAND_NONE);
     CHECK(app.selected_mode == FV_MODE_FIDO);
 
@@ -380,11 +500,13 @@ static void test_usb_attachment_invariants(void) {
 int main(void) {
     test_entry_method_conversion();
     test_boot_paths();
+    test_setup_media_loss_is_recoverable();
     test_setup_rejects_mismatched_confirmation();
     test_vault_unlock_and_lock();
     test_secret_entry_back_clears_input();
     test_secret_encoding_is_versioned_and_stable();
     test_all_modular_entry_methods();
+    test_balanced_word_picker();
     test_new_methods_work_in_setup_and_unlock();
     test_ui_framebuffer_is_deterministic();
     test_attempt_limit_destroys_secret();

@@ -99,7 +99,9 @@ static slot_state_t decode(fv_encrypted_block_t *e,uint64_t logical,unsigned slo
         record+CIPHERTEXT_OFFSET,FV_BLOCK_SIZE+16u,record,HEADER_SIZE,
         record+56u,e->encryption_key);
     clear(expected_nonce,sizeof(expected_nonce));
-    if(auth==0&&length==FV_BLOCK_SIZE){decoded->generation=get64(record+24u);
+    if(auth==0&&length==FV_BLOCK_SIZE&&fv_crypto_pipeline_decrypt_block(
+        &e->pipeline,logical,get64(record+24u),record+32u,get64(record+48u),
+        decoded->plain)){decoded->generation=get64(record+24u);
         decoded->counter=get64(record+48u);clear(record,sizeof(record));return SLOT_VALID;}
     clear(decoded,sizeof(*decoded));clear(record,sizeof(record));return SLOT_INVALID;
 }
@@ -149,9 +151,13 @@ static fv_block_result_t write_blocks(fv_block_device_t *device,uint64_t first,
     put64(record+16u,first);put64(record+24u,generation);memcpy(record+32u,e->epoch,16u);
     put64(record+48u,counter);memcpy(record+72u,e->vault_id,16u);
     if(!make_nonce(e,first,generation,e->epoch,counter,record+56u)){result=FV_BLOCK_ERROR_IO;goto done;}
+    uint8_t layered[512u];memcpy(layered,input,sizeof(layered));
+    if(!fv_crypto_pipeline_encrypt_block(&e->pipeline,first,generation,e->epoch,
+                                         counter,layered)){clear(layered,sizeof(layered));result=FV_BLOCK_ERROR_IO;goto done;}
     unsigned long long length=0u;
-    if(crypto_aead_encrypt(record+CIPHERTEXT_OFFSET,&length,input,512u,record,
-        HEADER_SIZE,NULL,record+56u,e->encryption_key)!=0||length!=528u){result=FV_BLOCK_ERROR_IO;goto done;}
+    if(crypto_aead_encrypt(record+CIPHERTEXT_OFFSET,&length,layered,512u,record,
+        HEADER_SIZE,NULL,record+56u,e->encryption_key)!=0||length!=528u){clear(layered,sizeof(layered));result=FV_BLOCK_ERROR_IO;goto done;}
+    clear(layered,sizeof(layered));
     result=e->untrusted->ops->write(e->untrusted,first*4u+(uint64_t)slot*2u,2u,record);
     if(result==FV_BLOCK_OK)result=e->untrusted->ops->sync(e->untrusted);
     if(result!=FV_BLOCK_OK){result=FV_BLOCK_ERROR_IO;goto done;}
@@ -179,14 +185,16 @@ static const fv_block_device_ops_t ops={read_blocks,write_blocks,sync_blocks,cou
 
 bool fv_encrypted_block_init(fv_encrypted_block_t *e,fv_block_device_t *u,
  const fv_volume_master_key_t *vmk,const uint8_t vault_id[16],
+ const fv_encryption_stack_descriptor_t *stack,
  fv_encrypted_block_random_fill_fn random_fill,void *random_context) {
     if(!e)return false;
     clear(e,sizeof(*e));
-    if(!u||!vmk||!vault_id||!random_fill||!u->ops||!u->ops->read||!u->ops->write||
+    if(!u||!vmk||!vault_id||!stack||!random_fill||!u->ops||!u->ops->read||!u->ops->write||
        !u->ops->sync||!u->ops->block_count||!u->ops->is_present||!u->ops->is_present(u))return false;
     uint64_t blocks=u->ops->block_count(u);if(blocks<4u||blocks%4u!=0u||zero(vault_id,16u))return false;
     e->untrusted=u;memcpy(e->vault_id,vault_id,16u);e->logical_blocks=blocks/4u;
-    if(!random_fill(random_context,e->epoch,16u)||zero(e->epoch,16u)||!derive(e,vmk)){clear(e,sizeof(*e));return false;}
+    if(!random_fill(random_context,e->epoch,16u)||zero(e->epoch,16u)||!derive(e,vmk)||
+       !fv_crypto_pipeline_init(&e->pipeline,stack,vmk,vault_id)){clear(e,sizeof(*e));return false;}
     e->next_counter=1u;e->interface.ops=&ops;e->interface.context=e;e->ready=true;return true;
 }
 void fv_encrypted_block_lock(fv_encrypted_block_t *e){

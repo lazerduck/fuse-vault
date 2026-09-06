@@ -5,12 +5,15 @@
 
 static void connector_trip(fv_connector_safety_t *safety) {
     if (safety == NULL) return;
+    const bool first_fault = !safety->faulted;
     if (safety->ops != NULL && safety->ops->disable_mux != NULL)
         (void)safety->ops->disable_mux(safety->context);
     safety->faulted = true;
     safety->initialized = false;
+    safety->routed = false;
     safety->state = FV_CONNECTOR_NONE;
-    if (safety->fault != NULL) safety->fault(safety->fault_context);
+    safety->routed_state = FV_CONNECTOR_NONE;
+    if (first_fault && safety->fault != NULL) safety->fault(safety->fault_context);
 }
 
 bool fv_connector_safety_init(fv_connector_safety_t *safety,
@@ -20,14 +23,15 @@ bool fv_connector_safety_init(fv_connector_safety_t *safety,
     if (safety == NULL || ops == NULL || ops->disable_mux == NULL ||
         ops->configure_presence_inputs == NULL ||
         ops->read_usb_a_present == NULL ||
-        ops->read_usb_c_present == NULL) return false;
+        ops->read_usb_c_present == NULL ||
+        ops->route_connector == NULL) return false;
     memset(safety, 0, sizeof(*safety));
     safety->ops = ops;
     safety->context = context;
     safety->fault = fault;
     safety->fault_context = fault_context;
-    /* This must be the first hardware operation. Selection and enable are
-       deliberately absent until the board mux truth table is reviewed. */
+    /* This must be the first hardware operation. The target route callback is
+       evidence-gated and must select only while the mux remains disabled. */
     if (!ops->disable_mux(context) || !ops->configure_presence_inputs(context)) {
         connector_trip(safety);
         return false;
@@ -45,13 +49,45 @@ bool fv_connector_safety_poll(fv_connector_safety_t *safety) {
         connector_trip(safety);
         return false;
     }
-    safety->state = usb_a && usb_c ? FV_CONNECTOR_CONFLICT
-                  : usb_a ? FV_CONNECTOR_USB_A
-                  : usb_c ? FV_CONNECTOR_USB_C : FV_CONNECTOR_NONE;
-    if (safety->state == FV_CONNECTOR_CONFLICT) {
+    const fv_connector_state_t observed =
+        usb_a && usb_c ? FV_CONNECTOR_CONFLICT
+      : usb_a ? FV_CONNECTOR_USB_A
+      : usb_c ? FV_CONNECTOR_USB_C : FV_CONNECTOR_NONE;
+    if (observed == FV_CONNECTOR_CONFLICT ||
+        (safety->routed && observed != safety->routed_state)) {
         connector_trip(safety);
         return false;
     }
+    safety->state = observed;
+    return true;
+}
+
+bool fv_connector_safety_route(fv_connector_safety_t *safety) {
+    if (safety == NULL || !safety->initialized || safety->faulted ||
+        safety->routed ||
+        (safety->state != FV_CONNECTOR_USB_A &&
+         safety->state != FV_CONNECTOR_USB_C)) {
+        return false;
+    }
+    if (!safety->ops->disable_mux(safety->context) ||
+        !safety->ops->route_connector(safety->context, safety->state)) {
+        connector_trip(safety);
+        return false;
+    }
+    safety->routed_state = safety->state;
+    safety->routed = true;
+    return true;
+}
+
+bool fv_connector_safety_disable(fv_connector_safety_t *safety) {
+    if (safety == NULL || safety->ops == NULL ||
+        safety->ops->disable_mux == NULL) return false;
+    if (!safety->ops->disable_mux(safety->context)) {
+        connector_trip(safety);
+        return false;
+    }
+    safety->routed = false;
+    safety->routed_state = FV_CONNECTOR_NONE;
     return true;
 }
 

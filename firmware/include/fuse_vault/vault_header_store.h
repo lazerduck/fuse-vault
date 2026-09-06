@@ -4,8 +4,8 @@
 #include "fuse_vault/block_device.h"
 #include "fuse_vault/persistence.h"
 
-#define FV_VAULT_HEADER_FORMAT_VERSION 1u
-#define FV_VAULT_HEADER_ENCODING_VERSION 1u
+#define FV_VAULT_HEADER_FORMAT_VERSION 2u
+#define FV_VAULT_HEADER_ENCODING_VERSION 2u
 #define FV_VAULT_HEADER_RECORD_SIZE 256u
 #define FV_VAULT_HEADER_SLOT_COUNT 2u
 #define FV_VAULT_HEADER_TAG_SIZE 32u

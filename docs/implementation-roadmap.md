@@ -1,9 +1,9 @@
 # Fuse Vault implementation roadmap and gap audit
 
-Status: planning baseline after commit `7f7b9ec` (2026-09-05). This document
-describes what the repository demonstrates today and orders the remaining work.
-It is not a claim that the current firmware is safe to provision or use with
-valuable data.
+Status: historical gap audit after commit `7f7b9ec` (2026-09-05). Several
+“missing” entries below have since been implemented. Use `v1-product-contract.md`
+for normative behavior and `product-readiness.md` for current release status.
+This document remains useful for detailed threat and validation rationale.
 
 ## Audit scope and evidence
 
@@ -39,7 +39,7 @@ Status terms used below:
   schematic, an assembled board, sacrificial silicon, instruments, or a real
   host/device interoperability test.
 
-## Current architecture
+## Architecture at the original audit
 
 The portable application is an event-driven state machine. It owns navigation,
 secret-entry state, attempt-count transitions, and platform commands. Platform
@@ -53,7 +53,7 @@ header service.
 
 The durable trust domains are intended to be:
 
-| Domain | Intended contents | Current reality |
+| Domain | Intended contents | Reality at audit time |
 |---|---|---|
 | RP2354A OTP | Two device roots, format/active/revocation markers | Lifecycle and Pico SDK adapter implemented; access locks and production manifest unresolved |
 | Internal stacked flash | Authenticated provisioning state and failed-attempt journal | Portable journal, dual authenticator, linker reservation, and RP2354A flash adapter implemented |
@@ -61,7 +61,7 @@ The durable trust domains are intended to be:
 | Volatile RAM | Entry state, encodings, roots while read, KDF workspaces, VMK, layer keys, plaintext sectors | Several explicit clears exist; complete ownership and compiler/toolchain assurance remain unfinished |
 | USB host | No interface while locked; plaintext blocks only while unlocked; FIDO messages in FIDO mode | Application commands and states only; no production USB device stack or descriptors |
 
-## End-to-end lifecycle map
+## Original end-to-end gap map
 
 | Lifecycle phase | Implemented | Simulated/tested | Missing | Hardware-blocked |
 |---|---|---|---|---|
@@ -77,7 +77,7 @@ The durable trust domains are intended to be:
 | Destructive lockout | One-way OTP revocation path and journal-authenticator deinit | OTP file lifecycle and app tenth-failure states | Precise commit/ack protocol, UI/power-failure semantics, validation that every future boot refuses all secret use | OTP revocation and permission enforcement on real locked silicon |
 | FIDO mode | Menu/state and attach/detach commands | State transitions only | FIDO2/CTAP2 implementation, credential store, PIN/user-verification policy, user-presence UI, attestation/update policy, independent key hierarchy | USB HID interoperability and secure physical-presence validation |
 
-The current `FIDO_READY` transition does not authenticate the vault secret. That
+The `FIDO_READY` transition does not authenticate the vault secret. That
 is acceptable only if the eventual FIDO design deliberately defines its own user
 presence/verification policy and separate keys. It must not be mistaken for an
 implemented authenticator or inherit a vault-unlocked session implicitly.
@@ -124,7 +124,7 @@ These are release gates, not aspirations:
 14. Ordinary builds cannot program fresh OTP roots. Provisioning builds and
     irreversible security configuration require explicit, auditable ceremony.
 
-## Sensitive-data ownership and zeroization
+## Original sensitive-data ownership and zeroization audit
 
 | Value | Owner and intended lifetime | Required destruction boundary | Current gap |
 |---|---|---|---|
@@ -212,10 +212,11 @@ Open assumptions and checks:
   board. Revision 1 shorts each presence net to GPIO2/GPIO16 or GPIO3/GPIO17;
   GPIO16/17 must remain high-impedance and the electrical contention risk must be
   reviewed, not merely documented in firmware.
-- Confirm the USB mux truth table, output-enable safe default, power-path diode
+- Confirm the remaining USB presence assertion levels, power-path diode
   behaviour, back-power prevention, simultaneous A/C attachment policy, VBUS
   divider thresholds, ESD parts, differential routing, and which connector can
-  source power or carry data.
+  source power. The FSUSB42 OE/SEL truth table and SEL-low USB-C mapping are now
+  recorded.
 - Confirm SD is four-bit SDIO (the top-level README still says SPI), voltage and
   pull-up requirements, card-detect polarity, PIO pin constraints, signal
   integrity, and hot-removal behaviour.
@@ -398,26 +399,22 @@ Host failure/removal outcomes are:
 | Lock/fault | request blocking followed by detach and key clear | later requests not-ready and adapter/session zeroed |
 | Destruction | tenth durable reservation, restart, SD replacement | root revocation has precedence permanently |
 
-The reconciled host lifecycle uses `fv_setup_provision()` as its single
-transaction coordinator and routes its published security state into the
-authenticated journal; the older `fv_device_provision()` remains a focused
-OTP+journal primitive test, not a second host lifecycle. One production-only
-boundary remains unresolved deliberately: the current platform service contract
-cannot stage an authenticated SD header before making OTP roots active, so the
-host coordinator activates roots and revokes on every later ambiguous failure.
-Stage 5 must replace that service boundary with reversible header/data staging,
-initial journal preparation, final OTP activation, cross-domain re-read,
-verification unlock, and publish-last ordering on actual SDIO/flash. No claim is
-made here about SDIO, TinyUSB, a physical display, or irreversible OTP behavior.
+The reconciled lifecycle uses `fv_device_runtime` as its single target and host
+coordinator. It composes publish-last setup, authentication, redundant media
+metadata, the encrypted block adapter, MSC attachment and fail-closed teardown.
+Factory OTP activation is kept distinct from user-vault setup, so removable
+media failure cannot accidentally consume or revoke factory identity. Missing
+media at boot is a recoverable locked wait state; inserted media is fully
+authenticated before password entry becomes available.
 
-Verification evidence: a clean configured RP2354A build completed all 172 build
-steps and linked `fuse_vault.elf`; a clean host build passed 17/17 CTest targets;
-the same 17/17 targets passed with AddressSanitizer and UndefinedBehaviorSanitizer.
-LeakSanitizer alone is unsupported under the test runner's ptrace environment
-and was disabled. `git diff --check` passed. A separate pristine RP2354A CMake
-configure could not fetch `picotool` because network name resolution is disabled,
-so target verification used the repository's configured SDK 2.3.0 build and a
-full `--clean-first` rebuild rather than claiming dependency reproducibility.
+Verification evidence (2026-09-05): the native suite passes 25/25 CTest targets,
+including the actual TinyUSB MSC adapter behind a fake TinyUSB/device backend;
+the same 25/25 pass under AddressSanitizer and UndefinedBehaviorSanitizer, and a
+GCC `-fanalyzer` build completes without a finding. LeakSanitizer alone is
+unsupported under the test runner's ptrace environment and was disabled. Both
+the conservative RP2354A image and a fully enabled candidate peripheral image
+compile and link. `git diff --check` passes. These checks are software evidence,
+not substitutes for assembled-board, power-cut, or irreversible-OTP evidence.
 
 ### Stage 4 — Board artifacts and non-secret peripheral bring-up — Partial
 
@@ -445,26 +442,31 @@ Implementation evidence (2026-09-05):
   The current database stores the actual design in encrypted history blobs, so
   it cannot substantiate nets, part identities, polarities, or truth tables.
 - Portable display initialization/presentation and change/rate scheduling are
-  implemented in `display.c`; controller-specific transport stays absent behind
-  an explicit zero-valued board evidence gate.
+  implemented in `display.c`; a guarded ST7735S target transport now exists.
 - `peripheral_safety.c` forces mux-disable before presence-input setup, rejects
-  simultaneous connector presence, and deliberately provides no enable path
-  while the mux truth table is unknown. Its removable raw-block guard makes card
-  loss and I/O/not-ready failures sticky and propagates them to application
-  fault/lock handling.
+  simultaneous connector presence, routes only one observed connector, and
+  disconnects/faults on a routed presence change. The RP2354 connector backend
+  records the confirmed FSUSB42 control levels and USB-C ROM-flashing default
+  while presence polarity remains gated. Its removable raw-block guard makes
+  card loss and I/O/not-ready
+  failures sticky and propagates them to application fault/lock handling.
+- `rp2354_sd.c` provides a CRC-checked SPI-mode SD baseline on the routed
+  CLK/CMD/DAT0/DAT3 signals, including capacity discovery and insertion,
+  removal, transport-failure and sync lifecycle signals. Four-bit PIO SDIO is a
+  throughput optimization, not a prerequisite for the V1 storage abstraction.
 - The Stage 4 host target tests initialization failure, display failure and
   scheduling, mux-disable ordering, connector conflict, card removal, raw I/O
   failure, one-shot fault propagation, USB detach, and session-key erasure. A
-  clean temporary host build passes 18/18 CTest targets.
+  clean temporary host build passes all current CTest targets.
 
 Hardware-blocked acceptance criteria: peer-reviewed schematic/netlist/BOM/PCB
 and revision reconciliation; proof of reset-level mux disable and duplicate-pin
 high impedance; target display test patterns and button/connector/card-detect
-tests; a real SDIO transport; bounded card read/write/sync; logic-analyser
+tests; bounded card read/write/sync; logic-analyser
 captures; and removal/fault testing on an assembled board. None is claimed by
 the host tests.
 
-### Stage 5 — Production SD/header and encrypted-volume integration
+### Stage 5 — Production SD/header and encrypted-volume integration — Implemented, bench validation pending
 
 Connect Stages 1–3 to the RP2354 SD backend while OTP provisioning remains
 disabled. Use injected/development roots through an explicitly non-production
@@ -480,7 +482,13 @@ Acceptance criteria:
   specified states over a statistically meaningful campaign.
 - KDF latency, storage throughput, and UI responsiveness meet recorded limits.
 
-### Stage 6 — USB MSC exposure and lock sequencing
+The code path is integrated: initial setup validates/initializes media,
+persists redundant authenticated metadata, reserves future-FIDO/recovery
+domains, creates an encrypted logical disk, and recovers it after restart. The
+remaining criteria require real SD cards, timed target measurements, and
+power-interruption hardware tests.
+
+### Stage 6 — USB MSC exposure and lock sequencing — Implemented, interoperability pending
 
 Add a USB device implementation backed only by the unlocked encrypted adapter.
 Specify connector selection and simultaneous-attachment behaviour.
@@ -496,7 +504,13 @@ Acceptance criteria:
   clears all USB/plaintext/key buffers, and only then returns to mode selection.
 - Surprise cable removal leaks no later plaintext and causes no nonce reuse.
 
-### Stage 7 — Destructive lockout on sacrificial hardware
+TinyUSB descriptors and MSC callbacks now sit only above the unlocked encrypted
+block device. Read, partial-write, sync, logical eject, readiness and failure
+signaling have direct host tests. The target loop turns any backend failure into
+USB detach and session erasure. Electrical connector routing and multi-OS USB
+interoperability remain bench release gates.
+
+### Stage 7 — Destructive lockout — Policy/tooling implemented, sacrificial validation pending
 
 Finalize OTP page allocation, access keys/locks, secure/non-secure permissions,
 manufacturing manifest, and destructive command protocol. Enable it only in a
@@ -505,14 +519,20 @@ controlled sacrificial build.
 Acceptance criteria:
 
 - Independent review approves the exact OTP map and generated manifest.
-- Root creation remains impossible in ordinary firmware; revocation remains the
+- First setup creates roots only in an empty OTP layout using the same firmware
+  as normal operation. Once page 60 is locked read-only, revocation remains the
   only field-programmable lifecycle transition required by policy.
 - Power interruption at every programmable row/marker yields only active,
   invalid/fail-locked, or revoked states as specified.
 - Debug/non-secure/boot paths cannot read roots or bypass revocation after locks.
 - Tenth-attempt acknowledgement and UI remain truthful under ambiguous failures.
 
-### Stage 8 — Secure boot, update, and release hardening
+The OTP allocation and permissions are machine-readable, checked against the
+documented manifest, and consumed by a fail-closed signed-release packager.
+The ordinary build provisions empty roots during first setup. Exact lock words and
+power-cut behavior still require independent review and sacrificial silicon.
+
+### Stage 8 — Secure boot, update, and release hardening — Partial
 
 Define signing custody, anti-rollback versioning, recovery/update UX, debug
 lockdown, reproducible release builds, dependency provenance, and security test
@@ -527,6 +547,11 @@ Acceptance criteria:
 - Static analysis, sanitizers on host, fuzzing of parsers/state machines, stack
   analysis, optimized zeroization inspection, and independent crypto/security
   review have no unresolved release-critical findings.
+
+Release CMake gates, version/VID/PID checks, two signing-key roles, rollback and
+signed-recovery policy, staged picotool OTP inputs, artifact hashes and a receipt
+are implemented. Real keys, reproducibility/SBOM work, parser fuzzing, target
+measurements, sacrificial secure-boot trials and independent review remain.
 
 ### Stage 9 — FIDO2 as an independent product slice
 
@@ -554,11 +579,12 @@ and destructive denial of service are not solved merely by the current journal
 and OTP design. Any remaining exclusions must be stated in the threat model and
 user documentation rather than implied to be protected.
 
-## Immediate decision
+## Immediate execution order
 
-Proceed with Stage 1, but first capture the minimum Stage 0 decisions that affect
-its bytes: header magic/version, entry-encoding version, sequence comparison and
-exhaustion, vault-ID binding to the internal journal, authentication-key source,
-slot layout, and flush/commit rules. Keep the implementation portable and backed
-by deterministic host fault injection. Defer SDIO, TinyUSB, and all irreversible
-OTP configuration until that boundary is stable.
+The portable V1 architecture and target composition are complete enough for
+board bring-up. The next work is evidence-driven: first validate display, SD
+and USB presence/routing on an assembled board; then run storage/USB/KDF and
+power-cut campaigns; then exercise the frozen OTP/secure-boot flow on
+sacrificial devices; finally obtain independent security review and release
+credentials. FIDO2 remains an isolated post-V1 product slice and does not alter
+the encrypted-storage format or key namespace.

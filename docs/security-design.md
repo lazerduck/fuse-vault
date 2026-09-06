@@ -13,9 +13,11 @@ host can access plaintext that the user deliberately exposes while the relevant
 USB mode is active; the device cannot protect that plaintext from a malicious
 host after disclosure.
 
-The design does not depend on a single cryptographic family. V1 will ship with
-one reviewed default profile. A later advanced mode may permit other versioned
-profiles, but arbitrary user-defined stacks are not a V1 requirement.
+The design does not depend on a single cryptographic family. During V1 setup the
+user selects an ordered stack from algorithms compiled into the reviewed
+firmware registry. Vault-header format V2 authenticates one to four permanent
+algorithm IDs and versions. This is not arbitrary user-supplied code: unknown or
+unavailable algorithms fail locked and are never silently replaced.
 
 ## Key hierarchy
 
@@ -39,6 +41,11 @@ The following values have distinct roles:
 
 Changing an entry method or secret rewraps the random VMK after successful
 authentication; it does not require re-encrypting every data block.
+
+The implemented selectable data layers are AES-256-XTS and ChaCha20. Their
+ordered transforms sit inside the mandatory Ascon-AEAD128 storage record, which
+provides authenticated addressing, metadata integrity, and torn-write recovery.
+SM4-XTS has a reserved identifier but is unavailable rather than a no-op.
 
 ## Default dual-family profile
 

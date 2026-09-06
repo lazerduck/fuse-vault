@@ -1,5 +1,6 @@
 #include "fuse_vault/credential_envelope.h"
 
+#include "fuse_vault/crypto_stack.h"
 #include "fuse_vault/journal_authenticator.h"
 #include "crypto_aead.h"
 
@@ -19,7 +20,7 @@
 #define ASCON_NONCE_SIZE 16u
 #define ASCON_TAG_SIZE 16u
 #define INNER_ENVELOPE_SIZE (AES_NONCE_SIZE + FV_VMK_SIZE + AES_TAG_SIZE)
-#define ENVELOPE_AAD_SIZE 86u
+#define ENVELOPE_AAD_SIZE 106u
 
 _Static_assert(FV_CREDENTIAL_ENVELOPE_SIZE ==
                    ASCON_NONCE_SIZE + INNER_ENVELOPE_SIZE + ASCON_TAG_SIZE,
@@ -71,7 +72,8 @@ bool fv_vault_header_valid(const fv_vault_header_t *header) {
            !all_zero(header->branch_a_salt, sizeof(header->branch_a_salt)) &&
            !all_zero(header->branch_b_salt, sizeof(header->branch_b_salt)) &&
            costs_valid(header->branch_a_cost, header->branch_b_cost) &&
-           header->wrapped_vmk_length == FV_CREDENTIAL_ENVELOPE_SIZE;
+           header->wrapped_vmk_length == FV_CREDENTIAL_ENVELOPE_SIZE &&
+           fv_crypto_stack_descriptor_valid(&header->encryption_stack, true);
 }
 
 static void encode_aad(const fv_vault_header_t *header,
@@ -88,6 +90,15 @@ static void encode_aad(const fv_vault_header_t *header,
     write_u32(output + 76u, header->branch_b_cost);
     write_u16(output + 80u, header->wrapped_vmk_length);
     write_u32(output + 82u, 1u); /* envelope format version */
+    write_u16(output + 86u, header->encryption_stack.format_version);
+    output[88] = header->encryption_stack.layer_count;
+    output[89] = header->encryption_stack.reserved;
+    for (size_t index = 0u; index < FV_ENCRYPTION_STACK_MAX_LAYERS; ++index) {
+        write_u16(output + 90u + index * 4u,
+                  header->encryption_stack.layers[index].algorithm_id);
+        write_u16(output + 92u + index * 4u,
+                  header->encryption_stack.layers[index].algorithm_version);
+    }
 }
 
 static bool pbkdf2_sha256(const fv_secret_encoding_t *entry,
@@ -286,6 +297,13 @@ fv_credential_result_t fv_credential_envelope_create(
     header->branch_a_cost = costs->pbkdf2_iterations;
     header->branch_b_cost = costs->kmac_iterations;
     header->wrapped_vmk_length = FV_CREDENTIAL_ENVELOPE_SIZE;
+    if (header->encryption_stack.format_version == 0u &&
+        header->encryption_stack.layer_count == 0u) {
+        fv_crypto_stack_default(&header->encryption_stack);
+    }
+    if (!fv_crypto_stack_descriptor_valid(&header->encryption_stack, true)) {
+        return FV_CREDENTIAL_INVALID_ARGUMENT;
+    }
     memset(header->wrapped_vmk, 0, sizeof(header->wrapped_vmk));
     uint8_t inner[INNER_ENVELOPE_SIZE];
     uint8_t aad[ENVELOPE_AAD_SIZE];

@@ -264,12 +264,12 @@ static void test_success(void) {
     }
 }
 
-static void test_failures_revoke_after_root_commit(void) {
+static void test_failures_preserve_device_roots(void) {
     const failure_t failures[] = {
         FAIL_READ_ROOTS, FAIL_STORE_HEADER, FAIL_STORE_HEADER_AFTER_COMMIT,
         FAIL_LOAD_HEADER, CORRUPT_HEADER, FAIL_STORE_STATE,
         FAIL_STORE_STATE_AFTER_COMMIT, FAIL_LOAD_STATE_AFTER_STORE, CORRUPT_STATE,
-        FAIL_PROVISION_ROOTS_AFTER_COMMIT, FAIL_ENVELOPE_RANDOM,
+        FAIL_ENVELOPE_RANDOM,
     };
     for (size_t index = 0u; index < sizeof(failures) / sizeof(failures[0]);
          ++index) {
@@ -278,8 +278,35 @@ static void test_failures_revoke_after_root_commit(void) {
         CHECK(run(failures[index], &state, &workspace) !=
               FV_SETUP_PROVISION_OK);
         CHECK(workspace_is_clear(&workspace));
-        CHECK(state.revoked && !state.roots_active);
+        CHECK(!state.revoked && state.roots_active);
     }
+}
+
+static void test_lost_root_commit_acknowledgement_is_verified(void) {
+    fixture_t state;
+    fv_setup_provision_workspace_t workspace;
+    CHECK(run(FAIL_PROVISION_ROOTS_AFTER_COMMIT, &state, &workspace) ==
+          FV_SETUP_PROVISION_OK);
+    CHECK(workspace_is_clear(&workspace));
+    CHECK(state.roots_active && !state.revoked);
+    CHECK(state.header_present && state.state_present);
+}
+
+static void test_factory_provisioned_roots_are_reused(void) {
+    fixture_t state = {.roots_active = true};
+    for (size_t index = 0u; index < sizeof(state.roots.device_secret); ++index) {
+        state.roots.device_secret[index] = (uint8_t)(index + 1u);
+    }
+    const fv_device_secret_t expected = state.roots;
+    fv_platform_services_t services = {.ops = &OPS, .context = &state};
+    fv_app_t app = provisioning_app(FV_ENTRY_METHOD_WHEELS);
+    const fv_credential_costs_t costs = {1u, 1u};
+    fv_setup_provision_workspace_t workspace;
+    CHECK(fv_setup_provision(&app, &services, &costs, &workspace) ==
+          FV_SETUP_PROVISION_OK);
+    CHECK(memcmp(&state.roots, &expected, sizeof(expected)) == 0);
+    CHECK(state.roots_active && !state.revoked);
+    CHECK(state.header_present && state.state_present);
 }
 
 static void test_early_failures_do_not_mutate_storage(void) {
@@ -326,7 +353,9 @@ static void test_rejects_invalid_cost_before_storage(void) {
 
 int main(void) {
     test_success();
-    test_failures_revoke_after_root_commit();
+    test_failures_preserve_device_roots();
+    test_lost_root_commit_acknowledgement_is_verified();
+    test_factory_provisioned_roots_are_reused();
     test_early_failures_do_not_mutate_storage();
     test_rejects_stale_material();
     test_rejects_invalid_cost_before_storage();

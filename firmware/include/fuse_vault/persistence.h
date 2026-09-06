@@ -13,6 +13,8 @@
 #define FV_VAULT_ID_SIZE 16u
 #define FV_SALT_SIZE 16u
 #define FV_WRAPPED_VMK_CAPACITY 128u
+#define FV_ENCRYPTION_STACK_FORMAT_VERSION 1u
+#define FV_ENCRYPTION_STACK_MAX_LAYERS 4u
 
 typedef enum {
     FV_PERSIST_OK = 0,
@@ -25,6 +27,28 @@ typedef enum {
     FV_CRYPTO_PROFILE_UNAVAILABLE = 0,
     FV_CRYPTO_PROFILE_DUAL_FAMILY_V1 = 1,
 } fv_crypto_profile_t;
+
+/* Permanent on-media identifiers. Values are never reused for a different
+ * algorithm. An ID may exist before an implementation is release-enabled. */
+typedef enum {
+    FV_ENCRYPTION_ALGORITHM_UNAVAILABLE = 0,
+    FV_ENCRYPTION_ALGORITHM_ASCON_AEAD128 = 1,
+    FV_ENCRYPTION_ALGORITHM_AES_256_XTS = 2,
+    FV_ENCRYPTION_ALGORITHM_CHACHA20 = 3,
+    FV_ENCRYPTION_ALGORITHM_SM4_XTS = 4,
+} fv_encryption_algorithm_t;
+
+typedef struct {
+    uint16_t algorithm_id;
+    uint16_t algorithm_version;
+} fv_encryption_layer_descriptor_t;
+
+typedef struct {
+    uint16_t format_version;
+    uint8_t layer_count;
+    uint8_t reserved;
+    fv_encryption_layer_descriptor_t layers[FV_ENCRYPTION_STACK_MAX_LAYERS];
+} fv_encryption_stack_descriptor_t;
 
 typedef enum {
     FV_DEVICE_SECRET_EMPTY = 0,
@@ -54,6 +78,7 @@ typedef struct {
     uint32_t branch_b_cost;
     uint16_t wrapped_vmk_length;
     uint8_t wrapped_vmk[FV_WRAPPED_VMK_CAPACITY];
+    fv_encryption_stack_descriptor_t encryption_stack;
 } fv_vault_header_t;
 
 typedef struct fv_platform_services fv_platform_services_t;

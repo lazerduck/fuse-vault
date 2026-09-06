@@ -22,7 +22,13 @@ void fv_input_map_for_app(const fv_app_t *app, fv_input_map_t *map) {
         case FV_STATE_SETUP_REQUIRED:
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
             break;
+        case FV_STATE_SETUP_MEDIA_CONFIRM:
+        case FV_STATE_SETUP_MEDIA_ERROR:
+            bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
+            bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
+            break;
         case FV_STATE_SETUP_METHOD_SELECT:
+        case FV_STATE_SETUP_STACK_SELECT:
             bind(map, FV_INPUT_UP, FV_EVENT_UP, true);
             bind(map, FV_INPUT_DOWN, FV_EVENT_DOWN, true);
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
@@ -31,9 +37,10 @@ void fv_input_map_for_app(const fv_app_t *app, fv_input_map_t *map) {
         case FV_STATE_SETUP_SECRET_ENTRY:
         case FV_STATE_SETUP_SECRET_CONFIRM:
         case FV_STATE_VAULT_SECRET_ENTRY: {
-            /* Repeating a direction would silently change a direction secret. */
+            /* These pickers commit choices on each press; holding must not repeat. */
             const bool repeat = app->selected_entry_method !=
-                                FV_ENTRY_METHOD_DIRECTIONS;
+                                FV_ENTRY_METHOD_DIRECTIONS &&
+                                app->selected_entry_method != FV_ENTRY_METHOD_WORD_LIST;
             bind_directions(map, repeat);
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
             bind(map, FV_INPUT_BACK, FV_EVENT_BACK, repeat);
@@ -54,6 +61,9 @@ void fv_input_map_for_app(const fv_app_t *app, fv_input_map_t *map) {
             bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
             break;
         case FV_STATE_BOOTING:
+        case FV_STATE_BOOT_MEDIA_REQUIRED:
+        case FV_STATE_SETUP_MEDIA_CHECKING:
+        case FV_STATE_SETUP_MEDIA_INITIALIZING:
         case FV_STATE_PROVISIONING:
         case FV_STATE_VAULT_RESERVING_ATTEMPT:
         case FV_STATE_VAULT_AUTHENTICATING:

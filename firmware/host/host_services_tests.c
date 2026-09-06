@@ -1,6 +1,7 @@
 #define _GNU_SOURCE
 
 #include "host_services.h"
+#include "fuse_vault/crypto_stack.h"
 #include "fuse_vault/credential_envelope.h"
 
 #include <fcntl.h>
@@ -121,6 +122,7 @@ int main(void) {
         .branch_b_cost = 2048u,
         .wrapped_vmk_length = FV_CREDENTIAL_ENVELOPE_SIZE,
     };
+    fv_crypto_stack_default(&header.encryption_stack);
     memcpy(header.vault_id, random_bytes, FV_VAULT_ID_SIZE);
     memcpy(header.branch_a_salt, random_bytes + 16u, FV_SALT_SIZE);
     memcpy(header.branch_b_salt, random_bytes + 32u, FV_SALT_SIZE);

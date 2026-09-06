@@ -2,6 +2,7 @@
 
 #include "fuse_vault/app.h"
 #include "fuse_vault/boot_recovery.h"
+#include "fuse_vault/crypto_stack.h"
 #include "fuse_vault/credential_envelope.h"
 #include "host_services.h"
 
@@ -34,6 +35,7 @@ static fv_vault_header_t valid_header(fv_secret_method_t method) {
     memset(header.branch_a_salt, 0x22, sizeof(header.branch_a_salt));
     memset(header.branch_b_salt, 0x33, sizeof(header.branch_b_salt));
     memset(header.wrapped_vmk, 0x44, header.wrapped_vmk_length);
+    fv_crypto_stack_default(&header.encryption_stack);
     return header;
 }
 

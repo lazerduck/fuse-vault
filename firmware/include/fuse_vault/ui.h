@@ -15,5 +15,6 @@ typedef struct {
 } fv_framebuffer_t;
 
 void fv_ui_draw(const fv_app_t *app, fv_framebuffer_t *framebuffer);
+void fv_ui_draw_view(const fv_ui_view_t *view, fv_framebuffer_t *framebuffer);
 
 #endif

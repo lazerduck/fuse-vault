@@ -1,4 +1,5 @@
 #include "fuse_vault/app.h"
+#include "fuse_vault/crypto_stack.h"
 #include "fuse_vault/secret_input.h"
 
 #include <stdio.h>
@@ -13,6 +14,28 @@ static fv_command_set_t enter_fault(fv_app_t *app) {
     fv_secret_entry_clear(&app->secret_entry);
     fv_secret_entry_clear(&app->setup_secret_entry);
     app->state = FV_STATE_FAULT;
+    return FV_COMMAND_USB_DETACH |
+           FV_COMMAND_ERASE_TRANSIENT_SECRET |
+           FV_COMMAND_ERASE_SESSION_KEYS;
+}
+
+static fv_command_set_t complete_boot(fv_app_t *app) {
+    if (app->provisioned && app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
+        app->state = FV_STATE_DESTROYED;
+        return FV_COMMAND_USB_DETACH |
+               FV_COMMAND_ERASE_TRANSIENT_SECRET |
+               FV_COMMAND_ERASE_SESSION_KEYS |
+               FV_COMMAND_DESTROY_DEVICE_SECRET;
+    }
+    app->state = app->provisioned ? FV_STATE_MODE_SELECT
+                                  : FV_STATE_SETUP_REQUIRED;
+    return FV_COMMAND_NONE;
+}
+
+static fv_command_set_t media_lost_during_setup(fv_app_t *app) {
+    fv_secret_entry_clear(&app->secret_entry);
+    fv_secret_entry_clear(&app->setup_secret_entry);
+    app->state = FV_STATE_SETUP_MEDIA_ERROR;
     return FV_COMMAND_USB_DETACH |
            FV_COMMAND_ERASE_TRANSIENT_SECRET |
            FV_COMMAND_ERASE_SESSION_KEYS;
@@ -46,6 +69,15 @@ void fv_app_init(fv_app_t *app, bool provisioned, uint8_t persisted_failed_attem
             : persisted_failed_attempts,
         .provisioned = provisioned,
     };
+    fv_crypto_stack_default(&app->selected_encryption_stack);
+}
+
+void fv_app_set_fido_available(fv_app_t *app, bool available) {
+    if (app == NULL) return;
+    app->fido_available = available;
+    if (!available && app->selected_mode == FV_MODE_FIDO) {
+        app->selected_mode = FV_MODE_VAULT;
+    }
 }
 
 fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
@@ -53,29 +85,70 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
         return FV_COMMAND_NONE;
     }
 
-    if (event == FV_EVENT_FATAL_ERROR || event == FV_EVENT_STORAGE_FAILED) {
+    if (event == FV_EVENT_FATAL_ERROR) {
+        return enter_fault(app);
+    }
+    if (event == FV_EVENT_STORAGE_FAILED) {
+        if (!app->provisioned &&
+            app->state >= FV_STATE_SETUP_REQUIRED &&
+            app->state < FV_STATE_PROVISIONING) {
+            return media_lost_during_setup(app);
+        }
         return enter_fault(app);
     }
 
     switch (app->state) {
         case FV_STATE_BOOTING:
+            if (event == FV_EVENT_BOOT_MEDIA_REQUIRED && app->provisioned) {
+                app->state = FV_STATE_BOOT_MEDIA_REQUIRED;
+            } else if (event == FV_EVENT_BOOT_COMPLETED) {
+                return complete_boot(app);
+            }
+            break;
+
+        case FV_STATE_BOOT_MEDIA_REQUIRED:
             if (event == FV_EVENT_BOOT_COMPLETED) {
-                if (app->provisioned && app->failed_attempts >= FV_MAX_UNLOCK_ATTEMPTS) {
-                    app->state = FV_STATE_DESTROYED;
-                    return FV_COMMAND_USB_DETACH |
-                           FV_COMMAND_ERASE_TRANSIENT_SECRET |
-                           FV_COMMAND_ERASE_SESSION_KEYS |
-                           FV_COMMAND_DESTROY_DEVICE_SECRET;
-                }
-                app->state = app->provisioned ? FV_STATE_MODE_SELECT
-                                              : FV_STATE_SETUP_REQUIRED;
+                return complete_boot(app);
             }
             break;
 
         case FV_STATE_SETUP_REQUIRED:
             if (event == FV_EVENT_SELECT) {
-                app->state = FV_STATE_SETUP_METHOD_SELECT;
+                app->state = FV_STATE_SETUP_MEDIA_CHECKING;
+                return FV_COMMAND_INSPECT_MEDIA;
             }
+            break;
+
+        case FV_STATE_SETUP_MEDIA_CHECKING:
+            if (event == FV_EVENT_MEDIA_FOUND) {
+                app->state = FV_STATE_SETUP_MEDIA_CONFIRM;
+            } else if (event == FV_EVENT_MEDIA_FAILED) {
+                app->state = FV_STATE_SETUP_MEDIA_ERROR;
+            }
+            break;
+
+        case FV_STATE_SETUP_MEDIA_CONFIRM:
+            if (event == FV_EVENT_SELECT) {
+                app->state = FV_STATE_SETUP_MEDIA_INITIALIZING;
+                return FV_COMMAND_PREPARE_MEDIA;
+            }
+            if (event == FV_EVENT_BACK) app->state = FV_STATE_SETUP_REQUIRED;
+            break;
+
+        case FV_STATE_SETUP_MEDIA_INITIALIZING:
+            if (event == FV_EVENT_MEDIA_PREPARED) {
+                app->state = FV_STATE_SETUP_METHOD_SELECT;
+            } else if (event == FV_EVENT_MEDIA_FAILED) {
+                app->state = FV_STATE_SETUP_MEDIA_ERROR;
+            }
+            break;
+
+        case FV_STATE_SETUP_MEDIA_ERROR:
+            if (event == FV_EVENT_SELECT) {
+                app->state = FV_STATE_SETUP_MEDIA_CHECKING;
+                return FV_COMMAND_INSPECT_MEDIA;
+            }
+            if (event == FV_EVENT_BACK) app->state = FV_STATE_SETUP_REQUIRED;
             break;
 
         case FV_STATE_SETUP_METHOD_SELECT:
@@ -122,7 +195,7 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 secure_clear(&expected, sizeof(expected));
                 if (matches) {
                     fv_secret_entry_clear(&app->secret_entry);
-                    app->state = FV_STATE_SETUP_POLICY_CONFIRM;
+                    app->state = FV_STATE_SETUP_STACK_SELECT;
                 } else {
                     fv_secret_entry_clear(&app->secret_entry);
                     fv_secret_entry_clear(&app->setup_secret_entry);
@@ -138,6 +211,28 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
 
         case FV_STATE_SETUP_SECRET_MISMATCH:
             if (event == FV_EVENT_SELECT || event == FV_EVENT_BACK) {
+                begin_secret_entry(app);
+                app->state = FV_STATE_SETUP_SECRET_ENTRY;
+            }
+            break;
+
+        case FV_STATE_SETUP_STACK_SELECT:
+            if (event == FV_EVENT_UP) {
+                app->selected_stack_preset = app->selected_stack_preset == 0u
+                    ? (uint8_t)(fv_crypto_stack_preset_count() - 1u)
+                    : (uint8_t)(app->selected_stack_preset - 1u);
+            } else if (event == FV_EVENT_DOWN) {
+                app->selected_stack_preset = (uint8_t)(
+                    (app->selected_stack_preset + 1u) %
+                    fv_crypto_stack_preset_count());
+            } else if (event == FV_EVENT_SELECT) {
+                if (!fv_crypto_stack_preset(app->selected_stack_preset,
+                                            &app->selected_encryption_stack)) {
+                    return enter_fault(app);
+                }
+                app->state = FV_STATE_SETUP_POLICY_CONFIRM;
+            } else if (event == FV_EVENT_BACK) {
+                fv_secret_entry_clear(&app->setup_secret_entry);
                 begin_secret_entry(app);
                 app->state = FV_STATE_SETUP_SECRET_ENTRY;
             }
@@ -173,7 +268,8 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
             break;
 
         case FV_STATE_MODE_SELECT:
-            if (event == FV_EVENT_UP || event == FV_EVENT_DOWN) {
+            if ((event == FV_EVENT_UP || event == FV_EVENT_DOWN) &&
+                app->fido_available) {
                 app->selected_mode = app->selected_mode == FV_MODE_VAULT
                     ? FV_MODE_FIDO
                     : FV_MODE_VAULT;
@@ -181,7 +277,7 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 if (app->selected_mode == FV_MODE_VAULT) {
                     begin_secret_entry(app);
                     app->state = FV_STATE_VAULT_SECRET_ENTRY;
-                } else {
+                } else if (app->fido_available) {
                     app->state = FV_STATE_FIDO_READY;
                     return FV_COMMAND_USB_ATTACH_FIDO;
                 }
@@ -284,10 +380,35 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             snprintf(view->title, sizeof(view->title), "Fuse Vault");
             snprintf(view->lines[0], sizeof(view->lines[0]), "Starting...");
             break;
+        case FV_STATE_BOOT_MEDIA_REQUIRED:
+            snprintf(view->title, sizeof(view->title), "Vault media required");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "Insert vault SD card");
+            snprintf(view->lines[2], sizeof(view->lines[2]), "USB remains locked");
+            break;
         case FV_STATE_SETUP_REQUIRED:
             snprintf(view->title, sizeof(view->title), "Setup required");
             snprintf(view->lines[0], sizeof(view->lines[0]), "No vault configured");
             snprintf(view->lines[2], sizeof(view->lines[2]), "Select: begin setup");
+            break;
+        case FV_STATE_SETUP_MEDIA_CHECKING:
+            snprintf(view->title, sizeof(view->title), "Checking SD card");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "Reading media state...");
+            break;
+        case FV_STATE_SETUP_MEDIA_CONFIRM:
+            snprintf(view->title, sizeof(view->title), "Initialize SD card?");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "ALL CARD DATA WILL BE LOST");
+            snprintf(view->lines[2], sizeof(view->lines[2]), "OK: erase and use");
+            snprintf(view->lines[3], sizeof(view->lines[3]), "Back: cancel");
+            break;
+        case FV_STATE_SETUP_MEDIA_INITIALIZING:
+            snprintf(view->title, sizeof(view->title), "Preparing SD card");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "Do not remove power");
+            break;
+        case FV_STATE_SETUP_MEDIA_ERROR:
+            snprintf(view->title, sizeof(view->title), "SD card unavailable");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "Insert/check card");
+            snprintf(view->lines[2], sizeof(view->lines[2]), "OK: retry");
+            snprintf(view->lines[3], sizeof(view->lines[3]), "Back: cancel");
             break;
         case FV_STATE_SETUP_METHOD_SELECT:
             snprintf(view->title, sizeof(view->title), "Entry method");
@@ -301,7 +422,6 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
         case FV_STATE_SETUP_SECRET_ENTRY:
             snprintf(view->title, sizeof(view->title), "Create secret");
             fv_secret_entry_render(&app->secret_entry, view);
-            snprintf(view->lines[3], sizeof(view->lines[3]), "Back at empty: cancel");
             break;
         case FV_STATE_SETUP_SECRET_CONFIRM:
             snprintf(view->title, sizeof(view->title), "Confirm secret");
@@ -313,6 +433,15 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             snprintf(view->lines[0], sizeof(view->lines[0]), "Nothing was saved");
             snprintf(view->lines[2], sizeof(view->lines[2]), "Enter a new secret");
             snprintf(view->lines[3], sizeof(view->lines[3]), "OK: try again");
+            break;
+        case FV_STATE_SETUP_STACK_SELECT:
+            snprintf(view->title, sizeof(view->title), "Encryption stack");
+            snprintf(view->lines[0], sizeof(view->lines[0]), "> %s",
+                     fv_crypto_stack_preset_name(app->selected_stack_preset));
+            snprintf(view->lines[1], sizeof(view->lines[1]), "%u of %u",
+                     (unsigned)app->selected_stack_preset + 1u,
+                     (unsigned)fv_crypto_stack_preset_count());
+            snprintf(view->lines[3], sizeof(view->lines[3]), "Up/down; OK choose");
             break;
         case FV_STATE_SETUP_POLICY_CONFIRM:
             snprintf(view->title, sizeof(view->title), "No recovery");
@@ -329,8 +458,9 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             snprintf(view->title, sizeof(view->title), "Select mode");
             snprintf(view->lines[0], sizeof(view->lines[0]), "%s Vault storage",
                      app->selected_mode == FV_MODE_VAULT ? ">" : " ");
-            snprintf(view->lines[1], sizeof(view->lines[1]), "%s FIDO2 key",
-                     app->selected_mode == FV_MODE_FIDO ? ">" : " ");
+            snprintf(view->lines[1], sizeof(view->lines[1]), "%s FIDO2 %s",
+                     app->selected_mode == FV_MODE_FIDO ? ">" : " ",
+                     app->fido_available ? "key" : "(planned)");
             snprintf(view->lines[3], sizeof(view->lines[3]), "Up/down + select");
             break;
         case FV_STATE_VAULT_SECRET_ENTRY:
@@ -375,16 +505,28 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
             snprintf(view->lines[2], sizeof(view->lines[2]), "Restart required");
             break;
     }
+    if (view->secret_controls && strcmp(view->select_action, "Done") == 0) {
+        snprintf(view->select_action, sizeof(view->select_action), "%s",
+                 app->state == FV_STATE_SETUP_SECRET_ENTRY ? "Next" :
+                 app->state == FV_STATE_SETUP_SECRET_CONFIRM ? "Confirm" : "Unlock");
+    }
+
 }
 
 const char *fv_state_name(fv_state_t state) {
     static const char *const names[] = {
         "booting",
+        "boot-media-required",
         "setup-required",
+        "setup-media-checking",
+        "setup-media-confirm",
+        "setup-media-initializing",
+        "setup-media-error",
         "setup-method-select",
         "setup-secret-entry",
         "setup-secret-confirm",
         "setup-secret-mismatch",
+        "setup-stack-select",
         "setup-policy-confirm",
         "provisioning",
         "mode-select",

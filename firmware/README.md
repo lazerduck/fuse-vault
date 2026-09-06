@@ -1,13 +1,14 @@
 # Fuse Vault firmware
 
 This directory contains the C firmware for the custom Fuse Vault RP2354A board.
-It uses the Raspberry Pi Pico C/C++ SDK and currently provides the minimal
-application and board structure needed for hardware bring-up.
+It uses the Raspberry Pi Pico C/C++ SDK and contains the portable product core,
+the RP2354A platform composition, native simulation, and verification tests.
 
-The initial firmware enters a locked idle state and exposes no USB interface.
-Peripheral pin assignments will be added after they have been verified against
-an exported schematic or the assembled board. The initial GPIO map has now been
-captured from the schematic and remains subject to bring-up verification.
+The firmware enters locked and exposes no USB data interface. The GPIO map and
+FSUSB42 OE/SEL behavior and active-high USB presence dividers are captured for
+PCB revision 1. The screen mounts horizontally with its flex through the PCB;
+its P-channel backlight switch enables low. Display initialization and SD
+card-detect polarity remain gated pending assembled-board bring-up.
 
 The application state machine and 160x80 RGB565 framebuffer renderer are
 portable C shared by the RP2354A target, a native simulator, and automated
@@ -16,11 +17,11 @@ to the TFT rather than recreating the interface with desktop widgets. Platform
 code—not the application core—owns secrets, persistent security state, USB,
 storage, input, and display hardware.
 
-The SD card is connected using four-bit SDIO. Its initial driver will use the
-RP2354A's PIO facilities. Higher layers access storage only through the generic
-512-byte block-device interface, keeping the encrypted-volume and USB code
-independent of SDIO. A later PCB revision or driver can therefore move to SPI
-without changing the storage-security architecture.
+The SD card is wired for four-bit SDIO. The initial auditable bring-up backend
+uses SD memory-card SPI mode over CLK/CMD/DAT0/DAT3 with command CRC7, data
+CRC16, bounded waits, CSD capacity parsing, and single-sector reads/writes.
+Higher layers use only the generic 512-byte block-device interface, so a faster
+PIO four-bit SDIO backend can replace it without changing storage security.
 
 PCB revision 1 accidentally connects each USB-presence signal to two GPIOs:
 GPIO2/GPIO16 for USB-A and GPIO3/GPIO17 for USB-C. Firmware treats GPIO2 and
@@ -73,6 +74,26 @@ RP2350 A package, and the RP2354A's 2 MiB stacked flash. It uses the generic
 serial-read boot stage until the flash configuration has been validated on the
 assembled device.
 
+The candidate ST7735S display turns on by default, so orientation, offsets and
+colour order can be inspected during bring-up. `FUSE_VAULT_ENABLE_DISPLAY=OFF`
+is available for transport diagnostics (normal application startup requires a
+working display). Enabling the display does not mark its profile as validated.
+Bench builds can supply `FUSE_VAULT_BENCH_USB_A_PRESENT_LEVEL`,
+`FUSE_VAULT_BENCH_USB_C_PRESENT_LEVEL`, and
+`FUSE_VAULT_BENCH_SD_CARD_DETECT_LEVEL` as `0` or `1`. Measured values must be
+recorded in the board definition before release.
+
+A production-candidate configuration additionally sets
+`FUSE_VAULT_RELEASE_BUILD=ON`. That profile requires an optimized Release build,
+a semantic version, an assigned non-development USB VID/PID, an explicit review
+acknowledgement, and all display/SD/USB evidence gates in the board definition.
+It rejects every bench-only override and a disabled display, and runs the OTP
+policy verifier in release mode. It therefore fails today by design until the
+signing hashes, recorded evidence, and assembled-board measurements have been
+reviewed. A successful release build is still unsigned; use the
+read-only packaging workflow in `../provisioning/README.md` to sign and verify
+the ELF and recovery UF2.
+
 ## Host simulator and tests
 
 Build the portable firmware core without the Pico SDK:
@@ -83,6 +104,12 @@ cmake -S firmware/host -B firmware/build-host -G Ninja \
 cmake --build firmware/build-host
 ctest --test-dir firmware/build-host --output-on-failure
 ```
+
+For AddressSanitizer and UndefinedBehaviorSanitizer verification, configure a
+separate host build with `-DFUSE_VAULT_ENABLE_SANITIZERS=ON`. Environments that
+run tests under `ptrace` must invoke CTest with
+`ASAN_OPTIONS=detect_leaks=0`; address and undefined-behavior checking remain
+enabled, while leak checking must be run on an unrestricted host.
 
 ### File-backed OTP emulator
 
@@ -125,9 +152,9 @@ firmware/build-host/fuse_vault_display_simulator
 The graphical simulator displays the 80x160 panel rotated into the device's
 160x80 landscape orientation at 4x scale. Arrow keys map to the four D-pad
 directions, Enter (or Space) maps to the centre OK button, and Backspace (or
-Escape) maps to the Back button. The window footer lists the additional letter
-keys used to inject platform results that do not exist yet, such as a
-successful or failed authentication.
+Escape) maps to the Back button. Clickable controls use the same debounce and
+repeat handling. The simulated-host note field accepts normal text input;
+click a device control to return keyboard focus to navigation.
 
 Keyboard press and release events now pass through the same input controller as
 the RP2354 GPIO buttons. It applies a 25 ms debounce, a 450 ms hold delay, and a
@@ -145,8 +172,17 @@ unlocking. The setup method screen offers four methods:
   Back removes the last step, and OK completes a sufficiently long sequence.
 - **Numeric keypad:** a navigable 3x4 keypad provides digits, delete, and OK.
   PINs contain 4-12 digits; Back also deletes the most recent digit.
-- **Word list:** four positions each select one of 64 stable words. Left and
-  Right choose a position, Up and Down choose its word, and OK completes entry.
+- **Word list:** four initially empty positions each select one of 64 stable
+  words. Choices sit above, right, below, and left to match the D-pad. Each press
+  chooses a group of 16, a group
+  of four, then a word. Every word takes exactly three presses, and selection
+  advances to the next empty position. Group labels show the first and last
+  three-letter word prefixes. After all four words are chosen, arrows edit the
+  corresponding numbered position and OK submits the reviewed phrase. Back
+  undoes a group choice, cancels an edit, or removes the previous word at the
+  root. Back at the first empty position leaves the screen. Held buttons do
+  not repeat. Incomplete phrases cannot be submitted or encoded; completed
+  phrases retain the existing word IDs and canonical encoding.
 
 Pressing Back on an empty variable-length entry returns to the preceding
 screen. Setup keeps the first entry in transient memory and confirms it by
@@ -170,53 +206,60 @@ For breakpoints and stepping, select `Fuse Vault: Debug display simulator` in
 the Run and Debug panel and press F5. The build is configured automatically
 before either action.
 
-Pass `--unprovisioned` to start in first-time setup. The simulator injects
-authentication and persistence outcomes because those platform services do not
-exist yet; it never exposes a real or plaintext storage volume.
+The graphical simulator now always uses persistent development storage and
+the shared `fv_device_runtime`. Setup, authentication, attempt accounting,
+encryption-stack selection, encrypted block access and teardown run for real.
+There are no success/failure injection shortcuts in this window. The separate
+terminal simulator remains an event-driven state-machine inspection tool.
 
-The unprovisioned simulation walks through entry-method selection, initial
-secret entry, independent confirmation, mismatch handling, and acceptance of
-the destructive-lockout/no-recovery policy. Without persistent development
-storage, press `O` after the provisioning screen appears to inject successful
-platform provisioning. With `--state-dir`, the provisioning command runs the
-credential coordinator: it creates and verifies device roots and a credential
-envelope before publishing the provisioned security-state record. The confirmed
-setup secret remains transiently available through the canonical setup encoding
-only while the provisioning backend needs it and is cleared on completion or
-fault.
+With no arguments, the default device is stored under
+`$XDG_DATA_HOME/fuse-vault/simulator/default` (normally
+`~/.local/share/fuse-vault/simulator/default`). First launch enters setup;
+subsequent launches recover that device. Use `--state-dir DIRECTORY` to keep a
+named device elsewhere. Only one simulator may open a given device at a time.
 
-Run the graphical simulator with persistent development attempt state using:
+`--new` starts a separate device; `--unprovisioned` remains an alias.
+With an explicit state directory, existing provisioned state always wins and
+is never erased. The window's **New device** button creates a uniquely named
+sibling directory, leaving the previous device available via `--state-dir`.
 
-```sh
-firmware/build-host/fuse_vault_display_simulator \
-  --unprovisioned \
-  --state-dir firmware/build-host/simulator-state
-```
+A useful ergonomics session:
 
-`--unprovisioned` supplies the initial state only when the directory is empty;
-after provisioning, the recovered security state and vault-header method take
-precedence on every restart. Omitting it for an empty directory fails closed
-instead of synthesizing incomplete provisioned metadata.
+1. Complete setup using the clickable D-pad/OK/Back or keyboard controls.
+2. Choose an entry method, enter and confirm its secret, choose the ordered
+   cipher stack, then accept the no-recovery policy.
+3. Select Vault and enter the same secret to unlock.
+4. Type a short sample note in the simulated-host panel and click **Save**.
+5. Click **Restart**, unlock again, then **Load** to retrieve that note.
+6. Try a wrong secret, Back, Lock and Eject; try another method with **New device**.
 
-In this mode the simulator creates a development-only device secret using the
-operating system random source and stores it separately from vault metadata.
-Provisioning writes the secret record first, reads it back, and writes a
-separate active marker last. Destructive lockout writes a revocation marker;
-after that marker exists the host backend will neither reveal nor replace the
-secret through its API.
-Attempt records use two alternating, atomically replaced slots: submitting a
-secret persists the incremented counter before authentication can begin, and
-the newest valid sequence is recovered after restart. CRC32 detects corruption
-and incomplete records but is not cryptographic authentication. These local
-files contain a plaintext simulated device secret and must never be treated as
-a production vault or copied into device firmware.
+The note panel accesses logical sector zero exclusively through virtual MSC and
+the encrypted block adapter, with sync on save. It is a 511-byte UTF-8 sample
+payload, not a filesystem or an OS-mounted drive. Lock/restart/eject disables
+the panel and clears its displayed text. The backing media file stores the
+encrypted record. Simulated roots remain ordinary local files, so use test
+secrets and test notes. This environment does not emulate physical OTP locks
+or device timing; cryptographic work runs synchronously on the host CPU.
 
-The RP2354 boot path uses the same recovery boundary, but deliberately supplies
-no vault-header service yet: the physical redundant SD header backend is not
-implemented. Consequently an otherwise provisioned hardware build remains
-locked in the fault state rather than assuming the wheels method. Credential
-authentication is compiled as portable core code but remains disconnected on
-hardware until that storage service is available.
+**Restart** performs orderly detach and starts recovery using the same files.
+Power-cut fault injection remains in automated tests. **New device** creates
+fresh simulated roots on setup and lets you compare password methods without
+deleting earlier devices. Keyboard holds use the firmware debounce/repeat
+controller; loss of window focus releases held controls.
+
+The RP2354 boot path now composes OTP roots, the internal flash journal, the raw
+SD backend, authenticated media layout and redundant header store through the
+same platform-service boundary as the host tests. It validates journal/media
+vault identity before recovering the entry method and fails locked on any
+missing, corrupt, unsupported, or inconsistent provisioned metadata.
+
+The SD driver may initialize successfully with no card present. New devices can
+therefore reach setup and retry after insertion. Provisioned devices show a
+media-required state with USB disconnected, initialize a card on its insertion
+edge, and continue only after the journal identity and authenticated vault
+header match. Removal, low-level SD failure, encrypted-block failure, or MSC
+sync failure during a live session is promoted to the application fault path so
+USB disconnects and session keys are erased.
 
 A limited host NOR utility tests the invariants needed by the future RP2354A
 internal-flash attempt journal: aligned erase/program operations, the inability
@@ -246,32 +289,25 @@ independently generated HMAC derivation/tag answer. Hardware journal writes
 are enabled only after active roots have been recovered; the boot path connects
 that root set to journal recovery.
 
-The shared first-time security-state transaction now generates both roots and
-a vault ID, erases and writes the first authenticated journal record, reads it
-back, and only then commits the OTP active marker. It finally discards the RAM
-copy, reads the roots back through the selected OTP backend, and authenticates
-the journal again. The same transaction is covered with the file-backed OTP
-emulator and is compiled for the RP2354A. It is not yet dispatched from the UI:
-the vault-header wrapping and encrypted-storage stages must be placed before
-its irreversible final commit so setup cannot mark an unusable vault complete.
+The same firmware handles first setup and normal operation. On a fresh device,
+setup generates, commits and reads back two random OTP roots before creating
+the vault header and journal. No provisioning build or second flash is needed.
+Setup reuses existing active roots. Only a completely empty root/revocation
+layout permits creation; partial, invalid, revoked or unreadable OTP never
+causes regeneration. Recoverable SD or journal failures never revoke roots.
 
-The two-root OTP lifecycle backend now reserves user-data page 60 and uses ECC
-rows for both roots and separate format, active, and revocation markers. Root
-data is read back before the active marker is programmed, interrupted
-provisioning is permanently invalid rather than retried, and revoked roots are
-never returned. Ordinary firmware cannot provision roots; that operation is
-available only to an explicitly configured provisioning build. Enabling it
-requires both `-DFUSE_VAULT_ENABLE_OTP_PROVISIONING=ON` and the CMake cache
-confirmation
-`-DFUSE_VAULT_OTP_PROVISIONING_CONFIRMATION=I_UNDERSTAND_OTP_WRITES_ARE_PERMANENT`.
-Persistent page locks and access permissions remain deferred until
-sacrificial-board testing.
-The hardware boot path now accepts either a completely empty root page or a
-fully active root set with a valid authenticated journal. Every other state
-fails locked. Temporary roots are cleared after deriving journal keys. Attempt
-reservations now append to the hardware journal before authentication can
-continue, while destructive lockout programs the one-way revocation marker and
-clears the derived keys.
+The OTP lifecycle uses page 60 for roots, format and active markers, and page 59
+for revocation. Root data is verified before the active marker is committed.
+Boot accepts empty roots for first setup, or active roots with an empty journal
+for new vault setup. Provisioned state requires a matching authenticated SD
+header. Attempt reservations append before authentication; destructive lockout
+programs the one-way revocation marker and clears derived keys.
+
+OTP access locks and firmware signing are separate from root creation. Candidate
+page locks, a picotool-compatible permission file, secure-boot policy and signing
+packager are defined in `../provisioning/`. Root creation must finish before
+applying the permanent page-60 read-only lock. The application does not program
+these locks or secure-boot settings automatically.
 
 The credential-envelope backend generates a random 32-byte VMK and protects it
 with an inner AES-256-GCM envelope and an outer Ascon-AEAD128 envelope. The
@@ -280,13 +316,13 @@ KMAC256 plus Root B. The 92-byte result fits in the existing vault header, whose
 security-relevant metadata is authenticated as AEAD associated data. Host tests
 require the correct entry and both roots, mutate every envelope byte, exercise
 metadata tampering and work limits, and include the official empty-message
-Ascon-AEAD128 known answer. Production iteration counts remain unset pending
-measurement on the assembled RP2354A.
+Ascon-AEAD128 known answer. The target starts at 100,000 PBKDF2 and 10,000 KMAC
+iterations; assembled-device latency measurement must set final release values.
 
 The core refuses to begin authentication until an incremented attempt counter
 has been persisted, and it refuses to request USB mass-storage attachment until
 successful authentication and persistence of the reset counter. The tests exercise
-provisioning, vault and FIDO mode selection, unlock and lock, persistent attempt
+provisioning, vault unlock and lock, future-FIDO availability gating, persistent attempt
 limits, fault handling, and the MSC attachment boundary.
 
 The shared authentication coordinator canonicalizes the active entry, validates
@@ -323,14 +359,15 @@ firmware/
 
 ## Next steps
 
-1. Confirm the oscillator, BOOTSEL, debug, and peripheral pin assignments.
-2. Add a board bring-up build with explicit diagnostic output.
-3. Implement display initialization and a test pattern.
-4. Implement directional controls and button debouncing.
-5. Detect the active USB connector and verify the data multiplexer.
-6. Initialize the SD card over SDIO and exercise raw block reads and writes.
-7. Add the locked-mode UI and explicit USB mode state machine.
+1. Verify the populated ST7735S module, candidate framebuffer orientation,
+   offsets, colour order, SPI rate, and reset/backlight polarity.
+2. Verify USB-A/USB-C presence polarity and bench-test the integrated
+   disable/select/enable routing and disconnect-on-change behavior.
+3. Bench-test SD CRC, geometry, removal, durability, and throughput on real cards.
+4. Test TinyUSB MSC format/mount/read/write/sync/eject across supported hosts.
+5. Supply signing identities and validate the frozen OTP, secure-boot, debug,
+   rollback, and signed-update policy on sacrificial boards.
+6. Run target KDF/stack/throughput/stack-watermark and power-cut campaigns.
 
-Secure boot, OTP provisioning, destructive lockout, cryptographic storage, and
-release signing will be introduced only after the basic hardware has been
-validated.
+See [`docs/product-readiness.md`](../docs/product-readiness.md) for the current
+release checklist.

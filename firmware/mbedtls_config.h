@@ -6,6 +6,8 @@
 /* Minimal Mbed TLS surface used by the credential envelope. */
 #define MBEDTLS_AES_C
 #define MBEDTLS_AES_FEWER_TABLES
+#define MBEDTLS_CIPHER_MODE_XTS
+#define MBEDTLS_CHACHA20_C
 #define MBEDTLS_CIPHER_C
 #define MBEDTLS_GCM_C
 

@@ -3,6 +3,7 @@
 #include "fuse_vault/authentication_coordinator.h"
 #include "fuse_vault/block_slice.h"
 #include "fuse_vault/encrypted_block.h"
+#include "fuse_vault/media_layout.h"
 #include "fuse_vault/provisioning_coordinator.h"
 #include "fuse_vault/virtual_msc.h"
 
@@ -32,7 +33,7 @@ static void set_secret(fv_secret_entry_t *entry, fv_entry_method_t method,
     } else {
         entry->state.word_list.words[0]=3u; entry->state.word_list.words[1]=17u;
         entry->state.word_list.words[2]=31u;
-        entry->state.word_list.words[3]=(uint16_t)(correct?63u:64u);
+        entry->state.word_list.words[3]=(uint8_t)(correct?63u:62u);
     }
 }
 static fv_app_t provisioning_app(fv_entry_method_t method) {
@@ -89,8 +90,9 @@ static void full_lifecycle(fv_entry_method_t method) {
     fv_vault_header_t header;CHECK(again.ops->load_vault_header(&again,&header)==FV_PERSIST_OK);
     fv_device_secret_t roots;CHECK(again.ops->read_device_secret(&again,&roots)==FV_PERSIST_OK);
     fv_volume_master_key_t raw_search_vmk=session.vmk;
-    fv_block_slice_t data;CHECK(fv_block_slice_init(&data,&again_context.vault_device,2u,64u));
-    fv_encrypted_block_t encrypted;CHECK(fv_encrypted_block_init(&encrypted,&data.interface,&session.vmk,header.vault_id,
+    fv_media_layout_t layout;CHECK(fv_media_load(&again_context.vault_device,&roots,header.vault_id,&layout)==FV_MEDIA_OK);
+    fv_block_slice_t data;CHECK(fv_media_open_data(&layout,&again_context.vault_device,&data));
+    fv_encrypted_block_t encrypted;CHECK(fv_encrypted_block_init(&encrypted,&data.interface,&session.vmk,header.vault_id,&header.encryption_stack,
         encrypted_rng,&again));
     fv_virtual_msc_t msc;fv_virtual_msc_init(&msc);uint8_t plain[512],output[512];
     memset(plain,0,sizeof(plain));memcpy(plain,"stage-3 supplied plaintext marker",33u);
@@ -105,14 +107,16 @@ static void full_lifecycle(fv_entry_method_t method) {
     CHECK(fv_virtual_msc_read10(&msc,3u,1u,output)==FV_MSC_NOT_READY);
 
     char media_path[4096];path(media_path,directory,"vault-media.bin");int fd=open(media_path,O_RDONLY);CHECK(fd>=0);
-    uint8_t raw[66u*512u];CHECK(read(fd,raw,sizeof(raw))==(ssize_t)sizeof(raw));CHECK(close(fd)==0);
-    CHECK(!contains(raw,sizeof(raw),plain,sizeof(plain)));
-    CHECK(!contains(raw,sizeof(raw),roots.device_secret,sizeof(roots.device_secret)));
-    CHECK(!contains(raw,sizeof(raw),raw_search_vmk.bytes,sizeof(raw_search_vmk.bytes)));
+    const size_t raw_size=256u*512u;uint8_t *raw=malloc(raw_size);CHECK(raw!=NULL);
+    CHECK(read(fd,raw,raw_size)==(ssize_t)raw_size);CHECK(close(fd)==0);
+    CHECK(!contains(raw,raw_size,plain,sizeof(plain)));
+    CHECK(!contains(raw,raw_size,roots.device_secret,sizeof(roots.device_secret)));
+    CHECK(!contains(raw,raw_size,raw_search_vmk.bytes,sizeof(raw_search_vmk.bytes)));
+    free(raw);
     memset(&roots,0,sizeof(roots));memset(&raw_search_vmk,0,sizeof(raw_search_vmk));
 
     fv_authentication_session_t resumed;CHECK(authenticate(&again,method,1u,true,&resumed)==FV_AUTHENTICATE_OK);
-    CHECK(fv_encrypted_block_init(&encrypted,&data.interface,&resumed.vmk,header.vault_id,
+    CHECK(fv_encrypted_block_init(&encrypted,&data.interface,&resumed.vmk,header.vault_id,&header.encryption_stack,
         encrypted_rng,&again));
     CHECK(fv_virtual_msc_attach(&msc,&encrypted.interface));
     CHECK(fv_virtual_msc_read10(&msc,3u,1u,output)==FV_MSC_OK&&memcmp(plain,output,512u)==0);

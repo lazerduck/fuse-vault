@@ -1,7 +1,9 @@
 # Fuse Vault encrypted block format V1
 
-Status: portable prototype, 2026-09-05. This format is not yet wired to SDIO,
-USB MSC, a filesystem, or production provisioning.
+Status: integrated V1 prototype, 2026-09-05. The format is wired through the
+RP2354 SD block backend, target runtime, and TinyUSB MSC callbacks, but remains
+hardware-unvalidated and unaudited. Vault-header format V2 authenticates the
+ordered selectable-layer descriptor.
 
 ## Scope and threat boundary
 
@@ -54,7 +56,23 @@ to the ciphertext. A record is released as plaintext only after canonical checks
 nonce re-derivation, constant-time nonce/vault comparison, and successful AEAD
 verification. Caller output is zeroed on every integrity or I/O failure.
 
-## Key and nonce derivation
+## Selectable encryption pipeline
+
+Before the mandatory Ascon storage envelope is applied, each 512-byte plaintext
+block passes through the ordered stack recorded in the authenticated vault
+header. Header format V2 supports one to four layers. AES-256-XTS and ChaCha20
+V1 layers are implemented; SM4-XTS has a permanent reserved ID but is rejected
+as unavailable. Decryption authenticates and opens the Ascon record first, then
+applies the selectable transforms in reverse order.
+
+Each layer receives independently derived key material bound to the vault ID,
+algorithm ID and version, and stack index. Its tweak or nonce is derived from
+the vault ID, index, logical block, record generation, writer epoch, and write
+counter. Unknown, unavailable, noncanonical, or duplicate-disallowed stacks
+fail before any plaintext interface becomes ready. No placeholder is treated as
+encryption.
+
+## Ascon envelope key and nonce derivation
 
 The 256-bit volume master key is never used directly by ASCON. The adapter
 derives independent keys bound to the vault ID:

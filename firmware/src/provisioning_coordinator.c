@@ -1,6 +1,7 @@
 #include "fuse_vault/provisioning_coordinator.h"
 
 #include "fuse_vault/secret_input.h"
+#include "fuse_vault/crypto_stack.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -47,7 +48,9 @@ static bool header_matches(const fv_vault_header_t *left,
            memcmp(left->branch_a_salt, right->branch_a_salt, FV_SALT_SIZE) == 0 &&
            memcmp(left->branch_b_salt, right->branch_b_salt, FV_SALT_SIZE) == 0 &&
            memcmp(left->wrapped_vmk, right->wrapped_vmk,
-                  FV_WRAPPED_VMK_CAPACITY) == 0;
+                  FV_WRAPPED_VMK_CAPACITY) == 0 &&
+           memcmp(&left->encryption_stack, &right->encryption_stack,
+                  sizeof(left->encryption_stack)) == 0;
 }
 
 static bool state_matches(const fv_security_state_t *left,
@@ -64,12 +67,13 @@ fv_setup_provision_result_t fv_setup_provision(
     if (workspace == NULL) return FV_SETUP_PROVISION_INVALID_ARGUMENT;
     secure_clear(workspace, sizeof(*workspace));
     fv_setup_provision_result_t result = FV_SETUP_PROVISION_INVALID_ARGUMENT;
-    bool roots_active = false;
 
     if (app == NULL || costs == NULL || !services_valid(services) ||
         app->state != FV_STATE_PROVISIONING ||
         !fv_entry_method_valid(app->selected_entry_method) ||
         app->setup_secret_entry.method != app->selected_entry_method ||
+        !fv_crypto_stack_descriptor_valid(&app->selected_encryption_stack,
+                                          true) ||
         costs->pbkdf2_iterations == 0u ||
         costs->pbkdf2_iterations > FV_CREDENTIAL_PBKDF2_MAX_ITERATIONS ||
         costs->kmac_iterations == 0u ||
@@ -91,7 +95,8 @@ fv_setup_provision_result_t fv_setup_provision(
         services->ops->load_vault_header(services, &existing_header);
     secure_clear(&existing_state, sizeof(existing_state));
     secure_clear(&existing_header, sizeof(existing_header));
-    if (roots_status != FV_DEVICE_SECRET_EMPTY ||
+    if ((roots_status != FV_DEVICE_SECRET_EMPTY &&
+         roots_status != FV_DEVICE_SECRET_ACTIVE) ||
         state_status != FV_PERSIST_NOT_FOUND ||
         header_status != FV_PERSIST_NOT_FOUND) {
         result = (state_status == FV_PERSIST_IO_ERROR ||
@@ -111,14 +116,49 @@ fv_setup_provision_result_t fv_setup_provision(
         result = FV_SETUP_PROVISION_ENCODING_FAILED;
         goto cleanup;
     }
-    if (!services->ops->random_fill(
-            services, workspace->generated_roots.device_secret,
-            sizeof(workspace->generated_roots.device_secret)) ||
-        all_zero(workspace->generated_roots.device_secret,
-                 FV_DEVICE_ROOT_SIZE) ||
-        all_zero(workspace->generated_roots.device_secret + FV_DEVICE_ROOT_SIZE,
-                 FV_DEVICE_ROOT_SIZE) ||
-        !services->ops->random_fill(services, workspace->header.vault_id,
+    if (roots_status == FV_DEVICE_SECRET_EMPTY) {
+        if (!services->ops->random_fill(
+                services, workspace->generated_roots.device_secret,
+                sizeof(workspace->generated_roots.device_secret)) ||
+            all_zero(workspace->generated_roots.device_secret,
+                     FV_DEVICE_ROOT_SIZE) ||
+            all_zero(workspace->generated_roots.device_secret +
+                         FV_DEVICE_ROOT_SIZE,
+                     FV_DEVICE_ROOT_SIZE)) {
+            result = FV_SETUP_PROVISION_RANDOM_FAILED;
+            goto cleanup;
+        }
+        const fv_persist_result_t provision_result =
+            services->ops->provision_device_secret(
+                services, &workspace->generated_roots);
+        if (provision_result != FV_PERSIST_OK) {
+            /* A lost acknowledgement may follow a successful one-way OTP
+             * commit. Continue only after status and byte-for-byte readback
+             * prove that the requested roots became active. */
+            fv_device_secret_status_t recovered_status =
+                FV_DEVICE_SECRET_INVALID;
+            if (services->ops->device_secret_status(
+                    services, &recovered_status) != FV_PERSIST_OK ||
+                recovered_status != FV_DEVICE_SECRET_ACTIVE ||
+                services->ops->read_device_secret(
+                    services, &workspace->stored_roots) != FV_PERSIST_OK ||
+                memcmp(&workspace->stored_roots,
+                       &workspace->generated_roots,
+                       sizeof(workspace->stored_roots)) != 0) {
+                result = FV_SETUP_PROVISION_ROOTS_FAILED;
+                goto cleanup;
+            }
+        }
+    }
+    if (services->ops->read_device_secret(
+            services, &workspace->stored_roots) != FV_PERSIST_OK ||
+        (roots_status == FV_DEVICE_SECRET_EMPTY &&
+         memcmp(&workspace->stored_roots, &workspace->generated_roots,
+                sizeof(workspace->stored_roots)) != 0)) {
+        result = FV_SETUP_PROVISION_VERIFICATION_FAILED;
+        goto cleanup;
+    }
+    if (!services->ops->random_fill(services, workspace->header.vault_id,
                                     FV_VAULT_ID_SIZE) ||
         all_zero(workspace->header.vault_id, FV_VAULT_ID_SIZE)) {
         result = FV_SETUP_PROVISION_RANDOM_FAILED;
@@ -126,26 +166,8 @@ fv_setup_provision_result_t fv_setup_provision(
     }
     workspace->header.sequence = 1u;
     workspace->header.entry_method = persisted_method;
+    workspace->header.encryption_stack = app->selected_encryption_stack;
 
-    if (services->ops->provision_device_secret(
-            services, &workspace->generated_roots) != FV_PERSIST_OK) {
-        result = FV_SETUP_PROVISION_ROOTS_FAILED;
-        /* A lost acknowledgement can report failure after committing roots. */
-        roots_status = FV_DEVICE_SECRET_INVALID;
-        if (services->ops->device_secret_status(services, &roots_status) !=
-                FV_PERSIST_OK || roots_status != FV_DEVICE_SECRET_EMPTY) {
-            roots_active = true;
-        }
-        goto cleanup;
-    }
-    roots_active = true;
-    if (services->ops->read_device_secret(
-            services, &workspace->stored_roots) != FV_PERSIST_OK ||
-        memcmp(&workspace->stored_roots, &workspace->generated_roots,
-               sizeof(workspace->stored_roots)) != 0) {
-        result = FV_SETUP_PROVISION_VERIFICATION_FAILED;
-        goto cleanup;
-    }
     if (fv_credential_envelope_create(
             &workspace->encoding, &workspace->stored_roots, costs,
             random_adapter, services, &workspace->header, &workspace->vmk) !=
@@ -184,9 +206,8 @@ fv_setup_provision_result_t fv_setup_provision(
     result = FV_SETUP_PROVISION_OK;
 
 cleanup:
-    if (result != FV_SETUP_PROVISION_OK && roots_active) {
-        (void)services->ops->revoke_device_secret(services);
-    }
+    /* Device roots are a factory/device identity, not disposable vault data.
+     * Recoverable media or journal failures must never burn revocation OTP. */
     secure_clear(workspace, sizeof(*workspace));
     return result;
 }

@@ -17,8 +17,14 @@ The device is a custom PCB with USB-A and USB-C plugs, an 80×160 colour display
 physical directional controls, and removable SD-card storage. All authentication,
 key derivation, encryption, and decryption are intended to happen on the device.
 
-Fuse Vault is currently under development. The hardware, firmware, and
-cryptographic design are evolving together as the first prototype is built.
+Fuse Vault is currently under development. The PCB is in manufacture. Portable
+firmware implements the setup and unlock state machines, device-root and
+attempt-count lifecycle, authenticated redundant headers, selectable AES-XTS
+and ChaCha20 data layers inside an authenticated Ascon storage envelope, and a
+shared target runtime with SD-sector and TinyUSB MSC backends. The remaining
+release work is hardware validation of the display, SD transport, and USB mux,
+plus physical OTP/secure-boot validation and target interoperability/security testing. See
+[the product-readiness checklist](docs/product-readiness.md).
 
 ## Mission
 
@@ -110,7 +116,8 @@ The current design includes:
 - Raspberry Pi RP2354A microcontroller with 2 MB of stacked flash
 - WiseVision N096-1608TBBIG09-C08 80×160 RGB display
 - Four-way directional control and a back button
-- SD card connected over SPI
+- SD card wired for four-bit SDIO; the bring-up firmware can use SPI mode over
+  the same pins as a conservative baseline
 - Male USB-A and USB-C connectors
 - USB ESD protection and power-path diodes
 - Voltage-divider sensing for connector detection
@@ -145,14 +152,16 @@ must be domain-separated so that no key is reused across algorithms or purposes.
 The device-bound secret deliberately makes the vault inseparable from its
 hardware. Fuse Vault will not provide a back door, recovery key, or escrow path.
 
-The exact KDF, secret-provisioning procedure, memory-clearing strategy, and OTP
-layout remain security-critical design work and are not yet specified.
+The V1 KDF domains, credential envelope, memory ownership, OTP root layout,
+candidate page locks, secure-boot/recovery policy, and fail-closed signing
+workflow are specified. Target KDF-cost calibration, real signing identities,
+and sacrificial-silicon validation remain release gates.
 
 ## Encryption pipeline
 
-Fuse Vault is intended to support a configurable stack of block-preserving
-encryption layers. V1 may use one stack selected when the whole vault is
-formatted. Encryption passes each storage block through the configured pipeline;
+Fuse Vault supports a versioned stack of block-preserving encryption layers.
+The user selects and orders the available layers when the vault is formatted.
+Encryption passes each storage block through the configured pipeline;
 decryption processes the same pipeline in reverse.
 
 ```text
@@ -160,15 +169,14 @@ write: plaintext block  ─▶ cipher A ─▶ cipher B ─▶ encrypted SD bloc
 read:  encrypted block ─▶ cipher B⁻¹ ─▶ cipher A⁻¹ ─▶ plaintext block
 ```
 
-Candidate primitives include AES, SM4, and others that can be implemented safely
-within the RP2354A's performance and memory constraints. Every layer must use an
-independently derived key.
+The V1 registry implements AES-256-XTS and ChaCha20 and reserves an unavailable
+ID for SM4-XTS. Every layer uses independently derived key material bound to its
+algorithm, version, vault, and stack position. A mandatory authenticated Ascon
+storage envelope prevents a user selection from removing integrity protection.
 
-A block cipher alone is not a complete storage format. The design must also
-define suitable modes of operation, block positions or tweaks, integrity and
-authentication, metadata protection, replay behaviour, and safe handling of
-interrupted writes. These details will form part of the on-disk format
-specification.
+The V1 on-media format defines tweaks/nonces, authenticated metadata, redundant
+copy-on-write records, interrupted-write recovery, and its explicit rollback
+limit. See [the encrypted-data format](docs/encrypted-data-format-v1.md).
 
 ## Operating modes
 
@@ -225,25 +233,22 @@ even without learning the data.
 
 ## Project status
 
-Fuse Vault is currently at the hardware-design and architecture stage. The
-repository contains the EasyEDA Pro circuit-board project and a barebones
-[RP2354A firmware project](firmware/README.md) ready for initial board bring-up.
-The storage format, cryptographic construction, provisioning tools, application
-firmware, and enclosure work are still to be developed.
+Fuse Vault is at the assembled-firmware and hardware-integration stage. The PCB
+is in manufacture. The setup, selectable encryption, persistence, encrypted
+block, and USB-MSC control paths now form one RP2354A runtime. The remaining
+critical path is physical display/SD/presence-sense bring-up, OTP and secure-boot validation,
+and hardware power-loss, performance, and host-interoperability testing.
 
 Near-term work includes:
 
-1. Review and validate the schematic and PCB design.
-2. Define a detailed threat model and explicit security boundaries.
-3. Specify the encrypted block format and power-loss behaviour.
-4. Select and review the password KDF and cipher construction.
-5. Define OTP provisioning, secure boot, debug restrictions, and firmware update
-   policy.
-6. Implement the display and physical-input interface.
-7. Implement locked and unlocked USB device states.
-8. Build and benchmark the storage-encryption pipeline.
-9. Add FIDO2 support after the core storage design is stable.
-10. Review and test the complete hardware and cryptographic implementation.
+1. Bring up the display and SD card, confirm USB presence polarity, and verify
+   connector routing on revision-1 boards.
+2. Benchmark KDF, crypto-stack, SD, and USB performance on the RP2354A.
+3. Create the release/recovery signing identities and validate the frozen OTP,
+   secure-boot, debug, rollback, and signed-update policy on sacrificial devices.
+4. Run power-cut/removal campaigns and Windows/macOS/Linux MSC tests.
+5. Complete independent cryptographic and firmware review.
+6. Add FIDO2 as an independently authorized product slice after V1 storage.
 
 ## Security status
 
@@ -255,6 +260,9 @@ process will be added before public hardware or firmware releases.
 
 - [Raspberry Pi microcontroller documentation](https://www.raspberrypi.com/documentation/microcontrollers/microcontroller-chips.html)
 - [FIDO2 specifications](https://fidoalliance.org/specifications/download/)
+- [V1 product contract](docs/v1-product-contract.md)
+- [Product-readiness checklist](docs/product-readiness.md)
+- [Release and OTP artifact workflow](provisioning/README.md)
 
 ## License
 
