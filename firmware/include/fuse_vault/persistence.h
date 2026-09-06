@@ -67,6 +67,9 @@ typedef struct {
     bool provisioned;
     bool fido_initialized;
     uint8_t fido_digest[32];
+    /* Zero sequence denotes a legacy vault without a committed header anchor. */
+    uint64_t header_sequence;
+    uint8_t header_tag[32];
 } fv_security_state_t;
 
 typedef struct {
@@ -102,6 +105,9 @@ typedef struct {
         fv_platform_services_t *services, const fv_security_state_t *state);
     fv_persist_result_t (*load_vault_header)(fv_platform_services_t *services,
                                              fv_vault_header_t *header);
+    /* With header_sequence anchored, stages/verifies the inactive copy only.
+     * load_vault_header continues returning the journal-committed copy until
+     * store_security_state publishes the replacement sequence and tag. */
     fv_persist_result_t (*store_vault_header)(fv_platform_services_t *services,
                                               const fv_vault_header_t *header);
 } fv_platform_service_ops_t;

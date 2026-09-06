@@ -51,11 +51,16 @@ static uint8_t glyph_row(char character, unsigned row) {
         case '<': { static const uint8_t g[7] = {1,2,4,8,4,2,1}; return g[row]; }
         case '[': { static const uint8_t g[7] = {14,8,8,8,8,8,14}; return g[row]; }
         case ']': { static const uint8_t g[7] = {14,2,2,2,2,2,14}; return g[row]; }
+        case '@': { static const uint8_t g[7] = {14,17,23,21,23,16,14}; return g[row]; }
+        case '?': { static const uint8_t g[7] = {14,17,1,2,4,0,4}; return g[row]; }
+        case '_': return row == 6u ? 31u : 0u;
+        case '+': return row == 3u ? 31u : (row >= 1u && row <= 5u ? 4u : 0u);
         case ':': return (row == 2u || row == 5u) ? 4u : 0u;
         case '/': return (uint8_t)(1u << (row < 5u ? row : 4u));
         case '-': return row == 3u ? 14u : 0u;
         case '.': return row == 6u ? 4u : 0u;
-        default: return 0u;
+        case ' ': return 0u;
+        default: return glyph_row('?', row);
     }
 }
 
@@ -147,6 +152,7 @@ void fv_ui_draw_view(const fv_ui_view_t *view,
         }
     }
     horizontal_line(framebuffer, 67u, COLOR_MUTED);
+    if (view->hide_controls) return;
     if (view->secret_controls) {
         text(framebuffer, 4u, 71u, "\005", COLOR_ACCENT);
         text(framebuffer, 13u, 71u, view->back_action, COLOR_TEXT);

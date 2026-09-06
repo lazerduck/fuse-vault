@@ -5,6 +5,7 @@
 #include "fuse_vault/fido_probe.h"
 #include "fuse_vault/fido_verification.h"
 #include "fuse_vault/secret_input.h"
+#include "fuse_vault/ui.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +21,25 @@ static fv_fido_probe_t transport;
 static fv_fido_verification_t verification;
 static uint32_t now = 100;
 static int presence_result;
-static bool attached;
+static bool attached, fail_commit;
+static bool commit(void *context, const uint8_t *image, size_t size) {
+    return !fail_commit && fv_fido_store_commit(context, image, size);
+}
+static void preview(const char *name) {
+    const char *directory = getenv("FV_PASSKEY_PREVIEW_DIR");
+    if (!directory) return;
+    char path[4096]; snprintf(path, sizeof(path), "%s/%s.ppm", directory, name);
+    FILE *file = fopen(path, "wb"); assert(file);
+    fv_framebuffer_t frame; fv_ui_draw(&app, &frame);
+    fprintf(file, "P6\n160 80\n255\n");
+    for (unsigned y=0; y<80; ++y) for (unsigned x=0; x<160; ++x) {
+        uint16_t v = frame.pixels[y][x];
+        uint8_t rgb[3] = {(uint8_t)(((v >> 11) & 31)*255/31),
+            (uint8_t)(((v >> 5) & 63)*255/63), (uint8_t)((v & 31)*255/31)};
+        assert(fwrite(rgb, 1, 3, file) == 3);
+    }
+    assert(fclose(file) == 0);
+}
 static bool random_fill(void *context, uint8_t *out, size_t size) {
     (void)context; return services.ops->random_fill(&services, out, size);
 }
@@ -48,14 +67,24 @@ static bool detach(void *context) {
     fv_fido_probe_reset(&transport); fv_fido_verification_clear(&verification);
     attached = false; return true;
 }
+static bool local_authorized(void *context) {
+    (void)context;
+    return attached && runtime.authentication.vmk_valid && app.session_unlocked &&
+        verification.valid && (uint32_t)(now - verification.verified_at) < FV_FIDO_UV_COMPLETE_MS;
+}
+static bool manage(void *context, fv_passkey_action_t action, uint16_t *index,
+    uint16_t *count, fv_passkey_t *entry) {
+    (void)context;
+    return fv_fido_engine_manage(action, index, count, entry);
+}
 static bool attach_fido(void *context, const fv_volume_master_key_t *vmk,
     const fv_media_layout_t *layout, const fv_encryption_stack_descriptor_t *stack) {
     (void)context;
     if (!fv_fido_store_open(&store, &services, &services_context.vault_device,
         layout, vmk, stack)) return false;
     const uint8_t device_id[16] = {'h','o','s','t','-','t','e','s','t'};
-    fv_fido_engine_ops_t ops = {.random = random_fill, .commit = fv_fido_store_commit,
-        .presence = presence, .millis = millis, .verify_user = verify_user, .uv_retries = uv_retries, .context = &store};
+    fv_fido_engine_ops_t ops = {.random = random_fill, .commit = commit,
+        .presence = presence, .millis = millis, .local_authorized = local_authorized, .verify_user = verify_user, .uv_retries = uv_retries, .context = &store};
     if (!fv_fido_engine_open(store.image, store.root_key, device_id, &ops)) return false;
     fv_fido_probe_reset(&transport);
     transport.dispatch = command;
@@ -67,16 +96,22 @@ static bool attach_fido(void *context, const fv_volume_master_key_t *vmk,
     attached = true;
     return true;
 }
-static const fv_runtime_usb_ops_t usb_ops = {attach_msc, detach, attach_fido};
+static const fv_runtime_usb_ops_t usb_ops = {attach_msc, detach, attach_fido, manage};
 static const fv_credential_costs_t costs = {1,1};
+static uint8_t secret_last = 56;
 static void secret(fv_secret_entry_t *entry) {
     fv_secret_entry_begin(entry, FV_ENTRY_METHOD_WHEELS);
     entry->state.wheels.values[0] = 12;
     entry->state.wheels.values[1] = 34;
-    entry->state.wheels.values[2] = 56;
+    entry->state.wheels.values[2] = secret_last;
 }
 static void unlock(void) {
+    fail_commit = false;
     fv_device_runtime_handle_event(&runtime, FV_EVENT_LOCK_REQUESTED);
+    if (app.state == FV_STATE_FAULT) {
+        app.state = FV_STATE_VAULT_SECRET_ENTRY;
+        /* Fault closed the engine; reopen recovers the durable snapshot. */
+    }
     assert(app.state == FV_STATE_VAULT_SECRET_ENTRY);
     secret(&app.secret_entry);
     fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
@@ -132,10 +167,75 @@ int main(void) {
     char line[8192];
     while (fgets(line, sizeof(line), stdin)) {
         if (!strcmp(line,"reopen\n")) { now += 1; unlock(); puts("ok"); }
+        else if (!strcmp(line,"change-password\n")) {
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_LOCK_REQUESTED);
+            secret(&app.secret_entry);
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+            assert(app.state == FV_STATE_MODE_SELECT);
+            while (app.selected_mode != FV_MODE_SETTINGS)
+                fv_device_runtime_handle_event(&runtime, FV_EVENT_DOWN);
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+            secret(&app.secret_entry);
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+            assert(app.state == FV_STATE_SETTINGS && !attached);
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+            ++secret_last;
+            secret(&app.secret_entry);
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+            secret(&app.secret_entry);
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+            assert(app.state == FV_STATE_CHANGE_REVIEW);
+            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+            assert(app.state == FV_STATE_CHANGE_SAVED && !attached);
+            unlock();
+            puts("ok");
+        }
         else if (!strcmp(line,"deny\n")) { presence_result = 2; puts("ok"); }
         else if (!strcmp(line,"allow\n")) { presence_result = 0; puts("ok"); }
         else if (!strcmp(line,"lock\n")) { fv_device_runtime_handle_event(&runtime,FV_EVENT_LOCK_REQUESTED); puts("ok"); }
         else if (!strcmp(line,"expire\n")) { now += FV_FIDO_UV_COMPLETE_MS; puts("ok"); }
+        else if (!strncmp(line,"ui-",3)) {
+            fv_event_t event = FV_EVENT_SELECT;
+            if (!strcmp(line,"ui-back\n")) event = FV_EVENT_BACK;
+            else if (!strcmp(line,"ui-right\n")) event = FV_EVENT_RIGHT;
+            else if (!strcmp(line,"ui-left\n")) event = FV_EVENT_LEFT;
+            else if (!strcmp(line,"ui-up\n")) event = FV_EVENT_UP;
+            else if (!strcmp(line,"ui-down\n")) event = FV_EVENT_DOWN;
+            fv_device_runtime_handle_event(&runtime,event);
+            if (app.state == FV_STATE_PASSKEY_DELETE_CONFIRM) preview("confirm");
+            puts("ok");
+        }
+        else if (!strcmp(line,"check-list\n")) {
+            assert(app.state == FV_STATE_PASSKEY_LIST && app.passkey_count == 1);
+            assert(!strcmp(app.passkey.site,"example.com"));
+            assert(!strcmp(app.passkey.account,"alice@example.com"));
+            preview("list");
+            puts("ok");
+        }
+        else if (!strcmp(line,"check-empty\n")) {
+            assert(app.state == FV_STATE_PASSKEY_LIST && app.passkey_count == 0);
+            preview("empty");
+            puts("ok");
+        }
+        else if (!strcmp(line,"fail-commit\n")) { fail_commit = true; puts("ok"); }
+        else if (!strcmp(line,"check-fault\n")) {
+            assert(app.state == FV_STATE_FAULT && !app.session_unlocked && !attached);
+            puts("ok");
+        }
+        else if (!strcmp(line,"check-two\n")) {
+            assert(app.state == FV_STATE_PASSKEY_LIST && app.passkey_count == 2);
+            assert(!strcmp(app.passkey.site, "example.com"));
+            assert(app.passkey.account[0]);
+            puts("ok");
+        }
+        else if (!strcmp(line,"check-bob\n")) {
+            assert(!strcmp(app.passkey.account,"bob@example.com")); puts("ok");
+        }
+        else if (!strcmp(line,"check-cleared\n")) {
+            fv_passkey_t empty = {0};
+            assert(!memcmp(&app.passkey, &empty, sizeof(empty)));
+            puts("ok");
+        }
         else {
             size_t size = strcspn(line,"\n");
             assert(size % 2 == 0 && size / 2 <= FV_FIDO_ENGINE_MESSAGE_SIZE);

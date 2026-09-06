@@ -9,6 +9,8 @@
 extern uint8_t keydev_dec[32];
 extern bool has_keydev_dec;
 #include "files.h"
+#include "credential.h"
+#include "resident_container.h"
 #include "object_authorization.h"
 #include "apdu.h"
 #include "hid/ctap_hid.h"
@@ -27,7 +29,7 @@ const known_app_t *find_app_by_rp_id_hash(const uint8_t *hash) { (void)hash; ret
 
 static fv_fido_engine_ops_t platform;
 static uint8_t *image;
-static bool failed, dirty, opened, staging;
+static bool failed, dirty, opened, staging, local_management;
 static uint32_t session_started;
 void fv_pico_engine_fail(void) { failed = true; }
 static uint8_t root_key[32], random_buffer[1024];
@@ -145,7 +147,7 @@ void fv_fido_engine_close(void) {
     mbedtls_platform_zeroize(random_buffer,sizeof(random_buffer));
     mbedtls_platform_zeroize(response_buffer,sizeof(response_buffer));
     if (image) mbedtls_platform_zeroize(image,FV_FIDO_STORE_BYTES);
-    image=NULL; otp_key_1=otp_key_2=NULL; opened=false;
+    image=NULL; otp_key_1=otp_key_2=NULL; opened=false; local_management=false;
     memset(&platform,0,sizeof(platform));
 }
 bool fv_fido_engine_open(uint8_t store[FV_FIDO_STORE_BYTES], const uint8_t root[32],
@@ -209,6 +211,7 @@ size_t fv_fido_engine_command_channel(uint32_t channel, const uint8_t *req,size_
     out[0]=CTAP2_ERR_PROCESSING;
     if (n>FV_FIDO_ENGINE_MESSAGE_SIZE) { out[0]=CTAP1_ERR_INVALID_LEN; return 1; }
     if (!opened || failed || !req || !n) return 1;
+    if (local_management) { out[0]=CTAP2_ERR_NOT_ALLOWED; return 1; }
     memset(response_buffer,0,sizeof(response_buffer));
     apdu.rdata=response_buffer+8; apdu.rlen=0;
     pin_uv_auth_token_tick();
@@ -242,4 +245,89 @@ size_t fv_fido_engine_command_channel(uint32_t channel, const uint8_t *req,size_
 
 size_t fv_fido_engine_command(const uint8_t *req,size_t n,uint8_t *out,size_t cap) {
     return fv_fido_engine_command_channel(1u, req, n, out, cap);
+}
+
+/* Local management does not mint host UV tokens or alter RP verification.
+ * Commands are serialized on core 0; the host is blocked for this whole view. */
+static void local_text(char output[256], const uint8_t *data, size_t size) {
+    memset(output, 0, 256);
+    if (!data) return;
+    if (size > 255) size = 255;
+    for (size_t i = 0; i < size; ++i)
+        output[i] = data[i] >= 32 && data[i] <= 126 ? (char)data[i] : '?';
+}
+static bool local_read(uint16_t *index, uint16_t *count, fv_passkey_t *entry) {
+    memset(entry, 0, sizeof(*entry));
+    *count = 0;
+    for (unsigned i = 0; i < MAX_RESIDENT_CREDENTIALS; ++i)
+        if (file_has_data(file_search((uint16_t)(EF_CRED + i)))) ++*count;
+    if (!*count) { *index = 0; return !failed; }
+    if (*index >= *count) *index = (uint16_t)(*count - 1u);
+    unsigned position = 0;
+    for (unsigned i = 0; i < MAX_RESIDENT_CREDENTIALS; ++i) {
+        file_t *ef = file_search((uint16_t)(EF_CRED + i));
+        if (!file_has_data(ef) || position++ != *index) continue;
+        uint8_t hash[32];
+        Credential cred = {0};
+        bool ok = credential_resident_rp_id_hash(ef, hash) == PICOKEYS_OK &&
+            credential_load_resident(ef, hash, &cred) == 0;
+        if (ok) {
+            local_text(entry->site, (const uint8_t *)cred.rpId.data, cred.rpId.len);
+            if (cred.userName.len) local_text(entry->account, (const uint8_t *)cred.userName.data, cred.userName.len);
+            else if (cred.userDisplayName.len) local_text(entry->account, (const uint8_t *)cred.userDisplayName.data, cred.userDisplayName.len);
+            else {
+                /* User handles are binary; show hex rather than interpreting them. */
+                const char hex[] = "0123456789abcdef";
+                memcpy(entry->account, "User ", 5);
+                size_t n = cred.userId.len < 64 ? cred.userId.len : 64;
+                for (size_t j=0; j<n; ++j) {
+                    entry->account[5+2*j] = hex[cred.userId.data[j] >> 4];
+                    entry->account[6+2*j] = hex[cred.userId.data[j] & 15];
+                }
+            }
+            if (cred.residentId.present && cred.residentId.len == sizeof(entry->id))
+                memcpy(entry->id, cred.residentId.data, sizeof(entry->id));
+            else ok = credential_derive_resident(cred.id.data, cred.id.len, entry->id) == 0;
+        }
+        credential_free(&cred);
+        return ok && !failed;
+    }
+    return false;
+}
+bool fv_fido_engine_manage(fv_passkey_action_t action, uint16_t *index,
+    uint16_t *count, fv_passkey_t *entry) {
+    if (!opened || failed || !index || !count || !entry ||
+        !platform.local_authorized || !platform.local_authorized(platform.context)) return false;
+    if (action == FV_PASSKEY_BEGIN) {
+        local_management = true;
+        reset_gna_state(); fv_pico_cred_session_clear();
+        return local_read(index, count, entry);
+    }
+    if (!local_management) return false;
+    if (action == FV_PASSKEY_END) {
+        local_management = false;
+        memset(entry, 0, sizeof(*entry)); *index = *count = 0;
+        return true;
+    }
+    if (action == FV_PASSKEY_READ) return local_read(index, count, entry);
+    if (action != FV_PASSKEY_DELETE) return false;
+    for (unsigned i = 0; i < MAX_RESIDENT_CREDENTIALS; ++i) {
+        file_t *ef = file_search((uint16_t)(EF_CRED + i));
+        if (!file_has_data(ef) || !credential_resident_matches_id(ef, entry->id, sizeof(entry->id))) continue;
+        uint8_t hash[32];
+        if (credential_resident_rp_id_hash(ef, hash) != PICOKEYS_OK) return false;
+        bool legacy = !resident_container_is_marker(ef);
+        staging = true;
+        bool ok = credential_resident_delete(ef) == PICOKEYS_OK;
+        if (ok && legacy) {
+            int result = credential_rp_legacy_decrement(hash);
+            ok = result == PICOKEYS_OK || result == PICOKEYS_ERR_FILE_NOT_FOUND;
+        }
+        if (ok) dev_state_update(DEV_STATE_CRED_STATE);
+        staging = false;
+        if (!ok) { failed = true; return false; }
+        if (!low_flash_commit_sync(0)) return false;
+        return local_read(index, count, entry);
+    }
+    return false;
 }

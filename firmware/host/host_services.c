@@ -419,6 +419,8 @@ static fv_persist_result_t host_load_security_state(
         .fido_initialized = recovered.fido_initialized,
     };
     memcpy(state->fido_digest, recovered.fido_digest, sizeof(state->fido_digest));
+    state->header_sequence = recovered.header_sequence;
+    memcpy(state->header_tag, recovered.header_tag, sizeof(state->header_tag));
     fv_host_services_context_t *context=services->context;
     memcpy(context->current_vault_id,recovered.vault_id,FV_VAULT_ID_SIZE);
     context->current_vault_id_valid=true;
@@ -437,6 +439,8 @@ static fv_persist_result_t host_store_security_state(
     fv_journal_state_t next={.sequence=state->sequence,
         .previous_sequence=recovered==FV_JOURNAL_OK?previous.sequence:0u,
         .failed_attempts=state->failed_attempts,.provisioned=state->provisioned};
+    next.header_sequence = state->header_sequence;
+    memcpy(next.header_tag, state->header_tag, sizeof(next.header_tag));
     next.fido_initialized = state->fido_initialized;
     memcpy(next.fido_digest, state->fido_digest, sizeof(next.fido_digest));
     memcpy(next.vault_id,context->current_vault_id,FV_VAULT_ID_SIZE);
@@ -450,6 +454,10 @@ static fv_persist_result_t host_store_security_state(
 static fv_persist_result_t host_load_vault_header(
     fv_platform_services_t *services, fv_vault_header_t *header) {
     if (services == NULL || header == NULL) return FV_PERSIST_INVALID;
+    fv_security_state_t state = {0};
+    const fv_persist_result_t state_result = host_load_security_state(services, &state);
+    if (state_result != FV_PERSIST_OK && state_result != FV_PERSIST_NOT_FOUND)
+        return state_result;
     fv_device_secret_t roots = {0};
     fv_persist_result_t rr = host_read_device_secret(services, &roots);
     if (rr != FV_PERSIST_OK) return rr;
@@ -457,7 +465,8 @@ static fv_persist_result_t host_load_vault_header(
     fv_media_layout_t layout;
     fv_block_slice_t header_slice;
     const fv_media_result_t media_result = fv_media_load(
-        &context->vault_device, &roots, NULL, &layout);
+        &context->vault_device, &roots,
+        context->current_vault_id_valid ? context->current_vault_id : NULL, &layout);
     if (media_result != FV_MEDIA_OK ||
         !fv_media_open_header(&layout, &context->vault_device, &header_slice)) {
         secure_clear(&roots, sizeof(roots));
@@ -465,8 +474,8 @@ static fv_persist_result_t host_load_vault_header(
             : media_result == FV_MEDIA_IO_ERROR ? FV_PERSIST_IO_ERROR
                                                 : FV_PERSIST_INVALID;
     }
-    const fv_vault_header_store_result_t result = fv_vault_header_store_load(
-        &header_slice.interface, &roots, layout.vault_id, header);
+    const fv_vault_header_store_result_t result = fv_vault_header_store_load_committed(
+        &header_slice.interface, &roots, layout.vault_id, &state, header);
     if (result == FV_VAULT_HEADER_STORE_OK) {
         memcpy(context->current_vault_id,header->vault_id,FV_VAULT_ID_SIZE);
         context->current_vault_id_valid=true;
@@ -481,6 +490,10 @@ static fv_persist_result_t host_load_vault_header(
 static fv_persist_result_t host_store_vault_header(
     fv_platform_services_t *services, const fv_vault_header_t *header) {
     if (services == NULL || header == NULL) return FV_PERSIST_INVALID;
+    fv_security_state_t state = {0};
+    const fv_persist_result_t state_result = host_load_security_state(services, &state);
+    if (state_result != FV_PERSIST_OK && state_result != FV_PERSIST_NOT_FOUND)
+        return state_result;
     fv_device_secret_t roots = {0};
     fv_persist_result_t rr = host_read_device_secret(services, &roots);
     if (rr != FV_PERSIST_OK) return rr;
@@ -501,8 +514,8 @@ static fv_persist_result_t host_store_vault_header(
         return media_result == FV_MEDIA_IO_ERROR ? FV_PERSIST_IO_ERROR
                                                  : FV_PERSIST_INVALID;
     }
-    const fv_vault_header_store_result_t result = fv_vault_header_store_update(
-        &header_slice.interface, &roots, header);
+    const fv_vault_header_store_result_t result = fv_vault_header_store_stage(
+        &header_slice.interface, &roots, &state, header);
     secure_clear(&roots, sizeof(roots));
     return result == FV_VAULT_HEADER_STORE_OK ? FV_PERSIST_OK
         : result == FV_VAULT_HEADER_STORE_IO_ERROR ? FV_PERSIST_IO_ERROR

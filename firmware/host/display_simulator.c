@@ -58,6 +58,7 @@ static void refresh_input_map(simulator_t *s) {
     fv_input_map_for_app(&s->app, &map);
     fv_input_controller_set_map(&s->input_controller, &map);
 }
+static bool present_settings_work(void *context, const fv_app_t *app);
 static bool boot(simulator_t *s) {
     if (s->started) fv_device_runtime_shutdown(&s->runtime);
     s->started = false;
@@ -91,6 +92,7 @@ static bool boot(simulator_t *s) {
     };
     if (!fv_device_runtime_init(&s->runtime, &s->app, &s->services,
             &s->services_context.vault_device, &USB_OPS, s, &costs)) return false;
+    fv_device_runtime_set_present(&s->runtime, present_settings_work, s);
     s->started = true;
     fv_device_runtime_handle_event(&s->runtime,
         safe ? FV_EVENT_BOOT_COMPLETED : FV_EVENT_FATAL_ERROR);
@@ -160,6 +162,24 @@ static void refresh(simulator_t *s) {
     if (!s->msc.attached) gtk_entry_set_text(GTK_ENTRY(s->note), "");
     gtk_widget_queue_draw(s->display);
 }
+static bool present_settings_work(void *context, const fv_app_t *app) {
+    simulator_t *s = context;
+    (void)app;
+    /* Draw the busy screen synchronously without pumping input or allowing a
+     * restart callback to re-enter a credential transaction. Headless tests
+     * have no window; the same view is still exercised by the renderer tests. */
+    if (!s->display || !gtk_widget_get_realized(s->display)) return true;
+    refresh(s);
+    GdkWindow *window = gtk_widget_get_window(s->display);
+    cairo_region_t *region = gdk_window_get_visible_region(window);
+    GdkDrawingContext *drawing = gdk_window_begin_draw_frame(window, region);
+    gtk_widget_draw(s->display, gdk_drawing_context_get_cairo_context(drawing));
+    gdk_window_end_draw_frame(window, drawing);
+    cairo_region_destroy(region);
+    gdk_display_flush(gdk_window_get_display(window));
+    return true;
+}
+
 static void dispatch_event(simulator_t *s, fv_event_t event) {
     fv_device_runtime_handle_event(&s->runtime, event);
     refresh_input_map(s);

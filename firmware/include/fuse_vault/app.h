@@ -2,6 +2,7 @@
 #define FUSE_VAULT_APP_H
 
 #include "fuse_vault/entry_method.h"
+#include "fuse_vault/passkeys.h"
 #include "fuse_vault/persistence.h"
 
 #include <stdbool.h>
@@ -39,6 +40,16 @@ typedef enum {
     FV_STATE_VAULT_RECORDING_SUCCESS,
     FV_STATE_VAULT_UNLOCKED,
     FV_STATE_FIDO_READY,
+    FV_STATE_PASSKEY_LIST,
+    FV_STATE_PASSKEY_DELETE_CONFIRM,
+    FV_STATE_SETTINGS,
+    FV_STATE_CHANGE_METHOD,
+    FV_STATE_CHANGE_SECRET,
+    FV_STATE_CHANGE_CONFIRM,
+    FV_STATE_CHANGE_MISMATCH,
+    FV_STATE_CHANGE_REVIEW,
+    FV_STATE_CHANGE_SAVING,
+    FV_STATE_CHANGE_SAVED,
     FV_STATE_DESTROYED,
     FV_STATE_FAULT,
 } fv_state_t;
@@ -46,6 +57,7 @@ typedef enum {
 typedef enum {
     FV_MODE_VAULT = 0,
     FV_MODE_FIDO,
+    FV_MODE_SETTINGS,
     FV_MODE_COUNT,
 } fv_mode_t;
 
@@ -69,6 +81,7 @@ typedef enum {
     FV_EVENT_LOCK_REQUESTED,
     FV_EVENT_USB_EJECTED,
     FV_EVENT_STORAGE_FAILED,
+    FV_EVENT_CREDENTIAL_CHANGED,
     FV_EVENT_FATAL_ERROR,
 } fv_event_t;
 
@@ -85,6 +98,11 @@ typedef enum {
     FV_COMMAND_STORE_ATTEMPT_COUNTER = 1u << 8,
     FV_COMMAND_INSPECT_MEDIA = 1u << 9,
     FV_COMMAND_PREPARE_MEDIA = 1u << 10,
+    FV_COMMAND_PASSKEY_BEGIN = 1u << 11,
+    FV_COMMAND_PASSKEY_READ = 1u << 12,
+    FV_COMMAND_PASSKEY_DELETE = 1u << 13,
+    FV_COMMAND_PASSKEY_END = 1u << 14,
+    FV_COMMAND_CHANGE_CREDENTIAL = 1u << 15,
 } fv_command_t;
 
 typedef uint32_t fv_command_set_t;
@@ -129,6 +147,10 @@ typedef struct {
     fv_entry_method_t selected_entry_method;
     fv_secret_entry_t secret_entry;
     fv_secret_entry_t setup_secret_entry;
+    /* Settings draft never replaces the active method until durable commit. */
+    fv_secret_entry_t change_secret_entry;
+    fv_entry_method_t change_entry_method;
+    uint8_t selected_setting;
     fv_encryption_stack_descriptor_t selected_encryption_stack;
     uint8_t selected_stack_preset;
     uint8_t failed_attempts;
@@ -137,10 +159,13 @@ typedef struct {
     bool session_unlocked;
     bool fido_waiting;
     bool fido_reset_pending;
+    fv_passkey_t passkey;
+    uint16_t passkey_index, passkey_count, passkey_offset;
 } fv_app_t;
 
 typedef struct {
     bool secret_controls;
+    bool hide_controls;
     bool direction_icons;
     bool word_picker;
     char word_choices[4][12]; /* Up, Right, Down, Left. */

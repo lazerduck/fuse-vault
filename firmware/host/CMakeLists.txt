@@ -27,6 +27,10 @@ add_library(fuse_vault_core STATIC
     ../src/block_slice.c
     ../src/authentication_coordinator.c
     ../src/app.c
+    ../src/app_view.c
+    ../src/settings.c
+    ../src/settings_view.c
+    ../src/credential_change.c
     ../src/boot_recovery.c
     ../src/credential_envelope.c
     ../src/crypto_stack.c
@@ -441,3 +445,10 @@ if(FUSE_VAULT_MBEDTLS_SOURCE)
         endif()
     endif()
 endif()
+
+add_executable(fuse_vault_credential_change_tests credential_change_tests.c nor_flash.c)
+target_link_libraries(fuse_vault_credential_change_tests PRIVATE fuse_vault_core)
+target_include_directories(fuse_vault_credential_change_tests PRIVATE .)
+target_compile_options(fuse_vault_credential_change_tests PRIVATE
+    -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
+add_test(NAME fuse_vault_credential_change COMMAND fuse_vault_credential_change_tests)

@@ -1,6 +1,9 @@
 #include "fuse_vault/device_runtime.h"
 
 #include "fuse_vault/provisioning_coordinator.h"
+#include "fuse_vault/credential_change.h"
+#include "fuse_vault/settings.h"
+#include "fuse_vault/secret_input.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -20,6 +23,12 @@ static bool random_adapter(void *context, uint8_t *output, size_t length) {
 static void clear_session(fv_device_runtime_t *runtime) {
     if (runtime->encrypted_ready) {
         fv_encrypted_block_lock(&runtime->encrypted);
+    }
+    if (runtime->app != NULL) {
+        clear(&runtime->app->passkey, sizeof(runtime->app->passkey));
+        fv_settings_clear(runtime->app);
+        runtime->app->passkey_index = runtime->app->passkey_count =
+            runtime->app->passkey_offset = 0;
     }
     runtime->encrypted_ready = false;
     fv_authentication_session_clear(&runtime->authentication);
@@ -102,6 +111,13 @@ bool fv_device_runtime_init(fv_device_runtime_t *runtime, fv_app_t *app,
     return true;
 }
 
+void fv_device_runtime_set_present(fv_device_runtime_t *runtime,
+                                  fv_runtime_present_fn present, void *context) {
+    if (!runtime) return;
+    runtime->present = present;
+    runtime->present_context = context;
+}
+
 void fv_device_runtime_execute(fv_device_runtime_t *runtime,
                                fv_command_set_t commands) {
     if (runtime == NULL || runtime->app == NULL) return;
@@ -116,6 +132,11 @@ void fv_device_runtime_execute(fv_device_runtime_t *runtime,
         if ((commands & FV_COMMAND_ERASE_TRANSIENT_SECRET) != 0u) {
             fv_secret_entry_clear(&runtime->app->secret_entry);
             fv_secret_entry_clear(&runtime->app->setup_secret_entry);
+            /* The state machine may already be waiting for another unlock.
+             * Restore its empty picker after wiping, including word sentinels. */
+            if (runtime->app->state == FV_STATE_VAULT_SECRET_ENTRY)
+                fv_secret_entry_begin(&runtime->app->secret_entry,
+                                      runtime->app->selected_entry_method);
         }
         if ((commands & FV_COMMAND_ERASE_SESSION_KEYS) != 0u) {
             clear_session(runtime);
@@ -171,6 +192,19 @@ void fv_device_runtime_execute(fv_device_runtime_t *runtime,
                 next |= fail(runtime);
             }
         }
+        if ((commands & FV_COMMAND_CHANGE_CREDENTIAL) != 0u) {
+            /* Defence in depth: no transport may retain keys or serve requests
+             * while the credential transaction runs. Detach failure aborts it. */
+            if ((runtime->present &&
+                 !runtime->present(runtime->present_context, runtime->app)) ||
+                !runtime->usb_ops->detach_usb(runtime->usb_context) ||
+                !fv_credential_change(runtime->app, runtime->services,
+                    &runtime->authentication, &runtime->credential_costs)) {
+                next |= fail(runtime);
+            } else {
+                next |= fv_app_handle(runtime->app, FV_EVENT_CREDENTIAL_CHANGED);
+            }
+        }
         if ((commands & FV_COMMAND_USB_ATTACH_MSC) != 0u) {
             if (!runtime->encrypted_ready ||
                 !runtime->usb_ops->attach_msc(
@@ -186,6 +220,19 @@ void fv_device_runtime_execute(fv_device_runtime_t *runtime,
                     &runtime->authentication.vmk, &runtime->media_layout,
                     &runtime->encrypted.pipeline.descriptor)) {
                 next |= fail(runtime);
+            }
+        }
+        const fv_command_set_t management[] = {FV_COMMAND_PASSKEY_BEGIN,
+            FV_COMMAND_PASSKEY_READ, FV_COMMAND_PASSKEY_DELETE, FV_COMMAND_PASSKEY_END};
+        for (unsigned i = 0; i < 4; ++i) {
+            if ((commands & management[i]) == 0) continue;
+            if (!runtime->authentication.vmk_valid || !runtime->app->session_unlocked ||
+                runtime->usb_ops->manage_passkeys == NULL ||
+                !runtime->usb_ops->manage_passkeys(runtime->usb_context,
+                    (fv_passkey_action_t)i, &runtime->app->passkey_index,
+                    &runtime->app->passkey_count, &runtime->app->passkey)) {
+                next |= fail(runtime);
+                break;
             }
         }
         commands = next;
@@ -207,5 +254,10 @@ void fv_device_runtime_shutdown(fv_device_runtime_t *runtime) {
         (void)runtime->usb_ops->detach_usb(runtime->usb_context);
     }
     clear_session(runtime);
+    if (runtime->app) {
+        fv_secret_entry_clear(&runtime->app->secret_entry);
+        fv_secret_entry_clear(&runtime->app->setup_secret_entry);
+        runtime->app->session_unlocked = false;
+    }
     clear(runtime, sizeof(*runtime));
 }

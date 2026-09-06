@@ -45,6 +45,12 @@ fv_credential_result_t fv_credential_envelope_create(
     fv_credential_random_fill_fn random_fill, void *random_context,
     fv_vault_header_t *header, fv_volume_master_key_t *vmk);
 
+/* Rewrap an existing VMK with fresh salts/nonces; never changes the VMK. */
+fv_credential_result_t fv_credential_envelope_rewrap(
+    const fv_secret_encoding_t *entry, const fv_device_secret_t *roots,
+    const fv_credential_costs_t *costs, fv_credential_random_fill_fn random_fill,
+    void *context, fv_vault_header_t *header, const fv_volume_master_key_t *vmk);
+
 fv_credential_result_t fv_credential_envelope_open(
     const fv_secret_encoding_t *entry,
     const fv_device_secret_t *device_roots,

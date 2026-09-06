@@ -135,3 +135,18 @@ These are concrete hardware/release tasks, not missing product architecture:
 The product is therefore no longer blocked on inventing its basic software
 shape. It is blocked on validating and finishing the physical transports and
 irreversible security configuration on the manufactured hardware.
+
+## Pre-board follow-up: stack and local passkey management
+
+The default storage target now uses the same guarded 64 KiB main-SRAM stack
+reservation as the FIDO target. Both link with their heap limit at the stack
+bottom, fixing the old 2 KiB stack beneath the display's roughly 26 KiB frame.
+
+The optional FIDO target now has a local resident-passkey list and explicit
+individual deletion confirmation. It blocks host commands during management,
+commits through the encrypted snapshot/journal, and clears metadata on exit.
+The 31-check FIDO-enabled host suite passes with independent client coverage
+for local deletion, cancellation, recovery, expiry and multiple entries.
+Address/undefined-behaviour sanitizer tests also pass (leak detection disabled
+in this traced environment; existing SD CRC conversion warnings were demoted
+from errors for that sanitizer build). Physical validation remains outstanding.

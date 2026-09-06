@@ -280,12 +280,12 @@ static bool aes_gcm_decrypt(const uint8_t key[AES_KEY_SIZE],
 #endif
 }
 
-fv_credential_result_t fv_credential_envelope_create(
+static fv_credential_result_t envelope_wrap(
     const fv_secret_encoding_t *entry,
     const fv_device_secret_t *device_roots,
     const fv_credential_costs_t *costs,
     fv_credential_random_fill_fn random_fill, void *random_context,
-    fv_vault_header_t *header, fv_volume_master_key_t *vmk) {
+    fv_vault_header_t *header, fv_volume_master_key_t *vmk, bool generate) {
     if (entry == NULL || device_roots == NULL || costs == NULL ||
         random_fill == NULL || header == NULL || vmk == NULL ||
         header->sequence == 0u || !fv_secret_method_valid(header->entry_method) ||
@@ -312,7 +312,7 @@ fv_credential_result_t fv_credential_envelope_create(
     fv_credential_result_t result = FV_CREDENTIAL_RANDOM_FAILED;
     if (!random_fill(random_context, header->branch_a_salt, FV_SALT_SIZE) ||
         !random_fill(random_context, header->branch_b_salt, FV_SALT_SIZE) ||
-        !random_fill(random_context, vmk->bytes, sizeof(vmk->bytes)) ||
+        (generate && !random_fill(random_context, vmk->bytes, sizeof(vmk->bytes))) ||
         !random_fill(random_context, inner, AES_NONCE_SIZE) ||
         !random_fill(random_context, header->wrapped_vmk, ASCON_NONCE_SIZE) ||
         all_zero(header->branch_a_salt, sizeof(header->branch_a_salt)) ||
@@ -351,6 +351,25 @@ cleanup:
         fv_volume_master_key_clear(vmk);
         memset(header->wrapped_vmk, 0, sizeof(header->wrapped_vmk));
     }
+    return result;
+}
+
+fv_credential_result_t fv_credential_envelope_create(
+    const fv_secret_encoding_t *entry, const fv_device_secret_t *roots,
+    const fv_credential_costs_t *costs, fv_credential_random_fill_fn random_fill,
+    void *context, fv_vault_header_t *header, fv_volume_master_key_t *vmk) {
+    return envelope_wrap(entry, roots, costs, random_fill, context, header, vmk, true);
+}
+
+fv_credential_result_t fv_credential_envelope_rewrap(
+    const fv_secret_encoding_t *entry, const fv_device_secret_t *roots,
+    const fv_credential_costs_t *costs, fv_credential_random_fill_fn random_fill,
+    void *context, fv_vault_header_t *header, const fv_volume_master_key_t *vmk) {
+    if (vmk == NULL) return FV_CREDENTIAL_INVALID_ARGUMENT;
+    fv_volume_master_key_t copy = *vmk;
+    const fv_credential_result_t result =
+        envelope_wrap(entry, roots, costs, random_fill, context, header, &copy, false);
+    fv_volume_master_key_clear(&copy);
     return result;
 }
 

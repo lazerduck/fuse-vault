@@ -28,7 +28,7 @@ def run(executable, protocol):
         assert pin.get_uv_retries() == 10
         token = pin.get_uv_token(ClientPin.PERMISSION.MAKE_CREDENTIAL, rp)
         def register():
-            return ctap.make_credential(challenge, {'id': rp}, {'id': b'alice'},
+            return ctap.make_credential(challenge, {'id': rp}, {'id': b'alice', 'name': 'alice@example.com'},
                 [{'type': 'public-key', 'alg': -7}], options={'rk': True},
                 pin_uv_param=pin.protocol.authenticate(token, challenge),
                 pin_uv_protocol=pin.protocol.VERSION)
@@ -39,6 +39,7 @@ def run(executable, protocol):
         credential = result.auth_data.credential_data
         assert result.auth_data.is_user_verified() and result.auth_data.is_user_present()
         credential.public_key.verify(bytes(result.auth_data) + challenge, result.att_stmt['sig'])
+        device.control('change-password')
         device.control('lock')
         rejected(CtapError.ERR.OTHER, lambda: ctap.get_info())
         device.reopen()
@@ -62,17 +63,50 @@ def run(executable, protocol):
         token = pin.get_uv_token(ClientPin.PERMISSION.CREDENTIAL_MGMT)
         management = CredentialManagement(ctap, pin.protocol, token)
         assert management.get_metadata()[CredentialManagement.RESULT.EXISTING_CRED_COUNT] == 1
-        management.delete_cred({'type': 'public-key', 'id': credential.credential_id})
+        device.control('ui-select')
+        device.control('check-list')
+        rejected(CtapError.ERR.NOT_ALLOWED, lambda: ctap.get_info())
+        # Opening confirmation and cancelling must leave the credential usable.
+        device.control('ui-select'); device.control('ui-back')
+        device.control('check-list')
+        device.control('ui-back')
+        assert management.get_metadata()[CredentialManagement.RESULT.EXISTING_CRED_COUNT] == 1
+        device.control('ui-select'); device.control('ui-select')
+        device.control('ui-right')
+        device.control('check-empty')
+        device.control('ui-back'); device.control('check-cleared')
         device.reopen(); ctap = Ctap2(device); pin = ClientPin(ctap, protocol())
         token = pin.get_uv_token(ClientPin.PERMISSION.CREDENTIAL_MGMT)
         management = CredentialManagement(ctap, pin.protocol, token)
         assert management.get_metadata()[CredentialManagement.RESULT.EXISTING_CRED_COUNT] == 0
+        # Multiple credentials, failed deletion recovery, expiry and key clearing.
+        device.reopen(); ctap = Ctap2(device)
+        for user in ('alice', 'bob'):
+            ctap.make_credential(challenge, {'id': rp},
+                {'id': user.encode(), 'name': user + '@example.com'},
+                [{'type': 'public-key', 'alg': -7}], options={'rk': True, 'uv': True})
+        device.control('ui-select'); device.control('check-two')
+        device.control('ui-down'); device.control('check-bob')
+        device.control('ui-up'); device.control('ui-select')
+        device.control('fail-commit'); device.control('ui-right')
+        device.control('check-fault'); device.control('check-cleared')
+        device.reopen(); device.control('ui-select'); device.control('check-two')
+        device.control('expire'); device.control('ui-select'); device.control('ui-right')
+        device.control('check-fault'); device.control('check-cleared')
+        device.reopen(); device.control('ui-select'); device.control('check-two')
+        device.control('lock'); device.control('check-cleared')
         device.reopen(); ctap = Ctap2(device)
         direct_hash = hashlib.sha256(b'direct built-in verification').digest()
         direct = ctap.make_credential(direct_hash, {'id': rp}, {'id': b'nonresident'},
             [{'type': 'public-key', 'alg': -7}], options={'uv': True})
         assert direct.auth_data.is_user_verified()
         old_id = direct.auth_data.credential_data.credential_id
+        device.control('change-password')
+        ctap = Ctap2(device)
+        preserved = ctap.get_assertion(rp, direct_hash,
+            allow_list=[{'type': 'public-key', 'id': old_id}], options={'uv': True})
+        direct.auth_data.credential_data.public_key.verify(
+            bytes(preserved.auth_data) + direct_hash, preserved.signature)
         device.control('deny')
         rejected(CtapError.ERR.OPERATION_DENIED, ctap.reset)
         device.control('allow'); ctap.reset()

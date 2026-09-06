@@ -63,6 +63,9 @@ typedef struct {
     bool provisioned;
     bool fido_initialized;
     uint8_t fido_digest[32];
+    /* Zero sequence denotes a legacy vault without a committed header anchor. */
+    uint64_t header_sequence;
+    uint8_t header_tag[32];
 } fv_journal_state_t;
 
 typedef struct {

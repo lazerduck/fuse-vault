@@ -29,7 +29,7 @@ SECTIONS
     PROVIDE (__llvm_libc_heap_limit = __HeapLimit);
 
     /* Check if data + heap + stack exceeds RAM limit */
-    ASSERT(__StackLimit == __StackBottom, "FIDO stack reservation mismatch")
-    ASSERT(__HeapLimit == __StackBottom, "FIDO heap/stack boundary mismatch")
-    ASSERT(__end__ <= __HeapLimit, "FIDO data/heap exceeds stack boundary")
+    ASSERT(__StackLimit == __StackBottom, "Firmware stack reservation mismatch")
+    ASSERT(__HeapLimit == __StackBottom, "Firmware heap/stack boundary mismatch")
+    ASSERT(__end__ <= __HeapLimit, "Firmware data/heap exceeds stack boundary")
 }

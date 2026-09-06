@@ -172,7 +172,33 @@ static void test_screen_change_blocks_unchanged_held_binding(void) {
     CHECK(log.count == 1u);
 }
 
+static void test_passkey_delete_requires_fresh_press(void) {
+    fv_app_t app;
+    fv_app_init(&app, true, 0u, FV_ENTRY_METHOD_WHEELS);
+    app.state = FV_STATE_PASSKEY_LIST;
+    fv_input_controller_t controller = controller_for(&app);
+    event_log_t log = {0};
+    const uint32_t right = FV_INPUT_BIT(FV_INPUT_RIGHT);
+    update(&controller, right, 1u, &log);
+    update(&controller, right, 21u, &log);
+    CHECK(log.count == 1u);
+    app.state = FV_STATE_PASSKEY_DELETE_CONFIRM;
+    fv_input_map_t map;
+    fv_input_map_for_app(&app, &map);
+    fv_input_controller_set_map(&controller, &map);
+    update(&controller, right, 1000u, &log);
+    CHECK(log.count == 1u); /* Scrolling cannot become confirmation. */
+    update(&controller, 0, 1001u, &log);
+    update(&controller, 0, 1021u, &log);
+    update(&controller, right, 1022u, &log);
+    update(&controller, right, 1042u, &log);
+    update(&controller, right, 2000u, &log);
+    CHECK(log.count == 2u && log.events[1] == FV_EVENT_RIGHT);
+    CHECK(!map.bindings[FV_INPUT_SELECT].enabled);
+}
+
 int main(void) {
+    test_passkey_delete_requires_fresh_press();
     test_debounce_edges_and_non_repeat();
     test_repeat_and_state_bindings();
     test_direction_sequences_do_not_repeat();

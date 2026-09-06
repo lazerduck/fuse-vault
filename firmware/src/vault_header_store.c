@@ -64,3 +64,82 @@ fv_vault_header_store_result_t fv_vault_header_store_update(fv_block_device_t*d,
     fv_vault_header_t old; fv_vault_header_store_result_t lr=fv_vault_header_store_load(d,r,h->vault_id,&old); if(lr==FV_VAULT_HEADER_STORE_OK&&(old.sequence==UINT64_MAX||h->sequence!=old.sequence+1u)){clear(&old,sizeof(old));return FV_VAULT_HEADER_STORE_INVALID;} if(lr==FV_VAULT_HEADER_STORE_NOT_FOUND&&h->sequence!=1u)return FV_VAULT_HEADER_STORE_INVALID; if(lr!=FV_VAULT_HEADER_STORE_OK&&lr!=FV_VAULT_HEADER_STORE_NOT_FOUND)return lr;
     uint64_t slot=lr==FV_VAULT_HEADER_STORE_OK?(old.sequence&1u):0u; clear(&old,sizeof(old)); uint8_t block[512]={0}; fv_vault_header_store_result_t sr=fv_vault_header_serialize(h,r,block); if(sr!=FV_VAULT_HEADER_STORE_OK)return sr; if(d->ops->write(d,slot,1u,block)!=FV_BLOCK_OK||d->ops->sync(d)!=FV_BLOCK_OK){clear(block,sizeof(block));return FV_VAULT_HEADER_STORE_IO_ERROR;} uint8_t check[512]; if(d->ops->read(d,slot,1u,check)!=FV_BLOCK_OK||memcmp(block,check,sizeof(block))!=0){clear(block,sizeof(block));clear(check,sizeof(check));return FV_VAULT_HEADER_STORE_IO_ERROR;} fv_vault_header_t parsed;sr=fv_vault_header_parse(check,r,h->vault_id,&parsed);clear(block,sizeof(block));clear(check,sizeof(check));clear(&parsed,sizeof(parsed));return sr;
 }
+
+bool fv_vault_header_anchor(const fv_vault_header_t *header,
+                            const fv_device_secret_t *roots,
+                            fv_security_state_t *state) {
+    uint8_t record[FV_VAULT_HEADER_RECORD_SIZE];
+    if (state == NULL || fv_vault_header_serialize(header, roots, record) !=
+            FV_VAULT_HEADER_STORE_OK) return false;
+    state->header_sequence = header->sequence;
+    memcpy(state->header_tag, record + TAG_OFFSET, sizeof(state->header_tag));
+    clear(record, sizeof(record));
+    return true;
+}
+
+/* Read only the journal-committed copy. A newer staged copy is not authoritative.
+ * The tag binds the whole canonical header, including retries at the same sequence. */
+static fv_vault_header_store_result_t find_committed(
+    fv_block_device_t *device, const fv_device_secret_t *roots,
+    const uint8_t vault_id[FV_VAULT_ID_SIZE], const fv_security_state_t *state,
+    fv_vault_header_t *header, uint64_t *slot) {
+    if (header) clear(header, sizeof(*header));
+    if (!usable(device) || !roots || !state || !header || !state->header_sequence)
+        return FV_VAULT_HEADER_STORE_INVALID;
+    uint8_t block[FV_BLOCK_SIZE];
+    fv_vault_header_store_result_t result = FV_VAULT_HEADER_STORE_INVALID;
+    for (uint64_t i = 0; i < FV_VAULT_HEADER_SLOT_COUNT; ++i) {
+        if (device->ops->read(device, i, 1u, block) != FV_BLOCK_OK) {
+            result = FV_VAULT_HEADER_STORE_IO_ERROR;
+            break;
+        }
+        if (get64(block + 16u) == state->header_sequence &&
+            equal(block + TAG_OFFSET, state->header_tag, 32u) &&
+            fv_vault_header_parse(block, roots, vault_id, header) == FV_VAULT_HEADER_STORE_OK) {
+            if (slot) *slot = i;
+            result = FV_VAULT_HEADER_STORE_OK;
+            break;
+        }
+    }
+    clear(block, sizeof(block));
+    if (result != FV_VAULT_HEADER_STORE_OK) clear(header, sizeof(*header));
+    return result;
+}
+
+fv_vault_header_store_result_t fv_vault_header_store_load_committed(
+    fv_block_device_t *device, const fv_device_secret_t *roots,
+    const uint8_t vault_id[FV_VAULT_ID_SIZE], const fv_security_state_t *state,
+    fv_vault_header_t *header) {
+    if (state == NULL) return FV_VAULT_HEADER_STORE_INVALID;
+    if (!state->header_sequence)
+        return fv_vault_header_store_load(device, roots, vault_id, header);
+    return find_committed(device, roots, vault_id, state, header, NULL);
+}
+
+fv_vault_header_store_result_t fv_vault_header_store_stage(
+    fv_block_device_t *device, const fv_device_secret_t *roots,
+    const fv_security_state_t *state, const fv_vault_header_t *header) {
+    if (!state || !header) return FV_VAULT_HEADER_STORE_INVALID;
+    if (!state->header_sequence)
+        return fv_vault_header_store_update(device, roots, header);
+    if (state->header_sequence == UINT64_MAX ||
+        header->sequence != state->header_sequence + 1u)
+        return FV_VAULT_HEADER_STORE_INVALID;
+    fv_vault_header_t committed;
+    uint64_t slot = 0u;
+    fv_vault_header_store_result_t result = find_committed(
+        device, roots, header->vault_id, state, &committed, &slot);
+    clear(&committed, sizeof(committed));
+    if (result != FV_VAULT_HEADER_STORE_OK) return result;
+    uint8_t block[FV_BLOCK_SIZE] = {0}, verified[FV_BLOCK_SIZE] = {0};
+    result = fv_vault_header_serialize(header, roots, block);
+    if (result == FV_VAULT_HEADER_STORE_OK &&
+        (device->ops->write(device, slot ^ 1u, 1u, block) != FV_BLOCK_OK ||
+         device->ops->sync(device) != FV_BLOCK_OK ||
+         device->ops->read(device, slot ^ 1u, 1u, verified) != FV_BLOCK_OK ||
+         !equal(block, verified, sizeof(block))))
+        result = FV_VAULT_HEADER_STORE_IO_ERROR;
+    clear(block, sizeof(block));
+    clear(verified, sizeof(verified));
+    return result;
+}

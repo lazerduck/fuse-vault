@@ -124,6 +124,10 @@ add_executable(fuse_vault
     src/block_slice.c
     src/authentication_coordinator.c
     src/app.c
+    src/app_view.c
+    src/settings.c
+    src/settings_view.c
+    src/credential_change.c
     src/boot_recovery.c
     src/credential_envelope.c
     src/crypto_stack.c
@@ -241,7 +245,7 @@ target_link_libraries(fuse_vault PRIVATE
 
 # Apply strict diagnostics to our code without imposing them on Pico SDK source
 # files, some of which intentionally use supported GNU C extensions.
-set_source_files_properties(src/app.c src/authentication_coordinator.c src/block_slice.c src/boot_recovery.c src/credential_envelope.c src/crypto_stack.c src/crypto_pipeline.c src/device_provisioning.c src/device_runtime.c src/device_roots.c src/device_services.c src/display.c src/encrypted_block.c src/input.c src/input_bindings.c src/journal_authenticator.c src/main.c src/media_layout.c src/peripheral_safety.c src/provisioning_coordinator.c src/rp2354_connector.c src/rp2354_display.c src/rp2354_input.c src/rp2354_otp.c src/rp2354_random.c src/rp2354_sd.c src/rp2354_security_flash.c src/rp2354_usb_descriptors.c src/rp2354_usb_msc.c src/secret_input.c src/security_journal.c src/ui.c src/vault_header_store.c src/virtual_msc.c PROPERTIES COMPILE_OPTIONS
+set_source_files_properties(src/app_view.c src/settings.c src/settings_view.c src/credential_change.c src/app.c src/authentication_coordinator.c src/block_slice.c src/boot_recovery.c src/credential_envelope.c src/crypto_stack.c src/crypto_pipeline.c src/device_provisioning.c src/device_runtime.c src/device_roots.c src/device_services.c src/display.c src/encrypted_block.c src/input.c src/input_bindings.c src/journal_authenticator.c src/main.c src/media_layout.c src/peripheral_safety.c src/provisioning_coordinator.c src/rp2354_connector.c src/rp2354_display.c src/rp2354_input.c src/rp2354_otp.c src/rp2354_random.c src/rp2354_sd.c src/rp2354_security_flash.c src/rp2354_usb_descriptors.c src/rp2354_usb_msc.c src/secret_input.c src/security_journal.c src/ui.c src/vault_header_store.c src/virtual_msc.c PROPERTIES COMPILE_OPTIONS
     "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow"
 )
 
@@ -268,15 +272,16 @@ pico_generate_pio_header(fuse_vault ${CMAKE_CURRENT_LIST_DIR}/pio/sd_spi.pio)
 set_source_files_properties(src/rp2354_sd_spi.c PROPERTIES
     COMPILE_OPTIONS "-Wall;-Wextra;-Wpedantic;-Wconversion;-Wshadow")
 
-# The CTAP/crypto call chain cannot safely use the SDK's 2 KiB scratch stack.
-if(FUSE_VAULT_ENABLE_FIDO2)
-    if(NOT COMMAND pico_add_linker_script_override_path)
-        message(FATAL_ERROR "FIDO2 requires Pico SDK 2.3+ linker include overrides")
-    endif()
-    target_compile_definitions(fuse_vault PRIVATE PICO_STACK_SIZE=65536 PICO_USE_STACK_GUARDS=1)
-    target_compile_options(fuse_vault PRIVATE -fstack-usage)
-    target_compile_options(fuse_vault_fido_engine PRIVATE -fstack-usage)
-    pico_add_linker_script_override_path(fuse_vault ${CMAKE_CURRENT_LIST_DIR}/linker/fido
-        FILES sections_stack.incl section_end.incl)
-    pico_set_linker_script_var(fuse_vault HEAP_LIMIT "ORIGIN(RAM) + LENGTH(RAM) - 65536")
+# Display rendering alone needs about 26 KiB. Reserve a guarded main-SRAM
+# stack for every target profile, including storage-only builds.
+if(NOT COMMAND pico_add_linker_script_override_path)
+    message(FATAL_ERROR "Firmware requires Pico SDK 2.3+ linker include overrides")
 endif()
+target_compile_definitions(fuse_vault PRIVATE PICO_STACK_SIZE=65536 PICO_USE_STACK_GUARDS=1)
+target_compile_options(fuse_vault PRIVATE -fstack-usage)
+if(FUSE_VAULT_ENABLE_FIDO2)
+    target_compile_options(fuse_vault_fido_engine PRIVATE -fstack-usage)
+endif()
+pico_add_linker_script_override_path(fuse_vault ${CMAKE_CURRENT_LIST_DIR}/linker/runtime
+    FILES sections_stack.incl section_end.incl)
+pico_set_linker_script_var(fuse_vault HEAP_LIMIT "ORIGIN(RAM) + LENGTH(RAM) - 65536")

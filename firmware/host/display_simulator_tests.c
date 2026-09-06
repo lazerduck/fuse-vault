@@ -74,6 +74,30 @@ int main(void) {
     CHECK(memcmp(note, recovered, sizeof(note)) == 0);
     dispatch_event(&s, FV_EVENT_USB_EJECTED);
     CHECK(!s.msc.attached && !s.runtime.authentication.vmk_valid);
+    /* Real button mappings: change method, confirm independently, reboot and
+     * read the same encrypted note. No UI state is injected for this flow. */
+    press(&s, FV_INPUT_DOWN); /* settings */
+    press(&s, FV_INPUT_SELECT);
+    press(&s, FV_INPUT_UP); press(&s, FV_INPUT_SELECT); /* current wheels */
+    CHECK(s.app.state == FV_STATE_SETTINGS && !s.msc.attached);
+    press(&s, FV_INPUT_DOWN); press(&s, FV_INPUT_SELECT);
+    press(&s, FV_INPUT_DOWN); press(&s, FV_INPUT_SELECT); /* directions */
+    for (unsigned i = 0; i < 6; ++i) press(&s, FV_INPUT_UP);
+    press(&s, FV_INPUT_SELECT);
+    CHECK(s.app.state == FV_STATE_CHANGE_CONFIRM);
+    for (unsigned i = 0; i < 6; ++i) press(&s, FV_INPUT_UP);
+    press(&s, FV_INPUT_SELECT);
+    CHECK(s.app.state == FV_STATE_CHANGE_REVIEW);
+    press(&s, FV_INPUT_SELECT);
+    CHECK(s.app.state == FV_STATE_CHANGE_SAVED && !s.runtime.authentication.vmk_valid);
+    CHECK(boot(&s));
+    CHECK(s.app.selected_entry_method == FV_ENTRY_METHOD_DIRECTIONS);
+    press(&s, FV_INPUT_SELECT);
+    for (unsigned i = 0; i < 6; ++i) press(&s, FV_INPUT_UP);
+    press(&s, FV_INPUT_SELECT);
+    CHECK(s.msc.attached);
+    CHECK(fv_virtual_msc_read10(&s.msc, 0u, 1u, recovered) == FV_MSC_OK);
+    CHECK(memcmp(note, recovered, sizeof(note)) == 0);
     fv_device_runtime_shutdown(&s.runtime);
     close(s.lock_fd);
     GDir *dir = g_dir_open(directory, 0u, NULL);

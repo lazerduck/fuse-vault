@@ -27,6 +27,8 @@ void fv_input_map_for_app(const fv_app_t *app, fv_input_map_t *map) {
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
             bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
             break;
+        case FV_STATE_SETTINGS:
+        case FV_STATE_CHANGE_METHOD:
         case FV_STATE_SETUP_METHOD_SELECT:
         case FV_STATE_SETUP_STACK_SELECT:
             bind(map, FV_INPUT_UP, FV_EVENT_UP, true);
@@ -34,18 +36,25 @@ void fv_input_map_for_app(const fv_app_t *app, fv_input_map_t *map) {
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
             bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
             break;
+        case FV_STATE_CHANGE_SECRET:
+        case FV_STATE_CHANGE_CONFIRM:
         case FV_STATE_SETUP_SECRET_ENTRY:
         case FV_STATE_SETUP_SECRET_CONFIRM:
         case FV_STATE_VAULT_SECRET_ENTRY: {
             /* These pickers commit choices on each press; holding must not repeat. */
-            const bool repeat = app->selected_entry_method !=
-                                FV_ENTRY_METHOD_DIRECTIONS &&
-                                app->selected_entry_method != FV_ENTRY_METHOD_WORD_LIST;
+            const fv_entry_method_t method =
+                app->state == FV_STATE_CHANGE_SECRET || app->state == FV_STATE_CHANGE_CONFIRM
+                    ? app->change_entry_method : app->selected_entry_method;
+            const bool repeat = method != FV_ENTRY_METHOD_DIRECTIONS &&
+                                method != FV_ENTRY_METHOD_WORD_LIST;
             bind_directions(map, repeat);
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
             bind(map, FV_INPUT_BACK, FV_EVENT_BACK, repeat);
             break;
         }
+        case FV_STATE_CHANGE_MISMATCH:
+        case FV_STATE_CHANGE_REVIEW:
+        case FV_STATE_CHANGE_SAVED:
         case FV_STATE_SETUP_SECRET_MISMATCH:
         case FV_STATE_SETUP_POLICY_CONFIRM:
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
@@ -57,10 +66,23 @@ void fv_input_map_for_app(const fv_app_t *app, fv_input_map_t *map) {
             bind(map, FV_INPUT_DOWN, FV_EVENT_DOWN, true);
             bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
             break;
-        case FV_STATE_VAULT_UNLOCKED:
-        case FV_STATE_FIDO_READY:
+        case FV_STATE_PASSKEY_LIST:
+            bind_directions(map, true);
+            bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
             bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
             break;
+        case FV_STATE_PASSKEY_DELETE_CONFIRM:
+            bind(map, FV_INPUT_RIGHT, FV_EVENT_RIGHT, false);
+            bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
+            break;
+        case FV_STATE_FIDO_READY:
+            bind(map, FV_INPUT_SELECT, FV_EVENT_SELECT, false);
+            bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
+            break;
+        case FV_STATE_VAULT_UNLOCKED:
+            bind(map, FV_INPUT_BACK, FV_EVENT_BACK, false);
+            break;
+        case FV_STATE_CHANGE_SAVING:
         case FV_STATE_BOOTING:
         case FV_STATE_BOOT_MEDIA_REQUIRED:
         case FV_STATE_SETUP_MEDIA_CHECKING:

@@ -72,3 +72,8 @@ credential-enumeration state, reset-window timing relative to FIDO enumeration,
 and complete authorization invalidation on reset. No upstream hardware driver
 or OTP initializer is linked. The fixed offset store is encrypted by Fuse Vault
 before SD writes; Pico FIDO does not receive the vault's plaintext block device.
+
+Local management adaptation: `port.c` exposes a device-session-authorized
+resident credential metadata/deletion API. It serializes against host commands,
+uses stable resident IDs and stages deletion until the existing durable commit.
+It never supplies private keys or creates CTAP authorization tokens for the UI.

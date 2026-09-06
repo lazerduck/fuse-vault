@@ -436,3 +436,41 @@ watermarks and power-cut behavior are still unmeasured.
 
 See the [integration status and hardware checklist](../docs/fido2-integration-plan.md)
 and [pinned sources/local adaptations](third_party/pico_fido/README.fuse-vault.md).
+
+## On-device passkey browser
+
+In a FIDO-enabled target build, unlock, select FIDO2, then press Select to
+browse saved resident passkeys. Up/Down selects an entry; Left/Right scrolls
+site and account text. Select opens a deletion confirmation, Back cancels,
+and a fresh Right press deletes the selected passkey. Back from the list
+returns to FIDO; Back again locks. Empty stores show “No saved passkeys”.
+Non-resident credentials are held by the relying party and cannot be listed.
+
+The host cannot issue FIDO commands while local management is open. Deletion
+uses the stable credential ID and the existing encrypted snapshot/journal
+commit, returning to the list only after durable success. Failures close the
+session; lock, faults and the ten-minute session limit clear displayed metadata.
+Local management does not issue host UV tokens or change the RP verification
+cache. Site/account text is bounded to 255 bytes and non-ASCII bytes display as
+question marks with the current device font. There is no rename/export UI.
+
+The independent simulated-device test now drives this same application and
+runtime flow after registering real credentials, covering cancellation,
+multiple entries, host exclusion, durable deletion, failed commits, expiry and
+metadata clearing. Run the FIDO host suite above to exercise it without a board.
+The graphical storage simulator remains storage-only.
+
+All target builds now reserve a guarded 64 KiB stack in main SRAM with a separate
+heap boundary, including the default storage build. Link-time assertions protect
+the reservation; compiler `.su` reports are generated for firmware sources.
+This fixes the default build's former 2 KiB allocation beneath a roughly 26 KiB
+display frame. Physical stack watermark measurements remain a bring-up task.
+
+## Password and entry-method settings
+
+Settings in the mode menu now provides password and entry-method changes after
+a fresh local unlock. The user enters the replacement twice, reviews it, and
+saves; success locks the device while preserving storage and FIDO credentials.
+Navigation, view rendering and the persistent change coordinator are separate
+modules. See [the lifecycle and transaction design](../docs/password-change.md)
+for the journal-v3 header anchor, power-loss behavior and extension points.

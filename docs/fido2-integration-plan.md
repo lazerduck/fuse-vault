@@ -84,7 +84,7 @@ media, input and connector safety. Crypto calls are synchronous; their maximum
 service latency still needs measurement on the board.
 
 The FIDO build uses the existing Mbed TLS backend with the needed modules enabled.
-It reserves a guarded 64 KiB main-SRAM stack using Pico SDK 2.3 linker overrides.
+All target builds reserve a guarded 64 KiB main-SRAM stack using Pico SDK 2.3 linker overrides.
 Compiler reports found a roughly 26 KiB display frame nested below a roughly
 6.7 KiB assertion frame, so the SDK's scratch stack was insufficient. Link-time
 assertions separate heap and stack. Hardware stack watermarks remain required.
@@ -125,3 +125,26 @@ assertions separate heap and stack. Hardware stack watermarks remain required.
    release identities and dependency/licence distribution requirements before
    removing the release gate. Development USB IDs and AAGUID are not certified
    or production-assigned identities.
+
+## Local credential management
+
+The device now offers a resident-passkey browser from FIDO Ready (Select).
+Up/Down browses, Left/Right scrolls site/account text, Select asks to delete,
+Back cancels, and a fresh Right press confirms deletion. Host CTAP commands
+return Not Allowed while this local view owns the engine. The stable resident
+ID identifies deletion, independent of the current list index; the existing
+snapshot and authenticated internal anchor commit it before UI success.
+
+Local access requires an unlocked device session within ten minutes of unlock;
+it does not create host tokens or rebind host RP verification. Closing the list
+clears public metadata; session teardown also closes its engine ownership.
+Failure to authorize or commit faults closed. Tests register credentials through
+python-fido2, drive the shared UI/runtime, and verify cancellation, host exclusion,
+multiple entries, deletion across reopen, failed-commit recovery and expiry.
+The existing engine-only reference tests retain host credential-management coverage.
+
+The list covers resident credentials only. Names use the current ASCII font,
+replace unsupported bytes with question marks, and scroll within a 255-byte
+bound. Browser interoperability and physical-button/latency validation remain
+outstanding. The GTK storage simulator does not yet expose this FIDO engine;
+the headless simulated-device fixture exercises these screens and operations.

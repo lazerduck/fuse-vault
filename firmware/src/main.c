@@ -102,6 +102,11 @@ static int fido_presence(void *context) {
     fv_input_controller_set_map(&input_controller, &map);
     return result;
 }
+static bool fido_local_authorized(void *context) {
+    (void)context;
+    return fido_safe(NULL) && fido_verification.valid &&
+        (uint32_t)(fido_millis(NULL) - fido_verification.verified_at) < FV_FIDO_UV_COMPLETE_MS;
+}
 static bool fido_cancelled(void *context) {
     (void)context; return fido_fault || fv_rp2354_usb_fido_cancelled();
 }
@@ -187,7 +192,7 @@ static bool usb_attach_fido(void *context, const fv_volume_master_key_t *vmk,
     fido_store.progress = fido_safe;
     fv_fido_engine_ops_t ops = {.random = target_random, .commit = fv_fido_store_commit,
         .presence = fido_presence, .millis = fido_millis,
-        .verify_user = fido_verify_user, .uv_retries = fido_uv_retries, .cancelled = fido_cancelled, .context = &fido_store};
+        .local_authorized = fido_local_authorized, .verify_user = fido_verify_user, .uv_retries = fido_uv_retries, .cancelled = fido_cancelled, .context = &fido_store};
     bool ok = fv_fido_engine_open(fido_store.image, fido_store.root_key,
         services_context.device_id, &ops) && fv_connector_safety_route(&connector) &&
         fv_rp2354_usb_fido_attach_engine(fido_dispatch, NULL);
@@ -202,10 +207,22 @@ static bool usb_attach_fido(void *context, const fv_volume_master_key_t *vmk,
 #endif
 }
 
+static bool manage_passkeys(void *context, fv_passkey_action_t action,
+    uint16_t *index, uint16_t *count, fv_passkey_t *entry) {
+    (void)context;
+#if FUSE_VAULT_ENABLE_FIDO2
+    return fv_fido_engine_manage(action, index, count, entry);
+#else
+    (void)action; (void)index; (void)count; (void)entry;
+    return false;
+#endif
+}
+
 static const fv_runtime_usb_ops_t USB_OPS = {
     .attach_msc = usb_attach_msc,
     .detach_usb = usb_detach,
     .attach_fido = usb_attach_fido,
+    .manage_passkeys = manage_passkeys,
 };
 
 static void refresh_input_map(void) {
@@ -214,11 +231,22 @@ static void refresh_input_map(void) {
     fv_input_controller_set_map(&input_controller, &map);
 }
 
+static bool present_settings_work(void *context, const fv_app_t *current) {
+    (void)context;
+    if (!display_ready) return false;
+    /* A long KDF must not leave the confirmation screen displayed. */
+    display.has_presented = false;
+    display_ready = fv_display_render(&display, current,
+                                     to_ms_since_boot(get_absolute_time()));
+    return display_ready;
+}
+
 static void dispatch_event(fv_event_t event) {
 #if FUSE_VAULT_ENABLE_FIDO2
     bool was_unlocked = app.session_unlocked;
 #endif
     if (runtime_ready) {
+        fv_device_runtime_set_present(&runtime, present_settings_work, NULL);
         fv_device_runtime_handle_event(&runtime, event);
     } else {
         (void)fv_app_handle(&app, event);
@@ -389,7 +417,8 @@ int main(void) {
          * transaction, then let TinyUSB produce any logical eject event. */
         fv_rp2354_usb_task_at(to_ms_since_boot(get_absolute_time()));
 #if FUSE_VAULT_ENABLE_FIDO2
-        if (app.state == FV_STATE_FIDO_READY && fido_verification.valid &&
+        if ((app.state == FV_STATE_FIDO_READY || app.state == FV_STATE_PASSKEY_LIST ||
+             app.state == FV_STATE_PASSKEY_DELETE_CONFIRM) && fido_verification.valid &&
             (uint32_t)(fido_millis(NULL) - fido_verification.verified_at) >= FV_FIDO_UV_COMPLETE_MS)
             fido_reunlock = true;
         if (fido_fault) {
