@@ -95,7 +95,7 @@ class Viewer(Gtk.Window):
         self.details.set_max_width_chars(85)
         box.pack_start(self.details, False, False, 0)
         self.connect('destroy', self.close)
-        GLib.timeout_add(20, self.tick)
+        GLib.timeout_add(5, self.tick)
         self.show_all()
 
     def close(self, *_):
@@ -139,14 +139,17 @@ class Viewer(Gtk.Window):
                 self.disconnect(f'Cannot open {path}: {exc}')
                 return True
         try:
-            try:
-                chunk = os.read(self.fd, 65536)
-                if not chunk:
-                    self.disconnect('USB disconnected; waiting to reconnect…')
-                    return True
-                self.buffer.extend(chunk)
-            except BlockingIOError:
-                pass
+            # Drain the tty rather than reading a single (~4 KiB) chunk per
+            # GUI tick. Bound work so a noisy device cannot starve GTK.
+            for _ in range(16):
+                try:
+                    chunk = os.read(self.fd, 65536)
+                    if not chunk:
+                        self.disconnect('USB disconnected; waiting to reconnect…')
+                        return True
+                    self.buffer.extend(chunk)
+                except BlockingIOError:
+                    break
             for header, pixels in extract_packets(self.buffer):
                 self.pending = False
                 self.last_frame = now
@@ -167,7 +170,7 @@ class Viewer(Gtk.Window):
                 self.status.set_text('Waiting for firmware — it may be busy with SD or password derivation.')
             # Retry only after a generous interval. Late frames remain valid;
             # firmware ignores duplicate requests while transmitting a snapshot.
-            if (not self.pending and now - self.last_request > .15) or now - self.last_request > 5:
+            if (not self.pending and now - self.last_request > .05) or now - self.last_request > 5:
                 os.write(self.fd, b'f')
                 self.last_request = now
                 self.pending = True

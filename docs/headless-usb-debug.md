@@ -90,7 +90,10 @@ ID, physical button mask, boot-check bitmask, boot recovery, uptime milliseconds
 The payload is 160x80 RGB565 pixels, little-endian, row-major. Requests during
 transmission are discarded. A separate snapshot buffer prevents tearing while
 USB applies backpressure. Disconnect cancels the current transfer. The viewer
-requests roughly six frames per second, waiting for each response.
+requests up to twenty frames per second, waiting for each response.
+Actual rate depends on USB and any synchronous SD/crypto work. The bench
+firmware services USB without the normal 1 ms main-loop sleep; the viewer
+drains available serial chunks every 5 ms.
 
 Host CTests cover partial USB writes, zero transmit capacity, coherent snapshots
 while the displayed frame changes, disconnect/reconnect, physical display pin

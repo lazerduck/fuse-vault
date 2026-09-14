@@ -470,7 +470,11 @@ int main(void) {
         }
 #if FUSE_VAULT_HEADLESS_DEBUG
         fv_usb_debug_task(app.state, fv_rp2354_input_pressed_mask());
-#endif
+        /* Full-speed bulk USB needs frequent task calls: a 1 ms sleep here
+         * throttles the 25.6 KiB screen transfer and delays visible input. */
+        tight_loop_contents();
+#else
         sleep_ms(1u);
+#endif
     }
 }
