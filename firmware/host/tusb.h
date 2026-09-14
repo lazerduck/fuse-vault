@@ -20,4 +20,12 @@ void tud_task(void);
 void tud_msc_set_sense(uint8_t lun, uint8_t sense_key, uint8_t add_sense_code,
                        uint8_t add_sense_qualifier);
 
+bool tud_cdc_connected(void);
+uint32_t tud_cdc_available(void);
+int32_t tud_cdc_read_char(void);
+uint32_t tud_cdc_write_available(void);
+uint32_t tud_cdc_write(const void *buffer, uint32_t count);
+uint32_t tud_cdc_write_flush(void);
+bool tud_cdc_write_clear(void);
+
 #endif

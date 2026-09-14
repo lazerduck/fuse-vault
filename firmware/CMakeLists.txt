@@ -31,6 +31,13 @@ option(FUSE_VAULT_ENABLE_FIDO2
 if(FUSE_VAULT_RELEASE_BUILD AND FUSE_VAULT_ENABLE_FIDO2)
     message(FATAL_ERROR "Pico FIDO requires hardware validation and is forbidden in release builds")
 endif()
+option(FUSE_VAULT_HEADLESS_DEBUG "Expose screen over USB CDC for bench testing" OFF)
+if(FUSE_VAULT_HEADLESS_DEBUG AND (FUSE_VAULT_RELEASE_BUILD OR FUSE_VAULT_ENABLE_FIDO2))
+    message(FATAL_ERROR "Headless USB debug is development-only and currently excludes FIDO2")
+endif()
+if(FUSE_VAULT_HEADLESS_DEBUG)
+    set(FUSE_VAULT_ENABLE_DISPLAY OFF CACHE BOOL "Physical screen disabled" FORCE)
+endif()
 option(FUSE_VAULT_ENABLE_DISPLAY
     "Enable the ST7735S display" ON)
 option(FUSE_VAULT_COMPILE_UNVALIDATED_USB_MSC
@@ -164,6 +171,11 @@ add_executable(fuse_vault
     src/virtual_msc.c
     third_party/ascon_aead128_ref/aead.c
 )
+
+if(FUSE_VAULT_HEADLESS_DEBUG)
+    target_sources(fuse_vault PRIVATE src/usb_debug_display.c)
+endif()
+target_compile_definitions(fuse_vault PRIVATE FUSE_VAULT_HEADLESS_DEBUG=$<BOOL:${FUSE_VAULT_HEADLESS_DEBUG}>)
 
 if(FUSE_VAULT_RELEASE_BUILD)
     target_compile_definitions(fuse_vault PRIVATE

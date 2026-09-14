@@ -11,16 +11,26 @@
 #define FUSE_VAULT_USB_VID 0xcafeu
 #endif
 #ifndef FUSE_VAULT_USB_PID
+#if FUSE_VAULT_HEADLESS_DEBUG
+#define FUSE_VAULT_USB_PID 0x4013u
+#else
 #define FUSE_VAULT_USB_PID 0x4011u
+#endif
 #endif
 
 static const tusb_desc_device_t DEVICE = {
     .bLength = sizeof(tusb_desc_device_t),
     .bDescriptorType = TUSB_DESC_DEVICE,
     .bcdUSB = 0x0200,
+#if FUSE_VAULT_HEADLESS_DEBUG
+    .bDeviceClass = TUSB_CLASS_MISC,
+    .bDeviceSubClass = MISC_SUBCLASS_COMMON,
+    .bDeviceProtocol = MISC_PROTOCOL_IAD,
+#else
     .bDeviceClass = 0x00,
     .bDeviceSubClass = 0x00,
     .bDeviceProtocol = 0x00,
+#endif
     .bMaxPacketSize0 = CFG_TUD_ENDPOINT0_SIZE,
     .idVendor = FUSE_VAULT_USB_VID,
     .idProduct = FUSE_VAULT_USB_PID,
@@ -45,12 +55,20 @@ uint8_t const *tud_descriptor_device_cb(void) {
     return (const uint8_t *)&DEVICE;
 }
 
+#if FUSE_VAULT_HEADLESS_DEBUG
+enum { INTERFACE_MSC, INTERFACE_CDC, INTERFACE_CDC_DATA, INTERFACE_COUNT };
+#define CONFIG_LENGTH (TUD_CONFIG_DESC_LEN + TUD_MSC_DESC_LEN + TUD_CDC_DESC_LEN)
+#else
 enum { INTERFACE_MSC, INTERFACE_COUNT };
 #define CONFIG_LENGTH (TUD_CONFIG_DESC_LEN + TUD_MSC_DESC_LEN)
+#endif
 static const uint8_t CONFIGURATION[] = {
     TUD_CONFIG_DESCRIPTOR(1, INTERFACE_COUNT, 0, CONFIG_LENGTH,
                           TUSB_DESC_CONFIG_ATT_REMOTE_WAKEUP, 100),
     TUD_MSC_DESCRIPTOR(INTERFACE_MSC, 0, 0x01, 0x81, 64),
+#if FUSE_VAULT_HEADLESS_DEBUG
+    TUD_CDC_DESCRIPTOR(INTERFACE_CDC, 0, 0x82, 8, 0x03, 0x83, 64),
+#endif
 };
 
 #if FUSE_VAULT_ENABLE_FIDO2
@@ -85,8 +103,13 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t language_id) {
         length = 1u;
     } else {
         if (index == 1u) ascii = "Fuse Vault";
-        else if (index == 2u) ascii = fv_rp2354_usb_is_fido()
+        else if (index == 2u) ascii =
+#if FUSE_VAULT_HEADLESS_DEBUG
+            "Fuse Vault SCREEN DEBUG";
+#else
+            fv_rp2354_usb_is_fido()
             ? "Fuse Vault FIDO Probe" : "Encrypted Storage";
+#endif
         else if (index == 3u) {
             pico_get_unique_board_id_string(serial, sizeof(serial));
             ascii = serial;

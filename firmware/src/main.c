@@ -17,6 +17,8 @@
 #include "fuse_vault/rp2354_security_flash.h"
 #include "fuse_vault/rp2354_usb_msc.h"
 
+#include "fuse_vault/usb_debug_display.h"
+
 #include "pico/stdlib.h"
 #include "pico/unique_id.h"
 
@@ -36,7 +38,9 @@ static fv_device_services_context_t services_context;
 static fv_device_runtime_t runtime;
 static fv_input_controller_t input_controller;
 static fv_display_t display;
+#if !FUSE_VAULT_HEADLESS_DEBUG
 static fv_rp2354_display_t display_context;
+#endif
 static bool runtime_ready;
 static bool display_ready;
 static bool connector_ready;
@@ -161,12 +165,17 @@ static bool target_random(void *context, uint8_t *output, size_t length) {
 static bool usb_attach_msc(void *context,
                            fv_block_device_t *plaintext_blocks) {
     (void)context;
-    if (!fv_connector_safety_poll(&connector) ||
-        !fv_connector_safety_route(&connector)) {
+    if (!fv_connector_safety_poll(&connector)
+#if !FUSE_VAULT_HEADLESS_DEBUG
+        || !fv_connector_safety_route(&connector)
+#endif
+        ) {
         return false;
     }
     if (fv_rp2354_usb_msc_attach(plaintext_blocks)) return true;
+#if !FUSE_VAULT_HEADLESS_DEBUG
     (void)fv_connector_safety_disable(&connector);
+#endif
     return false;
 }
 
@@ -178,7 +187,11 @@ static bool usb_detach(void *context) {
     fv_fido_store_close(&fido_store);
     fv_fido_verification_clear(&fido_verification);
 #endif
+#if FUSE_VAULT_HEADLESS_DEBUG
+    const bool route_ok = fv_connector_safety_poll(&connector);
+#else
     const bool route_ok = fv_connector_safety_disable(&connector);
+#endif
     return usb_ok && route_ok;
 }
 
@@ -315,14 +328,21 @@ int main(void) {
     fv_rp2354_connector_init(&connector_context);
     connector_ready = fv_connector_safety_init(
         &connector, &fv_rp2354_connector_ops, &connector_context, NULL, NULL);
+#if FUSE_VAULT_HEADLESS_DEBUG
+    connector_ready = connector_ready && fv_connector_safety_route(&connector);
+#endif
     const bool input_ready = fv_rp2354_input_init();
     const bool flash_ready =
         fv_rp2354_security_flash_init(&security_flash);
     const bool roots_ready = fv_rp2354_otp_init(&roots_storage);
     const bool sd_driver_ready = fv_rp2354_sd_init(&sd);
     const bool usb_ready = fv_rp2354_usb_msc_init();
+#if FUSE_VAULT_HEADLESS_DEBUG
+    display_ready = fv_display_init(&display, &fv_usb_debug_display_ops, NULL, 33u);
+#else
     display_ready = fv_display_init(&display, &fv_rp2354_display_ops,
                                     &display_context, 33u);
+#endif
 
     pico_unique_board_id_t board_id;
     pico_get_unique_board_id(&board_id);
@@ -349,6 +369,10 @@ int main(void) {
     fv_app_set_fido_available(&app, true);
 #endif
 
+#if FUSE_VAULT_HEADLESS_DEBUG
+    fv_usb_debug_set_boot(input_ready, flash_ready, roots_ready, sd_driver_ready,
+        usb_ready, connector_ready, services_ready, recovery);
+#endif
     const fv_credential_costs_t credential_costs = {
         /* Initial target values; the release ceremony must calibrate these
          * against measured device latency and raise them where practical. */
@@ -408,7 +432,7 @@ int main(void) {
         if (runtime_ready && fv_rp2354_sd_take_failure_event(&sd)) {
             dispatch_event(FV_EVENT_STORAGE_FAILED);
         }
-        if (runtime_ready && connector_ready &&
+        if (connector_ready &&
             !fv_connector_safety_poll(&connector)) {
             connector_ready = false;
             dispatch_event(FV_EVENT_FATAL_ERROR);
@@ -444,6 +468,9 @@ int main(void) {
             display_ready = false;
             if (runtime_ready) dispatch_event(FV_EVENT_FATAL_ERROR);
         }
+#if FUSE_VAULT_HEADLESS_DEBUG
+        fv_usb_debug_task(app.state, fv_rp2354_input_pressed_mask());
+#endif
         sleep_ms(1u);
     }
 }

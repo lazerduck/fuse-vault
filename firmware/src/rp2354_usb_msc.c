@@ -92,7 +92,13 @@ bool fv_rp2354_usb_msc_init(void) {
     eject_requested = false;
     storage_failure_requested = false;
     memset(sector, 0, sizeof(sector));
+#if FUSE_VAULT_HEADLESS_DEBUG
+    if (!initialized) initialized = tusb_init();
+    if (initialized) tud_connect();
+    return initialized;
+#else
     return true;
+#endif
 }
 
 bool fv_rp2354_usb_msc_attach(fv_block_device_t *plaintext_blocks) {
@@ -107,7 +113,11 @@ bool fv_rp2354_usb_msc_attach(fv_block_device_t *plaintext_blocks) {
     /* Compile-only coverage must never make an electrical routing claim. */
     if (plaintext_blocks != NULL) return false;
 #endif
-    if (initialized || attached || plaintext_blocks == NULL || plaintext_blocks->ops == NULL ||
+    if (
+#if !FUSE_VAULT_HEADLESS_DEBUG
+        initialized ||
+#endif
+        attached || plaintext_blocks == NULL || plaintext_blocks->ops == NULL ||
         plaintext_blocks->ops->read == NULL ||
         plaintext_blocks->ops->write == NULL ||
         plaintext_blocks->ops->sync == NULL ||
@@ -138,11 +148,13 @@ bool fv_rp2354_usb_msc_detach(void) {
     if (blocks != NULL && blocks->ops != NULL && blocks->ops->sync != NULL) {
         synced = blocks->ops->sync(blocks) == FV_BLOCK_OK;
     }
+#if !FUSE_VAULT_HEADLESS_DEBUG
     if (initialized) {
         tud_disconnect();
         if (!tud_deinit(0)) synced = false;
         initialized = false;
     }
+#endif
     fido_mode = false;
 #if FUSE_VAULT_ENABLE_FIDO2
     fv_fido_probe_reset(&probe);

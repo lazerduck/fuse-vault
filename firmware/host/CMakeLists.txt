@@ -452,3 +452,16 @@ target_include_directories(fuse_vault_credential_change_tests PRIVATE .)
 target_compile_options(fuse_vault_credential_change_tests PRIVATE
     -Wall -Wextra -Wpedantic -Wconversion -Wshadow -Werror)
 add_test(NAME fuse_vault_credential_change COMMAND fuse_vault_credential_change_tests)
+
+# Headless development profile: same MSC callbacks, CDC survives medium detach.
+add_executable(fuse_vault_headless_msc_tests ../src/rp2354_usb_msc.c rp2354_usb_msc_tests.c)
+target_include_directories(fuse_vault_headless_msc_tests PRIVATE . ../include)
+target_compile_definitions(fuse_vault_headless_msc_tests PRIVATE FUSE_VAULT_HEADLESS_DEBUG=1
+    FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED=1 FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED=1)
+target_compile_options(fuse_vault_headless_msc_tests PRIVATE -Wall -Wextra -Werror)
+add_test(NAME fuse_vault_headless_msc COMMAND fuse_vault_headless_msc_tests)
+add_executable(fuse_vault_usb_debug_tests ../src/usb_debug_display.c usb_debug_tests.c)
+target_include_directories(fuse_vault_usb_debug_tests PRIVATE debug_stubs . ../include ../boards)
+target_compile_definitions(fuse_vault_usb_debug_tests PRIVATE FUSE_VAULT_HEADLESS_DEBUG=1)
+target_compile_options(fuse_vault_usb_debug_tests PRIVATE -Wall -Wextra -Werror)
+add_test(NAME fuse_vault_usb_debug COMMAND fuse_vault_usb_debug_tests)

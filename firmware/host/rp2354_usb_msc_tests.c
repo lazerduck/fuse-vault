@@ -151,7 +151,11 @@ static void test_normal_io_and_eject(void) {
     assert(!fv_rp2354_usb_msc_take_storage_failure());
     assert(fv_rp2354_usb_msc_attach(&device));
     assert(init_calls == 1u);
+#if FUSE_VAULT_HEADLESS_DEBUG
+    assert(connect_calls == 2u); /* Boot CDC, then medium attachment. */
+#else
     assert(connect_calls == 1u);
+#endif
     assert(tud_msc_get_maxlun_cb() == 0u);
     tud_msc_inquiry_cb(0u, vendor, product, revision);
     assert(memcmp(vendor, "FUSEVLT ", sizeof(vendor)) == 0);
@@ -183,7 +187,18 @@ static void test_normal_io_and_eject(void) {
     assert(tud_msc_scsi_cb(0u, sync_command, NULL, 0u) == -1);
     assert(!fv_rp2354_usb_msc_take_storage_failure());
     assert(fv_rp2354_usb_msc_detach());
+#if FUSE_VAULT_HEADLESS_DEBUG
+    assert(disconnect_calls == 0u);
+    assert(!tud_msc_test_unit_ready_cb(0u));
+    fv_rp2354_usb_msc_task();
+    assert(task_calls == 2u); /* CDC remains serviced after eject/lock. */
+    assert(fv_rp2354_usb_msc_attach(&device));
+    assert(tud_msc_test_unit_ready_cb(0u));
+    assert(init_calls == 1u); /* No USB re-enumeration to unlock again. */
+    assert(fv_rp2354_usb_msc_detach());
+#else
     assert(disconnect_calls == 1u);
+#endif
 }
 
 static void test_backend_failures_request_lock(void) {
