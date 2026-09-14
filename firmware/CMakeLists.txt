@@ -173,7 +173,7 @@ add_executable(fuse_vault
 )
 
 if(FUSE_VAULT_HEADLESS_DEBUG)
-    target_sources(fuse_vault PRIVATE src/usb_debug_display.c)
+    target_sources(fuse_vault PRIVATE src/usb_debug_display.c src/storage_profile.c)
 endif()
 target_compile_definitions(fuse_vault PRIVATE FUSE_VAULT_HEADLESS_DEBUG=$<BOOL:${FUSE_VAULT_HEADLESS_DEBUG}>)
 

@@ -25,6 +25,16 @@ class DecoderTests(unittest.TestCase):
         buffer = bytearray(b'FVD1' + struct.pack('<7I', 0xffffffff, 0, 0, 0, 0, 0, 0) + self.packet())
         self.assertEqual(len(extract_packets(buffer)), 1)
 
+    def test_extended_timings(self):
+        packet = bytearray(self.packet())
+        struct.pack_into('<I', packet, 4, FRAME_BYTES + 80)
+        timings = struct.pack('<4I', 2, 6000, 0, 4000) * 5
+        packet.extend(timings)
+        result = extract_packets(packet)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0][1][FRAME_BYTES:], timings)
+        self.assertFalse(packet)
+
     def test_rgb565_primaries(self):
         data = struct.pack('<4H', 0xf800, 0x07e0, 0x001f, 0xffff) + bytes(FRAME_BYTES - 8)
         self.assertEqual(rgb565_to_rgb(data)[:12], bytes([255,0,0,0,255,0,0,0,255,255,255,255]))

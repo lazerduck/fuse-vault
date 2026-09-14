@@ -44,13 +44,14 @@ def extract_packets(buffer):
         if len(buffer) < 32:
             break
         header = struct.unpack_from('<8I', buffer)
-        if header[1] != FRAME_BYTES:
+        if header[1] not in (FRAME_BYTES, FRAME_BYTES + 80):
             del buffer[0]
             continue
-        if len(buffer) < PACKET_BYTES:
+        packet_size = 32 + header[1]
+        if len(buffer) < packet_size:
             break
-        packets.append((header, bytes(buffer[32:PACKET_BYTES])))
-        del buffer[:PACKET_BYTES]
+        packets.append((header, bytes(buffer[32:packet_size])))
+        del buffer[:packet_size]
     return packets
 
 
@@ -72,6 +73,7 @@ class Viewer(Gtk.Window):
         self.last_request = 0
         self.last_frame = 0
         self.pending = False
+        self.profile_supported = True
         self.next_connect = 0
         self.states = re.findall(r'\bFV_STATE_[A-Z_]+',
             (Path(__file__).resolve().parents[1] / 'include/fuse_vault/app.h').read_text())
@@ -90,6 +92,11 @@ class Viewer(Gtk.Window):
         self.status.set_selectable(True)
         box.pack_start(self.status, False, False, 0)
         self.details = Gtk.Label(label='Use the physical direction, OK and Back buttons on the board.')
+        self.performance = Gtk.Label(label="Storage timings will appear with profiling firmware.")
+        self.performance.set_selectable(True)
+        self.performance.set_line_wrap(True)
+        self.performance.set_max_width_chars(85)
+        box.pack_start(self.performance, False, False, 0)
         self.details.set_selectable(True)
         self.details.set_line_wrap(True)
         self.details.set_max_width_chars(85)
@@ -133,6 +140,7 @@ class Viewer(Gtk.Window):
                 termios.tcflush(self.fd, termios.TCIOFLUSH)
                 fcntl.ioctl(self.fd, termios.TIOCMBIS, struct.pack('I', termios.TIOCM_DTR))
                 self.last_request = 0
+                self.profile_supported = True
                 self.last_frame = now
                 self.status.set_text('Connected to ' + path + ' — waiting for firmware')
             except OSError as exc:
@@ -153,7 +161,15 @@ class Viewer(Gtk.Window):
             for header, pixels in extract_packets(self.buffer):
                 self.pending = False
                 self.last_frame = now
-                pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(GLib.Bytes.new(rgb565_to_rgb(pixels)),
+                if len(pixels) == FRAME_BYTES + 80:
+                    names = ('SD sector read', 'SD sector write', 'SD sync', 'Vault sector read', 'Vault sector write')
+                    lines = []
+                    for name, (count, lo, hi, maximum) in zip(names, struct.iter_unpack('<4I', pixels[FRAME_BYTES:])):
+                        total = lo + (hi << 32)
+                        average = total / count / 1000 if count else 0
+                        lines.append(f'{name}: {count} calls, mean {average:.2f} ms, max {maximum / 1000:.2f} ms')
+                    self.performance.set_text('Since boot (vault times include SD):\n' + '\n'.join(lines))
+                pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(GLib.Bytes.new(rgb565_to_rgb(pixels[:FRAME_BYTES])),
                     GdkPixbuf.Colorspace.RGB, False, 8, 160, 80, 160 * 3)
                 self.screen.set_from_pixbuf(pixbuf.scale_simple(640, 320, GdkPixbuf.InterpType.NEAREST))
                 _, _, sequence, state, buttons, flags, recovery, uptime = header
@@ -171,7 +187,9 @@ class Viewer(Gtk.Window):
             # Retry only after a generous interval. Late frames remain valid;
             # firmware ignores duplicate requests while transmitting a snapshot.
             if (not self.pending and now - self.last_request > .05) or now - self.last_request > 5:
-                os.write(self.fd, b'f')
+                if self.pending:
+                    self.profile_supported = False  # Older firmware only accepts f.
+                os.write(self.fd, b'g' if self.profile_supported else b'f')
                 self.last_request = now
                 self.pending = True
         except OSError as exc:

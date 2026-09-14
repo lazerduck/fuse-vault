@@ -1,3 +1,4 @@
+#include "fuse_vault/storage_profile.h"
 #include "fuse_vault/encrypted_block.h"
 
 #include "fuse_vault/journal_authenticator.h"
@@ -122,7 +123,7 @@ static fv_block_result_t select(fv_encrypted_block_t *e,uint64_t logical,
     clear(&a,sizeof(a));clear(&b,sizeof(b));return FV_BLOCK_OK;
 }
 
-static fv_block_result_t read_blocks(fv_block_device_t *device,uint64_t first,
+static fv_block_result_t read_blocks_impl(fv_block_device_t *device,uint64_t first,
                                      uint32_t count,uint8_t *output) {
     fv_encrypted_block_t *e=device?device->context:NULL;
     if(!e||!output||count!=1u)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
@@ -134,7 +135,14 @@ static fv_block_result_t read_blocks(fv_block_device_t *device,uint64_t first,
     clear(&d,sizeof(d));return r;
 }
 
-static fv_block_result_t write_blocks(fv_block_device_t *device,uint64_t first,
+static fv_block_result_t read_blocks(fv_block_device_t *device,uint64_t first,uint32_t count,uint8_t *output) {
+    uint64_t start=fv_storage_profile_begin();
+    fv_block_result_t result=read_blocks_impl(device,first,count,output);
+    fv_storage_profile_end(FV_PERF_VAULT_READ,start);
+    return result;
+}
+
+static fv_block_result_t write_blocks_impl(fv_block_device_t *device,uint64_t first,
                                       uint32_t count,const uint8_t *input) {
     fv_encrypted_block_t *e=device?device->context:NULL;
     if(!e||!input||count!=1u)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
@@ -167,6 +175,13 @@ static fv_block_result_t write_blocks(fv_block_device_t *device,uint64_t first,
     clear(&check,sizeof(check));
 done:
     clear(&old,sizeof(old));clear(record,sizeof(record));return result;
+}
+
+static fv_block_result_t write_blocks(fv_block_device_t *device,uint64_t first,uint32_t count,const uint8_t *input) {
+    uint64_t start=fv_storage_profile_begin();
+    fv_block_result_t result=write_blocks_impl(device,first,count,input);
+    fv_storage_profile_end(FV_PERF_VAULT_WRITE,start);
+    return result;
 }
 static fv_block_result_t sync_blocks(fv_block_device_t *device) {
     fv_encrypted_block_t *e=device?device->context:NULL;

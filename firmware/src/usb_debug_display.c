@@ -1,6 +1,7 @@
 /* Bench-only framebuffer mirror. Never enabled in a release image. */
 #include "fuse_vault/usb_debug_display.h"
 #include "fuse_vault/ui.h"
+#include "fuse_vault/storage_profile.h"
 #include "pico/stdlib.h"
 #include "tusb.h"
 #include <string.h>
@@ -9,12 +10,13 @@ static fv_framebuffer_t latest;
 static struct {
     uint32_t header[8];
     fv_framebuffer_t frame;
+    uint32_t timings[FV_PERF_COUNT * 4];
 } packet;
-static size_t sent;
+static size_t sent, packet_size;
 static bool transmitting;
 static unsigned boot_flags, boot_recovery;
 static uint32_t sequence;
-_Static_assert(sizeof(packet) == 32 + 160 * 80 * 2, "Wire packet layout");
+_Static_assert(sizeof(packet) == 32 + 160 * 80 * 2 + FV_PERF_COUNT * 16, "Wire packet layout");
 
 static bool initialize(void *context) {
     (void)context;
@@ -56,9 +58,11 @@ void fv_usb_debug_task(unsigned state, unsigned buttons) {
     }
     while (tud_cdc_available()) {
         int ch = tud_cdc_read_char();
-        if (ch != 'f' || transmitting) continue;
+        if ((ch != 'f' && ch != 'g') || transmitting) continue;
         packet.header[0] = 0x31445646u; /* FVD1, little endian */
-        packet.header[1] = sizeof(packet.frame);
+        packet.header[1] = sizeof(packet.frame) + (ch == 'g' ? sizeof(packet.timings) : 0);
+        packet_size = 32 + packet.header[1];
+        fv_storage_profile_snapshot(packet.timings);
         packet.header[2] = sequence;
         packet.header[3] = state;
         packet.header[4] = buttons;
@@ -71,9 +75,9 @@ void fv_usb_debug_task(unsigned state, unsigned buttons) {
     }
     if (transmitting) {
         unsigned count = tud_cdc_write_available();
-        if (count > sizeof(packet) - sent) count = sizeof(packet) - sent;
+        if (count > packet_size - sent) count = packet_size - sent;
         if (count) sent += tud_cdc_write((const uint8_t *)&packet + sent, count);
         tud_cdc_write_flush();
-        if (sent == sizeof(packet)) transmitting = false;
+        if (sent == packet_size) transmitting = false;
     }
 }

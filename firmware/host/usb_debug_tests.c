@@ -8,7 +8,8 @@
 static bool connected;
 static int request;
 static unsigned capacity, used, clears;
-static uint8_t wire[32 + 160 * 80 * 2];
+#define LEGACY_SIZE (32 + 160 * 80 * 2)
+static uint8_t wire[LEGACY_SIZE + 80];
 static uint16_t color;
 void gpio_init(unsigned p) { (void)p; }
 void gpio_set_dir(unsigned p, bool output) {
@@ -49,17 +50,20 @@ int main(void) {
     /* Changing the live image must not tear a snapshot under backpressure. */
     color=0x07e0;assert(fv_usb_debug_display_ops.present(NULL,&view));
     capacity=31;
-    for(unsigned i=0;i<5000 && used<sizeof(wire);i++)fv_usb_debug_task(3,0);
-    assert(used==sizeof(wire) && !memcmp(wire,"FVD1",4));
+    for(unsigned i=0;i<5000 && used<LEGACY_SIZE;i++)fv_usb_debug_task(3,0);
+    assert(used==LEGACY_SIZE && !memcmp(wire,"FVD1",4));
     assert(word(1)==25600 && word(2)==1 && word(3)==2 && word(4)==5);
     assert(word(5)==123 && word(6)==2 && word(7)==1234);
-    for(unsigned i=32;i<sizeof(wire);i+=2)assert(wire[i]==0 && wire[i+1]==0xf8);
+    for(unsigned i=32;i<LEGACY_SIZE;i+=2)assert(wire[i]==0 && wire[i+1]==0xf8);
     /* Drop a partial transfer; reconnect returns a fresh coherent frame. */
     used=0;request='f';fv_usb_debug_task(3,0);assert(used==7);
     connected=false;fv_usb_debug_task(3,0);used=0;
     connected=true;request='f';
+    for(unsigned i=0;i<5000 && used<LEGACY_SIZE;i++)fv_usb_debug_task(3,0);
+    assert(used==LEGACY_SIZE && word(2)==2);
+    for(unsigned i=32;i<LEGACY_SIZE;i+=2)assert(wire[i]==0xe0 && wire[i+1]==7);
+    used=0;request='g';
     for(unsigned i=0;i<5000 && used<sizeof(wire);i++)fv_usb_debug_task(3,0);
-    assert(used==sizeof(wire) && word(2)==2);
-    for(unsigned i=32;i<sizeof(wire);i+=2)assert(wire[i]==0xe0 && wire[i+1]==7);
+    assert(used==sizeof(wire) && word(1)==25680);
     puts("USB framebuffer backpressure, snapshot and disconnect checks passed");
 }

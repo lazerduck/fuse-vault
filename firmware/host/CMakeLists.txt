@@ -465,3 +465,8 @@ target_include_directories(fuse_vault_usb_debug_tests PRIVATE debug_stubs . ../i
 target_compile_definitions(fuse_vault_usb_debug_tests PRIVATE FUSE_VAULT_HEADLESS_DEBUG=1)
 target_compile_options(fuse_vault_usb_debug_tests PRIVATE -Wall -Wextra -Werror)
 add_test(NAME fuse_vault_usb_debug COMMAND fuse_vault_usb_debug_tests)
+add_executable(fuse_vault_storage_profile_tests ../src/storage_profile.c storage_profile_tests.c)
+target_include_directories(fuse_vault_storage_profile_tests PRIVATE debug_stubs ../include)
+target_compile_definitions(fuse_vault_storage_profile_tests PRIVATE PICO_ON_DEVICE=1 FUSE_VAULT_HEADLESS_DEBUG=1)
+target_compile_options(fuse_vault_storage_profile_tests PRIVATE -Wall -Wextra -Werror)
+add_test(NAME fuse_vault_storage_profile COMMAND fuse_vault_storage_profile_tests)

@@ -1,3 +1,4 @@
+#include "fuse_vault/storage_profile.h"
 #include "fuse_vault/rp2354_sd.h"
 
 #include "pico/stdlib.h"
@@ -286,7 +287,7 @@ static bool address_for_block(const fv_rp2354_sd_t *sd, uint64_t block,
     return true;
 }
 
-static fv_block_result_t read_one(fv_rp2354_sd_t *sd, uint64_t block,
+static fv_block_result_t read_one_impl(fv_rp2354_sd_t *sd, uint64_t block,
                                   uint8_t output[FV_BLOCK_SIZE]) {
     uint32_t address;
     if (!address_for_block(sd, block, &address)) {
@@ -315,7 +316,14 @@ static fv_block_result_t read_one(fv_rp2354_sd_t *sd, uint64_t block,
     return FV_BLOCK_OK;
 }
 
-static fv_block_result_t write_one(fv_rp2354_sd_t *sd, uint64_t block,
+static fv_block_result_t read_one(fv_rp2354_sd_t *sd, uint64_t block, uint8_t output[FV_BLOCK_SIZE]) {
+    uint64_t start=fv_storage_profile_begin();
+    fv_block_result_t result=read_one_impl(sd, block, output);
+    fv_storage_profile_end(FV_PERF_SD_READ,start);
+    return result;
+}
+
+static fv_block_result_t write_one_impl(fv_rp2354_sd_t *sd, uint64_t block,
                                    const uint8_t input[FV_BLOCK_SIZE]) {
     uint32_t address;
     if (!address_for_block(sd, block, &address)) {
@@ -352,6 +360,13 @@ static fv_block_result_t write_one(fv_rp2354_sd_t *sd, uint64_t block,
         return FV_BLOCK_ERROR_IO;
     }
     return FV_BLOCK_OK;
+}
+
+static fv_block_result_t write_one(fv_rp2354_sd_t *sd, uint64_t block, const uint8_t input[FV_BLOCK_SIZE]) {
+    uint64_t start=fv_storage_profile_begin();
+    fv_block_result_t result=write_one_impl(sd, block, input);
+    fv_storage_profile_end(FV_PERF_SD_WRITE,start);
+    return result;
 }
 
 static fv_block_result_t read_blocks(fv_block_device_t *device,
@@ -405,7 +420,7 @@ static fv_block_result_t write_blocks(fv_block_device_t *device,
     return FV_BLOCK_OK;
 }
 
-static fv_block_result_t sync_blocks(fv_block_device_t *device) {
+static fv_block_result_t sync_blocks_impl(fv_block_device_t *device) {
     fv_rp2354_sd_t *sd = device != NULL ? device->context : NULL;
     if (sd == NULL) return FV_BLOCK_ERROR_INVALID_ARGUMENT;
     if (!sd->initialized) return FV_BLOCK_ERROR_NOT_READY;
@@ -420,6 +435,13 @@ static fv_block_result_t sync_blocks(fv_block_device_t *device) {
     }
     deselect_card(sd);
     return FV_BLOCK_OK;
+}
+
+static fv_block_result_t sync_blocks(fv_block_device_t *device) {
+    uint64_t start=fv_storage_profile_begin();
+    fv_block_result_t result=sync_blocks_impl(device);
+    fv_storage_profile_end(FV_PERF_SD_SYNC,start);
+    return result;
 }
 
 static uint64_t block_count(const fv_block_device_t *device) {

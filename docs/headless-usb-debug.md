@@ -74,7 +74,7 @@ prevent the application from routing USB even though ROM BOOTSEL works.
 cmake -S firmware -B firmware/build-headless \
   -DPICO_SDK_PATH=/home/adam/pico-sdk \
   -Dpicotool_DIR=/home/adam/projects/fuse-vault/firmware/build/_deps/picotool \
-  -DFUSE_VAULT_HEADLESS_DEBUG=ON -DCMAKE_BUILD_TYPE=Debug
+  -DFUSE_VAULT_HEADLESS_DEBUG=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build firmware/build-headless -j4
 ```
 
@@ -106,6 +106,39 @@ ctest --test-dir firmware/build-host --output-on-failure
 python3 firmware/tools/usb_screen_tests.py
 ```
 
-At implementation time: 34 host checks and 3 viewer protocol tests pass; both
+At implementation time: 35 host checks and 4 viewer protocol tests pass; both
 normal and headless RP2354 builds link. Actual USB enumeration, GTK window
 rendering and end-to-end board operation still require the user's desktop/board.
+
+## Storage performance investigation (2026-09-14)
+
+The first board showed about 24 KiB/s completed writes, with FAT32 creation
+lasting 15 minutes 35 seconds. This is not an accepted performance baseline.
+The current headless build uses RelWithDebInfo (-O2 with debug symbols), rather
+than Debug (-Og). This is compiler optimisation, not a production release or
+an alteration of encryption, sector layout, or durability guarantees.
+
+The updated viewer requests `g`, an extended snapshot. This preserves the FVD1
+header but increases payload length from 25600 to 25680. After the pixels,
+five records each contain four little-endian uint32 words: operation count,
+total microseconds low word, total microseconds high word, maximum microseconds.
+Categories are SD sector read, SD sector write, SD sync, encrypted sector read,
+and encrypted sector write. The totals include failed operations. Counters
+start at boot and are not reset by locking. Vault timings include their nested
+SD operations; do not add all category totals together. Other vault time
+includes cryptography, validation, memory work and instrumentation overhead.
+The on-card format is unchanged. Old viewers can still request `f` without the
+extension; the new viewer falls back to `f` if older firmware ignores `g`.
+
+Finish or safely stop the current host operation before reflashing. Then close
+and relaunch the updated viewer, unlock the existing vault, and use normal
+small file operations. Capture the timing panel after slow operations. This
+identifies whether physical card commands or work above the SD layer dominate
+before changing buffering, transport or cryptography. No automatic disk writes,
+benchmarks, formatting or reflashing are performed by the viewer.
+
+The SD transfer implementation currently configures two DMA channels even for
+single-byte status polling; sector payloads are already transferred in bulk.
+That is a candidate optimisation, not yet a measured root cause or changed
+transport. This performance build adds measurements rather than weakening
+read-back verification or copy-on-write recovery.
