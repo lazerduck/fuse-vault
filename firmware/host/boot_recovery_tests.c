@@ -92,8 +92,6 @@ static void test_all_methods_survive_restart(void) {
         fv_app_t restarted_app;
         fv_app_init(&restarted_app, true, 0u, recovered);
         (void)fv_app_handle(&restarted_app, FV_EVENT_BOOT_COMPLETED);
-        CHECK(restarted_app.state == FV_STATE_MODE_SELECT);
-        (void)fv_app_handle(&restarted_app, FV_EVENT_SELECT);
         CHECK(restarted_app.state == FV_STATE_VAULT_SECRET_ENTRY);
         CHECK(restarted_app.secret_entry.method == expected);
         remove_state_directory(directory);

@@ -1,5 +1,11 @@
 # Fuse Vault V1 product contract
 
+Review update (2026-09-14): [storage and responsiveness redesign](storage-performance-redesign.md)
+records the proposed replacement for the bulk-storage, performance and execution
+requirements below. It awaits user review; the existing firmware still implements
+the earlier design. In particular, permanent data copies and the old latency
+costs are not requirements to carry into the redesign.
+
 Status: normative implementation target, 2026-09-05.
 
 This document defines the first usable Fuse Vault product. Where older planning

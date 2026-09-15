@@ -118,7 +118,7 @@ The current headless build uses RelWithDebInfo (-O2 with debug symbols), rather
 than Debug (-Og). This is compiler optimisation, not a production release or
 an alteration of encryption, sector layout, or durability guarantees.
 
-The updated viewer requests `g`, an extended snapshot. This preserves the FVD1
+The original profiling request `g` returns five counters. This preserves the FVD1
 header but increases payload length from 25600 to 25680. After the pixels,
 five records each contain four little-endian uint32 words: operation count,
 total microseconds low word, total microseconds high word, maximum microseconds.
@@ -128,7 +128,26 @@ start at boot and are not reset by locking. Vault timings include their nested
 SD operations; do not add all category totals together. Other vault time
 includes cryptography, validation, memory work and instrumentation overhead.
 The on-card format is unchanged. Old viewers can still request `f` without the
-extension; the new viewer falls back to `f` if older firmware ignores `g`.
+extension. The updated viewer sends `hg`: new firmware accepts `h` and
+ignores the following `g` while transmitting; older profiling firmware ignores
+`h` and accepts `g`. Screen-only firmware falls back to `f`, with periodic
+profiling retries. A timeout never disables previously confirmed metrics;
+timings older than two seconds are labelled stale.
+
+Request `h` returns 13 counters (25808 payload bytes). The first five retain
+their original order, followed by: select existing copies, read-back
+verification, record nonce KMAC, layer IV KMAC, AES-XTS including key setup,
+ChaCha20, Ascon encrypt, Ascon decrypt. Selection and verification include their
+nested SD and crypto operations; do not sum them with those components. AES
+and ChaCha timings combine encryption and decryption calls. Counts show how
+many times each layer runs, rather than assuming the selected preset. Timing
+rows scroll in the viewer.
+
+For a useful comparison, capture counters after unlock, copy one small test
+file (for example 1 MiB) and wait for the host to finish writing, then capture
+again. Capture before and after the slow delete separately. Differences in
+count and total time isolate each workload; the displayed means are cumulative
+since boot. This build does not automatically run a benchmark or alter data.
 
 Finish or safely stop the current host operation before reflashing. Then close
 and relaunch the updated viewer, unlock the existing vault, and use normal
@@ -142,3 +161,93 @@ single-byte status polling; sector payloads are already transferred in bulk.
 That is a candidate optimisation, not yet a measured root cause or changed
 transport. This performance build adds measurements rather than weakening
 read-back verification or copy-on-write recovery.
+
+
+### Prepared KMAC optimisation
+
+The storage nonce and layer-IV paths now prepare the fixed KMAC prefix and
+key state once per unlocked session. Each computation copies that state before
+absorbing the original per-record message and output length. For these short
+messages this reduces three Keccak permutations to one. It does not change
+keys, nonce inputs, ciphertext format, authentication, recovery or read-back
+verification. Prepared state is key-equivalent and lives inside the encrypted
+block/pipeline owners, whose existing lock/fault clearing erases it.
+
+The original one-shot implementation remains in use for other KMAC callers
+and as the differential test reference. Tests cover 1,728 combinations of
+key/customization, message and output lengths, including rate boundaries,
+repeated use without mutation, invalid initialization, erasure, and the
+existing encrypted-record golden values and interrupted-write recovery tests.
+Device speedup has not yet been measured. Compare record-nonce and layer-IV
+means against the previous 1.33/1.31 ms and total vault writes against 19.90 ms
+using the same scheme/card and a similar workload. No SD transport changes
+are included in this comparison.
+
+
+### Further performance build
+
+`firmware/build-headless/fuse_vault-performance.uf2` includes prepared KMAC,
+constant rho/pi rotations in Keccak (same permutation/round count), and a
+16-entry SD CRC lookup (same polynomial and checking). The KMAC-only image
+remains at `firmware/build-headless/fuse_vault-kmac-cache.uf2` for comparison.
+The Keccak change was checked against the pre-change implementation across
+the 1,728-case corpus; its concatenated output SHA-256 is
+`fe57451d323042359b48a5e9f128c6e7e3f255fb3b2e5802e500365b9c1dceb6`.
+SD protocol tests use an independent bitwise CRC reference and cover corrupted
+reads, command status, transport failure and recovery. The 8 MHz SD clock,
+DMA/PIO transport and write ordering are unchanged.
+
+After obtaining a full frame, the viewer sends `ihg`. Firmware handling `i`
+returns only the 208 timing bytes when the last transmitted frame sequence
+still matches, or a full frame plus timings when it changes. The same FVD1
+header carries fresh state, buttons and uptime. Reconnect invalidates the
+firmware's frame history, and the viewer starts each connection with `hg` to
+force a full frame even if the device did not observe the disconnect. Older
+firmware ignores unsupported request letters. Legacy `f`, `g`, and `h`
+responses retain their formats.
+
+An unchanged screen now uses 240 rather than 25,840 bytes per response:
+about 4.8 KB/s instead of 517 KB/s at 20 responses/second. These are protocol
+traffic calculations, not measured storage throughput. New firmware and a
+restarted updated viewer are both required for the reduction. Host tests
+exercise short writes, unchanged/changed frames, and disconnect recovery;
+viewer tests cover fragmented and coalesced full/timings-only packets.
+
+No measured device speedup or unlock-time improvement is claimed until the
+hardware is retested. Password KDF iteration counts are unchanged. Compare
+with the same card and Scheme 3, and retain the before/after timing panels.
+
+### Native four-bit SD bench build
+
+Build separately to preserve the SPI comparison images:
+
+```sh
+cmake -S firmware -B firmware/build-native-sd \
+  -DPICO_SDK_PATH=/home/adam/pico-sdk \
+  -Dpicotool_DIR=/home/adam/projects/fuse-vault/firmware/build/_deps/picotool \
+  -DFUSE_VAULT_HEADLESS_DEBUG=ON -DFUSE_VAULT_SD_NATIVE=ON \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build firmware/build-native-sd -j4
+```
+
+This selects native four-bit data at 25 MHz and multi-sector commands, using
+PIO1 and two DMA channels. It retains the encrypted on-card format, KMAC
+optimisations, authenticated read-back and synchronous write completion. It
+supports sector-addressed SDHC/SDXC cards; smaller byte-addressed SDSC cards
+are rejected. Production builds reject the native option until validated.
+
+Finish file operations and eject before flashing. **Fully unplug all USB
+power after flashing, then reconnect:** the card must leave the old SPI mode
+through a power cycle. No format or vault reprovisioning is required. Restart
+the viewer; its status line should show `4-bit SD / 25 MHz`. Boot flag bit 7
+identifies the native backend. With this flag, the SD counters are labelled
+read/write **request**, not sector: a request can contain multiple sectors.
+The existing vault-sector timing categories remain comparable across builds.
+
+Test reading an existing file before copying a new small test file. Capture
+vault timings before host file operations and after copy/eject. Successful
+builds and mock tests do not validate PIO electrical timing on the actual card.
+The SPI performance and KMAC-only UF2s remain available for recovery/comparison.
+
+No change to CPU-core allocation is included. This build isolates the larger
+transport change so measured gains and any card/transport errors are attributable.

@@ -21,6 +21,7 @@ typedef struct {
     fv_block_device_t *untrusted;
     uint8_t encryption_key[16];
     uint8_t nonce_key[32];
+    fv_kmac256_prepared_t nonce_prepared;
     uint8_t vault_id[FV_VAULT_ID_SIZE];
     uint8_t epoch[FV_ENCRYPTED_BLOCK_EPOCH_SIZE];
     uint64_t next_counter;

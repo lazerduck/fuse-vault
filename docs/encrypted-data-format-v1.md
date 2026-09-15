@@ -1,5 +1,10 @@
 # Fuse Vault encrypted block format V1
 
+Review update (2026-09-14): this is the existing prototype format, not the proposed
+new storage contract. See the [storage and responsiveness redesign](storage-performance-redesign.md)
+for packed metadata, disposable development vaults and removal of permanent
+user-sector recovery copies. The replacement serialization is not implemented.
+
 Status: integrated V1 prototype, 2026-09-05. The format is wired through the
 RP2354 SD block backend, target runtime, and TinyUSB MSC callbacks, but remains
 hardware-unvalidated and unaudited. Vault-header format V2 authenticates the

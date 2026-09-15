@@ -145,7 +145,7 @@ static void end_to_end_runtime(void) {
 
     fv_device_runtime_execute(&setup_runtime,
                               FV_COMMAND_BEGIN_PROVISIONING);
-    CHECK(setup_app.state == FV_STATE_MODE_SELECT);
+    CHECK(setup_app.state == FV_STATE_VAULT_SECRET_ENTRY);
     CHECK(setup_app.provisioned);
     CHECK(setup_runtime.authentication.vmk_valid == false);
     CHECK(setup_runtime.encrypted_ready == false);
@@ -182,6 +182,8 @@ static void end_to_end_runtime(void) {
     CHECK(persisted.failed_attempts == 1u);
 
     set_wheel_secret(&app.secret_entry, true);
+    fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_MODE_SELECT && !usb.msc.attached);
     fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
     CHECK(app.state == FV_STATE_VAULT_UNLOCKED);
     CHECK(app.failed_attempts == 0u);
@@ -263,7 +265,7 @@ static void end_to_end_runtime(void) {
     CHECK(memcmp(plaintext, recovered, sizeof(plaintext)) == 0);
 
     fv_device_runtime_handle_event(&runtime, FV_EVENT_BACK);
-    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
     CHECK(!usb.msc.attached);
     CHECK(!runtime.authentication.vmk_valid);
     CHECK(!runtime.encrypted_ready);

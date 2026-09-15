@@ -42,7 +42,12 @@ static void golden(void){
     if(memcmp(e.encryption_key,expected_key,16u)||memcmp(e.nonce_key,expected_nonce_key,32u)||memcmp(m.bytes+8u*512u+56u,expected_nonce,16u)||memcmp(digest,expected_digest,32u)){
         puts("golden values:");hex(e.encryption_key,16u);hex(e.nonce_key,32u);hex(m.bytes+8u*512u+56u,16u);hex(digest,32u);assert(false);
     }
-    fv_encrypted_block_lock(&e);fv_volume_master_key_clear(&key);
+    fv_encrypted_block_lock(&e);
+    const uint8_t cleared_nonce[sizeof(e.nonce_prepared)]={0};
+    const uint8_t cleared_pipeline[sizeof(e.pipeline)]={0};
+    assert(memcmp(&e.nonce_prepared,cleared_nonce,sizeof(cleared_nonce))==0);
+    assert(memcmp(&e.pipeline,cleared_pipeline,sizeof(cleared_pipeline))==0);
+    fv_volume_master_key_clear(&key);
 }
 
 static void round_trip_and_tamper(void){

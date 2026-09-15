@@ -104,7 +104,9 @@ uint16_t const *tud_descriptor_string_cb(uint8_t index, uint16_t language_id) {
     } else {
         if (index == 1u) ascii = "Fuse Vault";
         else if (index == 2u) ascii =
-#if FUSE_VAULT_HEADLESS_DEBUG
+#if defined(FUSE_VAULT_USB_PRODUCT)
+            FUSE_VAULT_USB_PRODUCT;
+#elif FUSE_VAULT_HEADLESS_DEBUG
             "Fuse Vault SCREEN DEBUG";
 #else
             fv_rp2354_usb_is_fido()

@@ -64,14 +64,15 @@ static bool derive(fv_encrypted_block_t *e,const fv_volume_master_key_t *vmk) {
 static bool make_nonce(const fv_encrypted_block_t *e,uint64_t logical,
                        uint64_t generation,const uint8_t epoch[16],
                        uint64_t counter,uint8_t out[16]) {
+    uint64_t start=fv_storage_profile_begin();
     uint8_t message[48];
     memcpy(message,e->vault_id,16u);put64(message+16u,logical);
     put64(message+24u,generation);memcpy(message+32u,epoch,16u);
     /* The per-session counter is mixed by changing the final epoch bytes. */
     for(unsigned i=0u;i<8u;++i)message[40u+i]^=(uint8_t)(counter>>(i*8u));
-    bool ok=fv_kmac256(e->nonce_key,sizeof(e->nonce_key),message,sizeof(message),
-                       nonce_customization,sizeof(nonce_customization)-1u,out,16u);
-    clear(message,sizeof(message));return ok;
+    bool ok=fv_kmac256_compute(&e->nonce_prepared,message,sizeof(message),out,16u);
+    clear(message,sizeof(message));
+    fv_storage_profile_end(FV_PERF_NONCE,start);return ok;
 }
 
 typedef enum { SLOT_EMPTY, SLOT_VALID, SLOT_INVALID, SLOT_IO } slot_state_t;
@@ -96,9 +97,11 @@ static slot_state_t decode(fv_encrypted_block_t *e,uint64_t logical,unsigned slo
                             equal(expected_nonce,record+56u,16u);
     unsigned long long length=0u;
     int auth=-1;
+    uint64_t auth_start=fv_storage_profile_begin();
     if(canonical)auth=crypto_aead_decrypt(decoded->plain,&length,NULL,
         record+CIPHERTEXT_OFFSET,FV_BLOCK_SIZE+16u,record,HEADER_SIZE,
         record+56u,e->encryption_key);
+    if(canonical)fv_storage_profile_end(FV_PERF_ASCON_DECRYPT,auth_start);
     clear(expected_nonce,sizeof(expected_nonce));
     if(auth==0&&length==FV_BLOCK_SIZE&&fv_crypto_pipeline_decrypt_block(
         &e->pipeline,logical,get64(record+24u),record+32u,get64(record+48u),
@@ -107,7 +110,7 @@ static slot_state_t decode(fv_encrypted_block_t *e,uint64_t logical,unsigned slo
     clear(decoded,sizeof(*decoded));clear(record,sizeof(record));return SLOT_INVALID;
 }
 
-static fv_block_result_t select(fv_encrypted_block_t *e,uint64_t logical,
+static fv_block_result_t select_impl(fv_encrypted_block_t *e,uint64_t logical,
                                 decoded_t *selected,bool *found) {
     decoded_t a,b;slot_state_t sa=decode(e,logical,0u,&a),sb=decode(e,logical,1u,&b);
     *found=false;
@@ -121,6 +124,15 @@ static fv_block_result_t select(fv_encrypted_block_t *e,uint64_t logical,
     else if(sb==SLOT_VALID){*selected=b;*found=true;}
     else if(sa==SLOT_INVALID||sb==SLOT_INVALID){clear(&a,sizeof(a));clear(&b,sizeof(b));return FV_BLOCK_ERROR_INTEGRITY;}
     clear(&a,sizeof(a));clear(&b,sizeof(b));return FV_BLOCK_OK;
+}
+
+/* Includes nested SD, nonce, authentication and layer timings. */
+static fv_block_result_t select(fv_encrypted_block_t *e,uint64_t logical,
+                                decoded_t *selected,bool *found) {
+    uint64_t start=fv_storage_profile_begin();
+    fv_block_result_t result=select_impl(e,logical,selected,found);
+    fv_storage_profile_end(FV_PERF_SELECT,start);
+    return result;
 }
 
 static fv_block_result_t read_blocks_impl(fv_block_device_t *device,uint64_t first,
@@ -163,16 +175,21 @@ static fv_block_result_t write_blocks_impl(fv_block_device_t *device,uint64_t fi
     if(!fv_crypto_pipeline_encrypt_block(&e->pipeline,first,generation,e->epoch,
                                          counter,layered)){clear(layered,sizeof(layered));result=FV_BLOCK_ERROR_IO;goto done;}
     unsigned long long length=0u;
-    if(crypto_aead_encrypt(record+CIPHERTEXT_OFFSET,&length,layered,512u,record,
-        HEADER_SIZE,NULL,record+56u,e->encryption_key)!=0||length!=528u){clear(layered,sizeof(layered));result=FV_BLOCK_ERROR_IO;goto done;}
+    uint64_t auth_start=fv_storage_profile_begin();
+    int auth=crypto_aead_encrypt(record+CIPHERTEXT_OFFSET,&length,layered,512u,record,
+        HEADER_SIZE,NULL,record+56u,e->encryption_key);
+    fv_storage_profile_end(FV_PERF_ASCON_ENCRYPT,auth_start);
+    if(auth!=0||length!=528u){clear(layered,sizeof(layered));result=FV_BLOCK_ERROR_IO;goto done;}
     clear(layered,sizeof(layered));
     result=e->untrusted->ops->write(e->untrusted,first*4u+(uint64_t)slot*2u,2u,record);
     if(result==FV_BLOCK_OK)result=e->untrusted->ops->sync(e->untrusted);
     if(result!=FV_BLOCK_OK){result=FV_BLOCK_ERROR_IO;goto done;}
+    uint64_t verify_start=fv_storage_profile_begin();
     decoded_t check;slot_state_t state=decode(e,first,slot,&check);
     if(state!=SLOT_VALID||check.generation!=generation||memcmp(check.plain,input,512u)!=0)
         result=state==SLOT_IO?FV_BLOCK_ERROR_IO:FV_BLOCK_ERROR_INTEGRITY;
     clear(&check,sizeof(check));
+    fv_storage_profile_end(FV_PERF_VERIFY,verify_start);
 done:
     clear(&old,sizeof(old));clear(record,sizeof(record));return result;
 }
@@ -209,6 +226,8 @@ bool fv_encrypted_block_init(fv_encrypted_block_t *e,fv_block_device_t *u,
     uint64_t blocks=u->ops->block_count(u);if(blocks<4u||blocks%4u!=0u||zero(vault_id,16u))return false;
     e->untrusted=u;memcpy(e->vault_id,vault_id,16u);e->logical_blocks=blocks/4u;
     if(!random_fill(random_context,e->epoch,16u)||zero(e->epoch,16u)||!derive(e,vmk)||
+       !fv_kmac256_prepare(&e->nonce_prepared,e->nonce_key,sizeof(e->nonce_key),
+                           nonce_customization,sizeof(nonce_customization)-1u)||
        !fv_crypto_pipeline_init(&e->pipeline,stack,vmk,vault_id)){clear(e,sizeof(*e));return false;}
     e->next_counter=1u;e->interface.ops=&ops;e->interface.context=e;e->ready=true;return true;
 }

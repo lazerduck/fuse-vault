@@ -4,6 +4,32 @@
 
 #include <stddef.h>
 
+#if FUSE_VAULT_BENCH_FIXED_USB_C
+#if !FUSE_VAULT_HEADLESS_DEBUG || !FUSE_VAULT_BASELINE_BENCH || FUSE_VAULT_RELEASE_BUILD
+#error "Fixed USB-C routing is restricted to the disposable-board diagnostic build"
+#endif
+static uint32_t diagnostic[20];
+static void record_presence(void) {
+    /* Preserve the original separate GPIO read ordering to observe disagreeing
+     * pairs too. These samples never control routing in this explicit build. */
+    const bool a = gpio_get(FUSE_VAULT_USB_A_PRESENT_PIN);
+    const bool ad = gpio_get(FUSE_VAULT_USB_A_PRESENT_DUPLICATE_PIN);
+    const bool c = gpio_get(FUSE_VAULT_USB_C_PRESENT_PIN);
+    const bool cd = gpio_get(FUSE_VAULT_USB_C_PRESENT_DUPLICATE_PIN);
+    const unsigned pattern = (unsigned)a | ((unsigned)c << 1) |
+        ((unsigned)ad << 2) | ((unsigned)cd << 3);
+    if (diagnostic[0] && pattern != diagnostic[2] && diagnostic[1] != UINT32_MAX)
+        ++diagnostic[1];
+    if (diagnostic[0] != UINT32_MAX) ++diagnostic[0];
+    diagnostic[2] = pattern;
+    diagnostic[3] = 1;
+    if (diagnostic[4 + pattern] != UINT32_MAX) ++diagnostic[4 + pattern];
+}
+void fv_rp2354_connector_diagnostic_snapshot(uint32_t out[20]) {
+    for (unsigned i = 0; i < 20; ++i) out[i] = diagnostic[i];
+}
+#endif
+
 #if FUSE_VAULT_USB_MUX_TRUTH_TABLE_CONFIRMED
 #if !defined(FUSE_VAULT_USB_MUX_ENABLE_LEVEL) || \
     !defined(FUSE_VAULT_USB_MUX_SELECT_USB_C_LEVEL)
@@ -63,7 +89,7 @@ static bool configure_presence_inputs(void *context) {
     return true;
 }
 
-#if FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED
+#if FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED && !FUSE_VAULT_BENCH_FIXED_USB_C
 static bool read_pair(uint8_t canonical_pin, uint8_t duplicate_pin,
                       bool active_level, bool *present) {
     if (present == NULL) return false;
@@ -77,8 +103,12 @@ static bool read_pair(uint8_t canonical_pin, uint8_t duplicate_pin,
 
 static bool read_usb_a_present(void *context, bool *present) {
     const fv_rp2354_connector_t *connector = context;
-    if (connector == NULL || !connector->pins_configured) return false;
-#if !FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED
+    if (connector == NULL || !connector->pins_configured || !present) return false;
+#if FUSE_VAULT_BENCH_FIXED_USB_C
+    record_presence();
+    *present = false; /* Test wiring: USB-C only, no second cable. */
+    return true;
+#elif !FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED
     (void)present;
     return false;
 #else
@@ -90,8 +120,11 @@ static bool read_usb_a_present(void *context, bool *present) {
 
 static bool read_usb_c_present(void *context, bool *present) {
     const fv_rp2354_connector_t *connector = context;
-    if (connector == NULL || !connector->pins_configured) return false;
-#if !FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED
+    if (connector == NULL || !connector->pins_configured || !present) return false;
+#if FUSE_VAULT_BENCH_FIXED_USB_C
+    *present = true;
+    return true;
+#elif !FUSE_VAULT_USB_PRESENCE_POLARITY_CONFIRMED
     (void)present;
     return false;
 #else

@@ -175,8 +175,6 @@ int main(void) {
             while (app.selected_mode != FV_MODE_SETTINGS)
                 fv_device_runtime_handle_event(&runtime, FV_EVENT_DOWN);
             fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
-            secret(&app.secret_entry);
-            fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
             assert(app.state == FV_STATE_SETTINGS && !attached);
             fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
             ++secret_last;

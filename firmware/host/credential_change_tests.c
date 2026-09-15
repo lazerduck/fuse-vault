@@ -135,7 +135,7 @@ static fixture_t *create(void) {
     event(f, FV_EVENT_SELECT); event(f, FV_EVENT_SELECT); event(f, FV_EVENT_SELECT);
     enter(f, FV_ENTRY_METHOD_WHEELS, false); enter(f, FV_ENTRY_METHOD_WHEELS, false);
     event(f, FV_EVENT_SELECT); event(f, FV_EVENT_SELECT);
-    CHECK(f->app.state == FV_STATE_MODE_SELECT);
+    CHECK(f->app.state == FV_STATE_VAULT_SECRET_ENTRY);
     return f;
 }
 static void boot(fixture_t *f) {
@@ -151,12 +151,12 @@ static void boot(fixture_t *f) {
     event(f, FV_EVENT_BOOT_COMPLETED);
 }
 static void settings(fixture_t *f, fv_entry_method_t method, bool different) {
-    if (f->app.state != FV_STATE_MODE_SELECT) event(f, FV_EVENT_BACK);
-    CHECK(f->app.state == FV_STATE_MODE_SELECT);
+    if (f->app.state != FV_STATE_VAULT_SECRET_ENTRY) event(f, FV_EVENT_BACK);
+    CHECK(f->app.state == FV_STATE_VAULT_SECRET_ENTRY);
+    enter(f, method, different);
+    CHECK(f->app.state == FV_STATE_MODE_SELECT && !f->msc.attached);
     while (f->app.selected_mode != FV_MODE_SETTINGS) event(f, FV_EVENT_DOWN);
     event(f, FV_EVENT_SELECT);
-    CHECK(f->app.state == FV_STATE_VAULT_SECRET_ENTRY && !f->msc.attached);
-    enter(f, method, different);
     CHECK(f->app.state == FV_STATE_SETTINGS && f->app.session_unlocked && !f->msc.attached);
 }
 static void draft(fixture_t *f, fv_entry_method_t method) {
@@ -176,7 +176,7 @@ static void destroy(fixture_t *f) { fv_device_runtime_shutdown(&f->runtime); fre
 
 static void methods_and_data(void) {
     fixture_t *f = create();
-    event(f, FV_EVENT_SELECT); enter(f, FV_ENTRY_METHOD_WHEELS, false);
+    enter(f, FV_ENTRY_METHOD_WHEELS, false); event(f, FV_EVENT_SELECT);
     CHECK(f->msc.attached);
     uint8_t data[512] = "Preserve files through all entry methods", out[512];
     CHECK(fv_virtual_msc_write10(&f->msc, 5, 1, data) == FV_MSC_OK);
@@ -199,10 +199,11 @@ static void methods_and_data(void) {
         CHECK(memcmp(&f->app.change_secret_entry, &zero, sizeof(zero)) == 0);
         boot(f);
         CHECK(f->app.selected_entry_method == method);
-        event(f, FV_EVENT_SELECT);
         enter(f, method, false); /* old/different secret must fail */
         CHECK(f->app.state == FV_STATE_VAULT_SECRET_ENTRY && f->app.failed_attempts == 1);
         enter(f, method, true);
+        CHECK(f->app.state == FV_STATE_MODE_SELECT && !f->msc.attached);
+        event(f, FV_EVENT_SELECT);
         CHECK(f->msc.attached);
         CHECK(memcmp(original.bytes, f->runtime.authentication.vmk.bytes, 32) == 0);
         CHECK(fv_virtual_msc_read10(&f->msc, 5, 1, out) == FV_MSC_OK);
@@ -271,8 +272,9 @@ static void interrupted_change(bool flash_failure) {
         CHECK(committed == FV_ENTRY_METHOD_WHEELS || committed == FV_ENTRY_METHOD_DIRECTIONS);
         if (!flash_failure && limit < 512) CHECK(committed == FV_ENTRY_METHOD_WHEELS);
         if (flash_failure && limit < 448) CHECK(committed == FV_ENTRY_METHOD_WHEELS);
-        event(f, FV_EVENT_SELECT);
         enter(f, committed, committed == FV_ENTRY_METHOD_DIRECTIONS);
+        CHECK(f->app.state == FV_STATE_MODE_SELECT && !f->msc.attached);
+        event(f, FV_EVENT_SELECT);
         CHECK(f->msc.attached);
     }
     free(card); destroy(f);
@@ -298,7 +300,7 @@ static void replay_and_retry(void) {
     memcpy(f->card, staged, CARD_BYTES);
     CHECK(f->services.ops->load_vault_header(&f->services, &header) == FV_PERSIST_INVALID);
     memcpy(f->card, good, CARD_BYTES);
-    boot(f); event(f, FV_EVENT_SELECT); enter(f, FV_ENTRY_METHOD_KEYPAD, true);
+    boot(f); enter(f, FV_ENTRY_METHOD_KEYPAD, true); event(f, FV_EVENT_SELECT);
     CHECK(f->msc.attached);
     fv_security_state_t state;
     CHECK(f->services.ops->load_security_state(&f->services, &state) == FV_PERSIST_OK);
@@ -321,7 +323,7 @@ static void platform_failures(void) {
         f->random_fail = f->sync_fail = f->read_fail = f->presentation_fail = false;
         boot(f);
         CHECK(f->app.selected_entry_method == FV_ENTRY_METHOD_WHEELS);
-        event(f, FV_EVENT_SELECT); enter(f, FV_ENTRY_METHOD_WHEELS, false);
+        enter(f, FV_ENTRY_METHOD_WHEELS, false); event(f, FV_EVENT_SELECT);
         CHECK(f->msc.attached);
         destroy(f);
     }

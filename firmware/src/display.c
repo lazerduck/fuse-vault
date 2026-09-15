@@ -1,3 +1,4 @@
+#include "fuse_vault/diagnostics.h"
 #include "fuse_vault/display.h"
 
 #include <string.h>
@@ -24,7 +25,10 @@ bool fv_display_render(fv_display_t *display, const fv_app_t *app,
     if (display->has_presented &&
         (uint32_t)(now_ms - display->last_present_ms) <
             display->minimum_interval_ms) return true;
-    if (!display->ops->present(display->context, &next)) {
+    uint64_t start=fv_diag_begin();
+    bool presented=display->ops->present(display->context, &next);
+    fv_diag_end(FV_DIAG_PRESENT,start);
+    if (!presented) {
         display->initialized = false;
         return false;
     }

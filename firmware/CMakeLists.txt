@@ -38,6 +38,22 @@ endif()
 if(FUSE_VAULT_HEADLESS_DEBUG)
     set(FUSE_VAULT_ENABLE_DISPLAY OFF CACHE BOOL "Physical screen disabled" FORCE)
 endif()
+option(FUSE_VAULT_SD_NATIVE "Bench native four-bit SD transport" OFF)
+option(FUSE_VAULT_BASELINE_BENCH "Add opt-in baseline commands to existing headless startup" OFF)
+option(FUSE_VAULT_BENCH_FIXED_USB_C "Diagnostic only: hold USB-C routing and record presence pins" OFF)
+if(FUSE_VAULT_BENCH_FIXED_USB_C AND (NOT FUSE_VAULT_BASELINE_BENCH OR NOT FUSE_VAULT_HEADLESS_DEBUG OR FUSE_VAULT_RELEASE_BUILD))
+    message(FATAL_ERROR "Fixed USB-C diagnostics require the development headless baseline profile")
+endif()
+if(FUSE_VAULT_BASELINE_BENCH AND (NOT FUSE_VAULT_HEADLESS_DEBUG OR FUSE_VAULT_RELEASE_BUILD))
+    message(FATAL_ERROR "Baseline commands require the development headless profile")
+endif()
+if(FUSE_VAULT_SD_NATIVE AND FUSE_VAULT_RELEASE_BUILD)
+    message(FATAL_ERROR "Native SD transport requires hardware validation before release")
+endif()
+set(FUSE_VAULT_SD_SOURCE src/rp2354_sd.c)
+if(FUSE_VAULT_SD_NATIVE)
+    set(FUSE_VAULT_SD_SOURCE src/rp2354_sd_native.c)
+endif()
 option(FUSE_VAULT_ENABLE_DISPLAY
     "Enable the ST7735S display" ON)
 option(FUSE_VAULT_COMPILE_UNVALIDATED_USB_MSC
@@ -157,7 +173,7 @@ add_executable(fuse_vault
     src/rp2354_random.c
     src/rp2354_connector.c
     src/rp2354_display.c
-    src/rp2354_sd.c
+    ${FUSE_VAULT_SD_SOURCE}
     src/rp2354_sd_spi.c
     src/rp2354_input.c
     src/rp2354_otp.c
@@ -173,7 +189,14 @@ add_executable(fuse_vault
 )
 
 if(FUSE_VAULT_HEADLESS_DEBUG)
-    target_sources(fuse_vault PRIVATE src/usb_debug_display.c src/storage_profile.c)
+    target_sources(fuse_vault PRIVATE src/usb_debug_display.c src/storage_profile.c src/diagnostics.c)
+endif()
+if(FUSE_VAULT_BASELINE_BENCH)
+    target_sources(fuse_vault PRIVATE bench/main.c)
+    target_compile_definitions(fuse_vault PRIVATE FUSE_VAULT_BASELINE_BENCH=1)
+endif()
+if(FUSE_VAULT_BENCH_FIXED_USB_C)
+    target_compile_definitions(fuse_vault PRIVATE FUSE_VAULT_BENCH_FIXED_USB_C=1)
 endif()
 target_compile_definitions(fuse_vault PRIVATE FUSE_VAULT_HEADLESS_DEBUG=$<BOOL:${FUSE_VAULT_HEADLESS_DEBUG}>)
 
@@ -235,6 +258,12 @@ target_include_directories(fuse_vault PRIVATE
 
 # Keep the final 8 KiB outside the firmware image as a second, link-time guard
 # in addition to the backend's runtime overlap check.
+if(FUSE_VAULT_SD_NATIVE)
+    add_subdirectory(third_party/pico_sd/src)
+    target_link_libraries(fuse_vault PRIVATE no-OS-FatFS-SD-SDIO-SPI-RPi-Pico)
+    target_compile_definitions(fuse_vault PRIVATE FUSE_VAULT_SD_NATIVE=1)
+endif()
+
 target_link_options(fuse_vault PRIVATE
     "LINKER:-T,${CMAKE_CURRENT_LIST_DIR}/linker/security_journal_assert.ld"
 )

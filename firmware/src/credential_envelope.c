@@ -1,3 +1,4 @@
+#include "fuse_vault/diagnostics.h"
 #include "fuse_vault/credential_envelope.h"
 
 #include "fuse_vault/crypto_stack.h"
@@ -101,7 +102,7 @@ static void encode_aad(const fv_vault_header_t *header,
     }
 }
 
-static bool pbkdf2_sha256(const fv_secret_encoding_t *entry,
+static bool pbkdf2_sha256_impl(const fv_secret_encoding_t *entry,
                           const uint8_t salt[FV_SALT_SIZE],
                           const uint8_t vault_id[FV_VAULT_ID_SIZE],
                           uint32_t iterations, uint8_t output[32]) {
@@ -135,7 +136,7 @@ static bool pbkdf2_sha256(const fv_secret_encoding_t *entry,
     return ok;
 }
 
-static bool iterated_kmac(const fv_secret_encoding_t *entry,
+static bool iterated_kmac_impl(const fv_secret_encoding_t *entry,
                           const uint8_t salt[FV_SALT_SIZE],
                           const uint8_t vault_id[FV_VAULT_ID_SIZE],
                           uint32_t iterations, uint8_t output[32]) {
@@ -162,6 +163,26 @@ static bool iterated_kmac(const fv_secret_encoding_t *entry,
     if (ok) memcpy(output, current, sizeof(current));
     secure_clear(current, sizeof(current));
     secure_clear(message, sizeof(message));
+    return ok;
+}
+
+static bool pbkdf2_sha256(const fv_secret_encoding_t *entry,
+                          const uint8_t salt[FV_SALT_SIZE],
+                          const uint8_t vault_id[FV_VAULT_ID_SIZE],
+                          uint32_t iterations, uint8_t output[32]) {
+    uint64_t start=fv_diag_begin();
+    bool ok=pbkdf2_sha256_impl(entry,salt,vault_id,iterations,output);
+    fv_diag_end(FV_DIAG_PBKDF,start);
+    return ok;
+}
+
+static bool iterated_kmac(const fv_secret_encoding_t *entry,
+                          const uint8_t salt[FV_SALT_SIZE],
+                          const uint8_t vault_id[FV_VAULT_ID_SIZE],
+                          uint32_t iterations, uint8_t output[32]) {
+    uint64_t start=fv_diag_begin();
+    bool ok=iterated_kmac_impl(entry,salt,vault_id,iterations,output);
+    fv_diag_end(FV_DIAG_KDF_KMAC,start);
     return ok;
 }
 

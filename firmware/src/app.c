@@ -33,7 +33,7 @@ static fv_command_set_t complete_boot(fv_app_t *app) {
     }
     app->state = app->provisioned ? FV_STATE_MODE_SELECT
                                   : FV_STATE_SETUP_REQUIRED;
-    if (app->provisioned && app->fido_available) {
+    if (app->provisioned) {
         begin_secret_entry(app);
         app->state = FV_STATE_VAULT_SECRET_ENTRY;
     }
@@ -58,11 +58,9 @@ static fv_command_set_t leave_sensitive_mode(fv_app_t *app) {
     fv_settings_clear(app);
     fv_secret_entry_clear(&app->secret_entry);
     app->session_unlocked = false;
-    app->state = FV_STATE_MODE_SELECT;
-    if (app->fido_available) {
-        begin_secret_entry(app);
-        app->state = FV_STATE_VAULT_SECRET_ENTRY;
-    }
+    app->selected_mode = FV_MODE_VAULT;
+    begin_secret_entry(app);
+    app->state = FV_STATE_VAULT_SECRET_ENTRY;
     return FV_COMMAND_USB_DETACH |
            FV_COMMAND_ERASE_TRANSIENT_SECRET |
            FV_COMMAND_ERASE_SESSION_KEYS;
@@ -283,11 +281,8 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                 fv_secret_entry_clear(&app->setup_secret_entry);
                 app->provisioned = true;
                 app->failed_attempts = 0u;
-                app->state = FV_STATE_MODE_SELECT;
-                if (app->fido_available) {
-                    begin_secret_entry(app);
-                    app->state = FV_STATE_VAULT_SECRET_ENTRY;
-                }
+                begin_secret_entry(app);
+                app->state = FV_STATE_VAULT_SECRET_ENTRY;
                 return FV_COMMAND_ERASE_TRANSIENT_SECRET |
                        FV_COMMAND_ERASE_SESSION_KEYS;
             }
@@ -306,16 +301,13 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
                         (event == FV_EVENT_UP ? FV_MODE_COUNT - 1 : 1)) % FV_MODE_COUNT);
                 } while (app->selected_mode == FV_MODE_FIDO && !app->fido_available);
             } else if (event == FV_EVENT_SELECT) {
-                if (app->selected_mode == FV_MODE_SETTINGS) {
-                    /* Fresh normal authentication; settings never attach a USB interface. */
-                    app->session_unlocked = false;
+                if (!app->session_unlocked) {
+                    begin_secret_entry(app);
+                    app->state = FV_STATE_VAULT_SECRET_ENTRY;
+                } else if (app->selected_mode == FV_MODE_SETTINGS) {
                     fv_settings_clear(app);
-                    begin_secret_entry(app);
-                    app->state = FV_STATE_VAULT_SECRET_ENTRY;
-                    return FV_COMMAND_USB_DETACH | FV_COMMAND_ERASE_SESSION_KEYS;
-                } else if (!app->session_unlocked) {
-                    begin_secret_entry(app);
-                    app->state = FV_STATE_VAULT_SECRET_ENTRY;
+                    app->selected_setting = 0u;
+                    app->state = FV_STATE_SETTINGS;
                 } else if (app->selected_mode == FV_MODE_VAULT) {
                     app->state = FV_STATE_VAULT_UNLOCKED;
                     return FV_COMMAND_USB_ATTACH_MSC;
@@ -382,17 +374,9 @@ fv_command_set_t fv_app_handle(fv_app_t *app, fv_event_t event) {
         case FV_STATE_VAULT_RECORDING_SUCCESS:
             if (event == FV_EVENT_ATTEMPT_COUNTER_STORED) {
                 app->session_unlocked = true;
-                if (app->selected_mode == FV_MODE_SETTINGS) {
-                    app->selected_setting = 0u;
-                    app->state = FV_STATE_SETTINGS;
-                    return FV_COMMAND_NONE;
-                }
-                if (app->fido_available) {
-                    app->state = FV_STATE_MODE_SELECT;
-                    return FV_COMMAND_NONE;
-                }
-                app->state = FV_STATE_VAULT_UNLOCKED;
-                return FV_COMMAND_USB_ATTACH_MSC;
+                app->selected_mode = FV_MODE_VAULT;
+                app->state = FV_STATE_MODE_SELECT;
+                return FV_COMMAND_NONE;
             }
             break;
 

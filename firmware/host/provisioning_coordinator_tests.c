@@ -242,8 +242,7 @@ static void test_success(void) {
                     state.state.failed_attempts, recovered);
         CHECK(fv_app_handle(&restarted, FV_EVENT_BOOT_COMPLETED) ==
               FV_COMMAND_NONE);
-        CHECK(restarted.state == FV_STATE_MODE_SELECT);
-        (void)fv_app_handle(&restarted, FV_EVENT_SELECT);
+        CHECK(restarted.state == FV_STATE_VAULT_SECRET_ENTRY);
         restarted.secret_entry = app.setup_secret_entry;
         restarted.failed_attempts = 1u;
         restarted.state = FV_STATE_VAULT_AUTHENTICATING;
@@ -254,8 +253,9 @@ static void test_success(void) {
         CHECK(session.vmk_valid);
         CHECK((fv_app_handle(&restarted, FV_EVENT_AUTH_SUCCEEDED) &
                FV_COMMAND_STORE_ATTEMPT_COUNTER) != 0u);
-        CHECK((fv_app_handle(&restarted, FV_EVENT_ATTEMPT_COUNTER_STORED) &
-               FV_COMMAND_USB_ATTACH_MSC) != 0u);
+        CHECK(fv_app_handle(&restarted, FV_EVENT_ATTEMPT_COUNTER_STORED) == FV_COMMAND_NONE);
+        CHECK(restarted.state == FV_STATE_MODE_SELECT && restarted.session_unlocked);
+        CHECK((fv_app_handle(&restarted, FV_EVENT_SELECT) & FV_COMMAND_USB_ATTACH_MSC) != 0u);
         const fv_command_set_t lock_commands =
             fv_app_handle(&restarted, FV_EVENT_LOCK_REQUESTED);
         CHECK((lock_commands & FV_COMMAND_ERASE_SESSION_KEYS) != 0u);

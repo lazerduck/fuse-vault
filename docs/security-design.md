@@ -1,5 +1,10 @@
 # Fuse Vault security and provisioning design
 
+Review update (2026-09-14): the [storage and responsiveness redesign](storage-performance-redesign.md)
+retains Ascon and selectable encryption while proposing a new data layout and
+measured password-hardening budget. Existing recovery and KDF descriptions below
+describe the prototype; the redesign remains a review draft, not implemented code.
+
 Status: architectural baseline for development. Cryptographic profile details
 remain provisional until they have test vectors, measurements on RP2354A, and
 independent review.

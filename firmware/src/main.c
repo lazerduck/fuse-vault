@@ -1,3 +1,7 @@
+#include "fuse_vault/diagnostics.h"
+#if FUSE_VAULT_BASELINE_BENCH
+#include "fuse_vault/baseline_bench.h"
+#endif
 #include "fuse_vault/app.h"
 #include "fuse_vault/boot_recovery.h"
 #include "fuse_vault/device_roots.h"
@@ -93,6 +97,8 @@ static int fido_presence(void *context) {
         if (!fv_display_render(&display, &app, now)) {
             display_ready = false; fido_fault = true; result = 2; break;
         }
+        fv_diag_service(1);
+        uint64_t input_start=fv_diag_begin();
         fv_input_controller_update(&approval, fv_rp2354_input_pressed_mask(),
             now, fido_presence_event, &result);
         sleep_ms(1u);
@@ -321,6 +327,13 @@ static boot_recovery_state_t recover_boot_state(
         ? BOOT_RECOVERY_READY : BOOT_RECOVERY_FAILED;
 }
 
+#if FUSE_VAULT_BASELINE_BENCH
+static void baseline_service(void) {
+    if (connector_ready && fv_connector_safety_poll(&connector))
+        fv_rp2354_usb_msc_task();
+}
+#endif
+
 int main(void) {
     /* OE# is pulled low on PCB revision 1 so USB-C is available to the ROM
      * loader. Disconnect the data mux before initializing any other
@@ -408,6 +421,11 @@ int main(void) {
     refresh_input_map();
 
     for (;;) {
+#if FUSE_VAULT_BASELINE_BENCH
+        if (fv_baseline_bench_poll(&sd,
+            connector_ready && !runtime.authentication.vmk_valid && !runtime.encrypted_ready,
+            baseline_service)) continue;
+#endif
         fv_rp2354_sd_poll(&sd);
         if (runtime_ready && fv_rp2354_sd_take_insertion_event(&sd) &&
             app.state == FV_STATE_BOOT_MEDIA_REQUIRED) {
@@ -439,7 +457,10 @@ int main(void) {
         }
         /* Check physical removal/conflict before accepting another host
          * transaction, then let TinyUSB produce any logical eject event. */
+        fv_diag_service(0);
+        uint64_t usb_start=fv_diag_begin();
         fv_rp2354_usb_task_at(to_ms_since_boot(get_absolute_time()));
+        fv_diag_end(FV_DIAG_USB,usb_start);
 #if FUSE_VAULT_ENABLE_FIDO2
         if ((app.state == FV_STATE_FIDO_READY || app.state == FV_STATE_PASSKEY_LIST ||
              app.state == FV_STATE_PASSKEY_DELETE_CONFIRM) && fido_verification.valid &&
@@ -459,17 +480,25 @@ int main(void) {
         if (runtime_ready && fv_rp2354_usb_msc_take_eject_request()) {
             dispatch_event(FV_EVENT_USB_EJECTED);
         }
+        fv_diag_service(1);
+        uint64_t input_start=fv_diag_begin();
         fv_input_controller_update(
             &input_controller, fv_rp2354_input_pressed_mask(),
             to_ms_since_boot(get_absolute_time()), handle_input_event, NULL);
+        fv_diag_end(FV_DIAG_INPUT,input_start);
+        fv_diag_service(2);
+        uint64_t display_start=fv_diag_begin();
         /* Retry rate-limited frames even when no further input arrives. */
         if (display_ready && !fv_display_render(
                 &display, &app, to_ms_since_boot(get_absolute_time()))) {
             display_ready = false;
             if (runtime_ready) dispatch_event(FV_EVENT_FATAL_ERROR);
         }
+        fv_diag_end(FV_DIAG_DISPLAY,display_start);
 #if FUSE_VAULT_HEADLESS_DEBUG
+        uint64_t debug_start=fv_diag_begin();
         fv_usb_debug_task(app.state, fv_rp2354_input_pressed_mask());
+        fv_diag_end(FV_DIAG_DEBUG,debug_start);
         /* Full-speed bulk USB needs frequent task calls: a 1 ms sleep here
          * throttles the 25.6 KiB screen transfer and delays visible input. */
         tight_loop_contents();

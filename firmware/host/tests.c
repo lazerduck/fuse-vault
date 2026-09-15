@@ -50,7 +50,7 @@ static fv_app_t boot_provisioned(void) {
     fv_app_t app;
     fv_app_init(&app, true, 0u, FV_ENTRY_METHOD_WHEELS);
     CHECK(fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED) == FV_COMMAND_NONE);
-    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
     return app;
 }
 
@@ -93,7 +93,7 @@ static void test_boot_paths(void) {
     fv_app_render(&app, &waiting_view);
     CHECK(strstr(waiting_view.lines[0], "Insert vault SD") != NULL);
     CHECK(fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED) == FV_COMMAND_NONE);
-    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
 
     fv_app_init(&app, false, 0u, FV_ENTRY_METHOD_WHEELS);
     (void)fv_app_handle(&app, FV_EVENT_BOOT_COMPLETED);
@@ -122,7 +122,7 @@ static void test_boot_paths(void) {
     CHECK(app.state == FV_STATE_PROVISIONING);
     CHECK(has_command(fv_app_handle(&app, FV_EVENT_PROVISIONING_SUCCEEDED),
                       FV_COMMAND_ERASE_TRANSIENT_SECRET));
-    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
     CHECK(app.provisioned);
 
     fv_app_init(&app, true, FV_MAX_UNLOCK_ATTEMPTS, FV_ENTRY_METHOD_WHEELS);
@@ -171,7 +171,6 @@ static void test_setup_rejects_mismatched_confirmation(void) {
 
 static void test_vault_unlock_and_lock(void) {
     fv_app_t app = boot_provisioned();
-    CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
     CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
 
     CHECK(fv_app_handle(&app, FV_EVENT_UP) == FV_COMMAND_NONE);
@@ -201,18 +200,19 @@ static void test_vault_unlock_and_lock(void) {
     CHECK(app.state == FV_STATE_VAULT_RECORDING_SUCCESS);
 
     commands = fv_app_handle(&app, FV_EVENT_ATTEMPT_COUNTER_STORED);
+    CHECK(commands == FV_COMMAND_NONE && app.state == FV_STATE_MODE_SELECT);
+    commands = fv_app_handle(&app, FV_EVENT_SELECT);
     CHECK(has_command(commands, FV_COMMAND_USB_ATTACH_MSC));
     CHECK(app.state == FV_STATE_VAULT_UNLOCKED);
 
     commands = fv_app_handle(&app, FV_EVENT_LOCK_REQUESTED);
     CHECK(has_command(commands, FV_COMMAND_USB_DETACH));
     CHECK(has_command(commands, FV_COMMAND_ERASE_SESSION_KEYS));
-    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
 }
 
 static void test_secret_entry_back_clears_input(void) {
     fv_app_t app = boot_provisioned();
-    (void)fv_app_handle(&app, FV_EVENT_SELECT);
     (void)fv_app_handle(&app, FV_EVENT_UP);
     (void)fv_app_handle(&app, FV_EVENT_RIGHT);
     (void)fv_app_handle(&app, FV_EVENT_DOWN);
@@ -221,7 +221,7 @@ static void test_secret_entry_back_clears_input(void) {
 
     CHECK(has_command(fv_app_handle(&app, FV_EVENT_BACK),
                       FV_COMMAND_ERASE_TRANSIENT_SECRET));
-    CHECK(app.state == FV_STATE_MODE_SELECT);
+    CHECK(app.state == FV_STATE_VAULT_SECRET_ENTRY);
     CHECK(app.secret_entry.state.wheels.values[0] == 0u);
     CHECK(app.secret_entry.state.wheels.values[1] == 0u);
     CHECK(app.secret_entry.state.wheels.selected == 0u);
@@ -229,7 +229,6 @@ static void test_secret_entry_back_clears_input(void) {
 
 static void test_secret_encoding_is_versioned_and_stable(void) {
     fv_app_t app = boot_provisioned();
-    (void)fv_app_handle(&app, FV_EVENT_SELECT);
     app.secret_entry.state.wheels.values[0] = 12u;
     app.secret_entry.state.wheels.values[1] = 34u;
     app.secret_entry.state.wheels.values[2] = 56u;
@@ -408,7 +407,6 @@ static void test_new_methods_work_in_setup_and_unlock(void) {
         fv_app_t unlock;
         fv_app_init(&unlock, true, 0u, method);
         (void)fv_app_handle(&unlock, FV_EVENT_BOOT_COMPLETED);
-        (void)fv_app_handle(&unlock, FV_EVENT_SELECT);
         CHECK(unlock.secret_entry.method == method);
         enter_test_secret(&unlock, method);
         CHECK(unlock.state == FV_STATE_VAULT_RESERVING_ATTEMPT);
@@ -426,7 +424,6 @@ static void test_ui_framebuffer_is_deterministic(void) {
 
 static void test_attempt_limit_destroys_secret(void) {
     fv_app_t app = boot_provisioned();
-    CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
 
     for (unsigned attempt = 1u; attempt <= FV_MAX_UNLOCK_ATTEMPTS; ++attempt) {
         (void)reserve_and_begin_authentication(&app);
@@ -474,12 +471,12 @@ static void test_fido_mode(void) {
 
 static void test_fault_closes_security_boundary(void) {
     fv_app_t app = boot_provisioned();
-    CHECK(fv_app_handle(&app, FV_EVENT_SELECT) == FV_COMMAND_NONE);
     (void)reserve_and_begin_authentication(&app);
     CHECK(has_command(fv_app_handle(&app, FV_EVENT_AUTH_SUCCEEDED),
                       FV_COMMAND_STORE_ATTEMPT_COUNTER));
-    CHECK(has_command(fv_app_handle(&app, FV_EVENT_ATTEMPT_COUNTER_STORED),
-                      FV_COMMAND_USB_ATTACH_MSC));
+    CHECK(fv_app_handle(&app, FV_EVENT_ATTEMPT_COUNTER_STORED) == FV_COMMAND_NONE);
+    CHECK(app.state == FV_STATE_MODE_SELECT && app.session_unlocked);
+    CHECK(has_command(fv_app_handle(&app, FV_EVENT_SELECT), FV_COMMAND_USB_ATTACH_MSC));
 
     const fv_command_set_t commands = fv_app_handle(&app, FV_EVENT_STORAGE_FAILED);
     CHECK(app.state == FV_STATE_FAULT);

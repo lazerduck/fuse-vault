@@ -77,3 +77,8 @@ Local management adaptation: `port.c` exposes a device-session-authorized
 resident credential metadata/deletion API. It serializes against host commands,
 uses stable resident IDs and stages deletion until the existing durable commit.
 It never supplies private keys or creates CTAP authorization tokens for the UI.
+
+The makeCredential presence path also checks physical approval when no
+pinUvAuthParam is supplied (the device-unlock UV path), matching getAssertion.
+The graphical simulator regression cancels such a registration and checks that
+no resident credential was created before approving a separate registration.

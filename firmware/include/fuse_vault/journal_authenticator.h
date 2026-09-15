@@ -15,6 +15,19 @@ typedef struct {
     bool initialized;
 } fv_dual_journal_authenticator_t;
 
+/* Key-equivalent session state. Owner must erase on lock/fault. */
+typedef struct {
+    uint64_t state[25];
+    bool ready;
+} fv_kmac256_prepared_t;
+bool fv_kmac256_prepare(fv_kmac256_prepared_t *prepared,
+    const uint8_t *key, size_t key_length,
+    const uint8_t *customization, size_t customization_length);
+bool fv_kmac256_compute(const fv_kmac256_prepared_t *prepared,
+    const uint8_t *message, size_t message_length,
+    uint8_t *output, size_t output_length);
+void fv_kmac256_clear(fv_kmac256_prepared_t *prepared);
+
 bool fv_kmac256(const uint8_t *key, size_t key_length,
                 const uint8_t *message, size_t message_length,
                 const uint8_t *customization, size_t customization_length,

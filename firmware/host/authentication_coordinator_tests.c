@@ -203,7 +203,8 @@ static bool session_lifecycle_across_methods(void) {
             CHECK((commands & FV_COMMAND_STORE_ATTEMPT_COUNTER) != 0u);
             CHECK((commands & FV_COMMAND_USB_ATTACH_MSC) == 0u);
             commands = fv_app_handle(&app, FV_EVENT_ATTEMPT_COUNTER_STORED);
-            CHECK((commands & FV_COMMAND_USB_ATTACH_MSC) != 0u);
+            CHECK(commands == FV_COMMAND_NONE && app.state == FV_STATE_MODE_SELECT);
+            CHECK((fv_app_handle(&app, FV_EVENT_SELECT) & FV_COMMAND_USB_ATTACH_MSC) != 0u);
             CHECK(session.vmk_valid);
 
             commands = fv_app_handle(&app, teardown_events[teardown]);

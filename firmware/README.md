@@ -242,7 +242,7 @@ A useful ergonomics session:
 1. Complete setup using the clickable D-pad/OK/Back or keyboard controls.
 2. Choose an entry method, enter and confirm its secret, choose the ordered
    cipher stack, then accept the no-recovery policy.
-3. Select Vault and enter the same secret to unlock.
+3. Enter the same secret to unlock, then select Vault storage.
 4. Type a short sample note in the simulated-host panel and click **Save**.
 5. Click **Restart**, unlock again, then **Load** to retrieve that note.
 6. Try a wrong secret, Back, Lock and Eject; try another method with **New device**.
@@ -254,6 +254,30 @@ the panel and clears its displayed text. The backing media file stores the
 encrypted record. Simulated roots remain ordinary local files, so use test
 secrets and test notes. This environment does not emulate physical OTP locks
 or device timing; cryptographic work runs synchronously on the host CPU.
+
+When Mbed TLS 3.6 sources are available, the graphical simulator also connects
+**FIDO2** to the real CTAP engine and encrypted private credential store. CMake
+looks in `$PICO_SDK_PATH/lib/mbedtls` and `~/pico-sdk/lib/mbedtls`, or accepts
+`-DFUSE_VAULT_MBEDTLS_SOURCE=/path/to/mbedtls`. The selected Python interpreter
+must have `fido2` and `cryptography` installed; choose it with
+`-DPython3_EXECUTABLE=/usr/bin/python3`. Set `-DFUSE_VAULT_SIMULATOR_FIDO2=OFF`
+for a storage-only GUI build.
+
+Unlock, select **FIDO2**, and use the simulated host's **Register** or
+**Authenticate** buttons. Approve on the device with **OK**; **Back** cancels.
+The client verifies registration and authentication signatures using python-fido2.
+When idle, device **OK** opens the passkey list; select a passkey and confirm
+with **Right** to delete it. Password changes and restarts preserve credentials.
+Verification starts within 30 seconds of unlock and remains bound to that site
+for up to ten minutes; unlock again for another site or after expiry.
+
+This panel uses private local IPC, not USB HID: it does not expose a security key
+to desktop browsers. The simulated site's `simulated-fido-host.json` contains
+public registration data; authenticator signing keys stay in encrypted media.
+New simulator devices have 2 MiB of media, including a 1 MiB FIDO reservation.
+Older 128 KiB devices still open unchanged for storage and settings, but cannot
+fit the FIDO store. Use **New device** for FIDO testing; it preserves the old device.
+After rebuilding, close and reopen the application to load the new executable.
 
 **Restart** performs orderly detach and starts recovery using the same files.
 Power-cut fault injection remains in automated tests. **New device** creates
@@ -468,9 +492,15 @@ display frame. Physical stack watermark measurements remain a bring-up task.
 
 ## Password and entry-method settings
 
-Settings in the mode menu now provides password and entry-method changes after
-a fresh local unlock. The user enters the replacement twice, reviews it, and
+Both storage-only and FIDO-enabled builds unlock before showing the mode menu.
+Unlocking alone does not attach USB; choose storage to mount it, or Settings to
+change the password or entry method using the authenticated session. The user enters the replacement twice, reviews it, and
 saves; success locks the device while preserving storage and FIDO credentials.
 Navigation, view rendering and the persistent change coordinator are separate
 modules. See [the lifecycle and transaction design](../docs/password-change.md)
 for the journal-v3 header anchor, power-loss behavior and extension points.
+
+
+After rebuilding the graphical simulator, close and relaunch its window to load
+the new executable. Its Restart button only reboots the simulated device state
+inside the running process; it does not reload an updated binary.

@@ -3,6 +3,7 @@
 
 #include "fuse_vault/credential_envelope.h"
 #include "fuse_vault/crypto_stack.h"
+#include "fuse_vault/journal_authenticator.h"
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -13,6 +14,7 @@ typedef struct {
     uint16_t algorithm_id;
     uint16_t algorithm_version;
     uint8_t key[FV_CRYPTO_PIPELINE_KEY_CAPACITY];
+    fv_kmac256_prepared_t iv_prepared;
 } fv_crypto_pipeline_layer_t;
 
 typedef struct {

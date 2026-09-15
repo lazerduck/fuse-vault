@@ -143,7 +143,7 @@ static void test_setup_and_restart(bool preprovisioned) {
     CHECK(fv_device_runtime_init(&setup_runtime, &setup_app, &services, &media,
                                  &USB_OPS, &usb, &costs));
     fv_device_runtime_execute(&setup_runtime, FV_COMMAND_BEGIN_PROVISIONING);
-    CHECK(setup_app.state == FV_STATE_MODE_SELECT);
+    CHECK(setup_app.state == FV_STATE_VAULT_SECRET_ENTRY);
     CHECK(fv_device_roots_status(&roots_storage) == FV_DEVICE_ROOTS_ACTIVE);
     fv_device_secret_t initial_roots;
     CHECK(fv_device_roots_read(&roots_storage, &initial_roots) ==
@@ -172,6 +172,8 @@ static void test_setup_and_restart(bool preprovisioned) {
     fv_device_runtime_t runtime;
     CHECK(fv_device_runtime_init(&runtime, &app, &restarted_services, &media,
                                  &USB_OPS, &usb, &costs));
+    fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
+    CHECK(app.state == FV_STATE_MODE_SELECT && !usb.msc.attached);
     fv_device_runtime_handle_event(&runtime, FV_EVENT_SELECT);
     CHECK(app.state == FV_STATE_VAULT_UNLOCKED && usb.msc.attached);
 

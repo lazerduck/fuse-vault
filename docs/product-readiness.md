@@ -1,5 +1,11 @@
 # Fuse Vault product-readiness status
 
+Review update (2026-09-14): measured unlock/storage latency has made the current
+prototype unsuitable as a usable-product baseline. The [storage and responsiveness
+redesign](storage-performance-redesign.md) defines proposed capacity, latency and
+execution changes for review. Earlier passing tests and readiness statements below
+do not demonstrate those new targets or validate the replacement format.
+
 Status: active V1 release checklist, updated 2026-09-06.
 
 ## Current outcome

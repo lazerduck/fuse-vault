@@ -28,16 +28,6 @@ static const uint64_t ROUND_CONSTANTS[24] = {
     UINT64_C(0x0000000080000001), UINT64_C(0x8000000080008008),
 };
 
-static const unsigned ROTATION[24] = {
-    1u, 3u, 6u, 10u, 15u, 21u, 28u, 36u, 45u, 55u, 2u, 14u,
-    27u, 41u, 56u, 8u, 25u, 43u, 62u, 18u, 39u, 61u, 20u, 44u,
-};
-
-static const unsigned PILN[24] = {
-    10u, 7u, 11u, 17u, 18u, 3u, 5u, 16u, 8u, 21u, 24u, 4u,
-    15u, 23u, 19u, 13u, 12u, 2u, 20u, 14u, 22u, 9u, 6u, 1u,
-};
-
 typedef struct {
     uint64_t state[KECCAK_LANES];
     size_t position;
@@ -63,12 +53,38 @@ static void keccak_f1600(uint64_t state[KECCAK_LANES]) {
             }
         }
         uint64_t t = state[1];
-        for (unsigned index = 0u; index < 24u; ++index) {
-            const unsigned lane = PILN[index];
-            const uint64_t saved = state[lane];
-            state[lane] = rotate_left(t, ROTATION[index]);
-            t = saved;
-        }
+        /* Constant rotations avoid variable 64-bit shifts on Cortex-M33.
+         * Same rho/pi cycle and 24 rounds as the compact reference loop. */
+#define RHO_PI(lane, rotation) do { \
+    const uint64_t saved = state[lane]; \
+    state[lane] = rotate_left(t, rotation); \
+    t = saved; \
+} while (0)
+        RHO_PI(10u, 1u);
+        RHO_PI(7u, 3u);
+        RHO_PI(11u, 6u);
+        RHO_PI(17u, 10u);
+        RHO_PI(18u, 15u);
+        RHO_PI(3u, 21u);
+        RHO_PI(5u, 28u);
+        RHO_PI(16u, 36u);
+        RHO_PI(8u, 45u);
+        RHO_PI(21u, 55u);
+        RHO_PI(24u, 2u);
+        RHO_PI(4u, 14u);
+        RHO_PI(15u, 27u);
+        RHO_PI(23u, 41u);
+        RHO_PI(19u, 56u);
+        RHO_PI(13u, 8u);
+        RHO_PI(12u, 25u);
+        RHO_PI(2u, 43u);
+        RHO_PI(20u, 62u);
+        RHO_PI(14u, 18u);
+        RHO_PI(22u, 39u);
+        RHO_PI(9u, 61u);
+        RHO_PI(6u, 20u);
+        RHO_PI(1u, 44u);
+#undef RHO_PI
         for (unsigned row = 0u; row < KECCAK_LANES; row += 5u) {
             for (unsigned index = 0u; index < 5u; ++index) bc[index] = state[row + index];
             for (unsigned index = 0u; index < 5u; ++index) {
@@ -170,6 +186,63 @@ bool fv_kmac256(const uint8_t *key, size_t key_length,
     while (produced < output_length) {
         const size_t remaining = output_length - produced;
         const size_t chunk = remaining < KMAC256_RATE ? remaining : KMAC256_RATE;
+        memcpy(output + produced, bytes, chunk);
+        produced += chunk;
+        if (produced < output_length) keccak_f1600(sponge.state);
+    }
+    secure_clear(&sponge, sizeof(sponge));
+    return true;
+}
+
+void fv_kmac256_clear(fv_kmac256_prepared_t *prepared) {
+    if (prepared != NULL) secure_clear(prepared, sizeof(*prepared));
+}
+
+bool fv_kmac256_prepare(fv_kmac256_prepared_t *prepared,
+    const uint8_t *key, size_t key_length,
+    const uint8_t *customization, size_t customization_length) {
+    if (prepared == NULL) return false;
+    fv_kmac256_clear(prepared);
+    if (key == NULL || key_length > SIZE_MAX / 8u ||
+        (customization == NULL && customization_length != 0u) ||
+        customization_length > SIZE_MAX / 8u) return false;
+    sponge_t sponge = {0};
+    static const uint8_t function_name[] = "KMAC";
+    absorb_bytepad_prefix(&sponge);
+    absorb_encoded_string(&sponge, function_name, sizeof(function_name) - 1u);
+    absorb_encoded_string(&sponge, customization, customization_length);
+    absorb_zero_padding(&sponge);
+    absorb_bytepad_prefix(&sponge);
+    absorb_encoded_string(&sponge, key, key_length);
+    absorb_zero_padding(&sponge);
+    /* bytepad finishes at a rate boundary, so position is always zero. */
+    memcpy(prepared->state, sponge.state, sizeof(prepared->state));
+    prepared->ready = true;
+    secure_clear(&sponge, sizeof(sponge));
+    return true;
+}
+
+bool fv_kmac256_compute(const fv_kmac256_prepared_t *prepared,
+    const uint8_t *message, size_t message_length,
+    uint8_t *output, size_t output_length) {
+    if (prepared == NULL || !prepared->ready || output == NULL ||
+        (message == NULL && message_length != 0u) ||
+        message_length > SIZE_MAX / 8u || output_length > SIZE_MAX / 8u)
+        return false;
+    sponge_t sponge = {0};
+    memcpy(sponge.state, prepared->state, sizeof(sponge.state));
+    sponge_absorb(&sponge, message, message_length);
+    uint8_t encoded[9];
+    size_t encoded_length = right_encode((uint64_t)output_length * 8u, encoded);
+    sponge_absorb(&sponge, encoded, encoded_length);
+    uint8_t *bytes = (uint8_t *)sponge.state;
+    bytes[sponge.position] ^= 0x04u;
+    bytes[KMAC256_RATE - 1u] ^= 0x80u;
+    keccak_f1600(sponge.state);
+    size_t produced = 0u;
+    while (produced < output_length) {
+        size_t remaining = output_length - produced;
+        size_t chunk = remaining < KMAC256_RATE ? remaining : KMAC256_RATE;
         memcpy(output + produced, bytes, chunk);
         produced += chunk;
         if (produced < output_length) keccak_f1600(sponge.state);

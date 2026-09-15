@@ -1,3 +1,4 @@
+#include "fuse_vault/diagnostics.h"
 #include "fuse_vault/rp2354_usb_msc.h"
 
 #include "tusb.h"
@@ -137,6 +138,7 @@ bool fv_rp2354_usb_msc_attach(fv_block_device_t *plaintext_blocks) {
         initialized = true;
     }
     attached = true;
+    fv_diag_end(FV_DIAG_ATTACH,fv_diag_begin());
     tud_connect();
     return true;
 #endif
@@ -277,6 +279,7 @@ bool tud_msc_is_writable_cb(uint8_t lun) {
 
 int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
                           void *buffer, uint32_t buffer_size) {
+    fv_diag_io(lba,offset,buffer_size,0);
     (void)lun;
     if (!backend_ready()) {
         if (attached) storage_failure_requested = true;
@@ -304,6 +307,7 @@ int32_t tud_msc_read10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
 
 int32_t tud_msc_write10_cb(uint8_t lun, uint32_t lba, uint32_t offset,
                            uint8_t *buffer, uint32_t buffer_size) {
+    fv_diag_io(lba,offset,buffer_size,1);
     (void)lun;
     if (!backend_ready()) {
         if (attached) storage_failure_requested = true;

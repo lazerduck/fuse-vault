@@ -1,7 +1,7 @@
 """Protocol tests do not need USB hardware or a graphical display."""
 import struct
 import unittest
-from usb_screen import extract_packets, rgb565_to_rgb, FRAME_BYTES
+from usb_screen import extract_packets, rgb565_to_rgb, FRAME_BYTES, MetricsRequests, TIMING_NAMES
 
 class DecoderTests(unittest.TestCase):
     def packet(self):
@@ -34,6 +34,49 @@ class DecoderTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0][1][FRAME_BYTES:], timings)
         self.assertFalse(packet)
+
+    def test_detailed_timings_fragmented(self):
+        packet = bytearray(self.packet())
+        timings = struct.pack('<4I', 3, 9000, 0, 5000) * len(TIMING_NAMES)
+        struct.pack_into('<I', packet, 4, FRAME_BYTES + len(timings))
+        packet.extend(timings)
+        buffer = bytearray(packet[:-1])
+        self.assertEqual(extract_packets(buffer), [])
+        buffer.extend(packet[-1:])
+        result = extract_packets(buffer)
+        self.assertEqual(result[0][1][FRAME_BYTES:], timings)
+        self.assertFalse(buffer)
+
+    def test_slow_storage_does_not_disable_confirmed_metrics(self):
+        requests = MetricsRequests()
+        self.assertEqual(requests.command(0, False), b'hg')
+        requests.received(True)
+        self.assertEqual(requests.command(6, True), b'ihg')
+        requests.received(False)  # A late legacy reply cannot undo detection.
+        self.assertEqual(requests.command(12, True), b'ihg')
+        self.assertEqual(requests.command(13, False), b'ihg')
+
+    def test_legacy_fallback_reprobes(self):
+        requests = MetricsRequests()
+        self.assertEqual(requests.command(0, False), b'hg')
+        self.assertEqual(requests.command(6, True), b'f')
+        self.assertEqual(requests.command(7, False), b'f')
+        self.assertEqual(requests.command(11, False), b'hg')
+        requests.received(True)
+        self.assertEqual(requests.command(17, True), b'ihg')
+
+    def test_timings_only_then_full_screen(self):
+        timings = struct.pack('<4I', 9, 10000, 0, 3000) * len(TIMING_NAMES)
+        packet = struct.pack('<8I', 0x31445646, len(timings), 7, 2, 0, 127, 0, 1234) + timings
+        buffer = bytearray(packet[:-3])
+        self.assertEqual(extract_packets(buffer), [])
+        buffer.extend(packet[-3:] + self.packet())
+        result = extract_packets(buffer)
+        self.assertEqual(len(result), 2)
+        self.assertEqual(result[0][1], timings)
+        self.assertEqual(len(result[1][1]), FRAME_BYTES)
+        self.assertFalse(buffer)
+        self.assertEqual(MetricsRequests().command(20, False), b'hg')
 
     def test_rgb565_primaries(self):
         data = struct.pack('<4H', 0xf800, 0x07e0, 0x001f, 0xffff) + bytes(FRAME_BYTES - 8)

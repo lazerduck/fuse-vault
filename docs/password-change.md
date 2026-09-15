@@ -4,10 +4,13 @@ Implemented 2026-09-06; hardware validation remains pending.
 
 ## User flow
 
-Choose Settings from the mode menu. Settings is available in both storage-only
-and FIDO-enabled builds. Selecting it requires a fresh normal device unlock:
-attempt reservation, verification and durable success accounting all run before
-the settings menu opens. No storage or FIDO USB interface is attached in settings.
+Unlock the device first, then choose Settings from the mode menu. Both
+storage-only and FIDO-enabled builds now use this order on boot, after setup
+and after locking. Attempt reservation, verification and durable success
+accounting finish before the menu appears. Unlocking does not attach USB:
+selecting storage or FIDO explicitly attaches that interface. Settings uses the
+current authenticated session without asking for the password a second time.
+No storage or FIDO USB interface is attached in settings.
 
 - **Change password** keeps the current entry method.
 - **Change entry method** chooses number wheels, directions, keypad or word list,

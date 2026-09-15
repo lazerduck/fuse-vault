@@ -1,3 +1,4 @@
+#include "fuse_vault/diagnostics.h"
 #include "fuse_vault/device_runtime.h"
 
 #include "fuse_vault/provisioning_coordinator.h"
@@ -37,6 +38,7 @@ static void clear_session(fv_device_runtime_t *runtime) {
 }
 
 static bool prepare_encrypted_session(fv_device_runtime_t *runtime) {
+    uint64_t start=fv_diag_begin();
     fv_device_secret_t roots = {0};
     fv_vault_header_t header = {0};
     const bool ok = runtime->authentication.vmk_valid &&
@@ -54,6 +56,7 @@ static bool prepare_encrypted_session(fv_device_runtime_t *runtime) {
             &header.encryption_stack, random_adapter, runtime);
     clear(&roots, sizeof(roots));
     clear(&header, sizeof(header));
+    fv_diag_end(FV_DIAG_ACTIVATE,start);
     runtime->encrypted_ready = ok;
     if (!ok) clear_session(runtime);
     return ok;

@@ -1,5 +1,10 @@
 # Firmware architecture
 
+Review update (2026-09-14): see the [storage and responsiveness redesign](storage-performance-redesign.md)
+for the proposed two-core worker architecture. The current target still executes
+expensive work synchronously; asynchronous command/event interfaces alone do not
+establish responsive execution.
+
 ## Input pipeline
 
 Physical input and screen behaviour are deliberately independent:

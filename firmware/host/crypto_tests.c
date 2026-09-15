@@ -95,7 +95,35 @@ static void test_distinct_roots_produce_distinct_tags(void) {
     CHECK(memcmp(&authenticator, zero, sizeof(authenticator)) == 0);
 }
 
+static void test_prepared_kmac(void) {
+    uint8_t key[200], custom[200], message[300], expected[300], actual[300];
+    for (size_t i=0; i<sizeof(key); ++i) {key[i]=(uint8_t)i;custom[i]=(uint8_t)(i+17);}
+    for (size_t i=0; i<sizeof(message); ++i) message[i]=(uint8_t)(i*7);
+    const size_t lengths[] = {0, 16, 32, 48, 60, 64, 131, 132, 135, 136, 137, 200};
+    fv_kmac256_prepared_t prepared;
+    for (size_t k=0; k<sizeof(lengths)/sizeof(lengths[0]); ++k) {
+        CHECK(fv_kmac256_prepare(&prepared,key,lengths[k],custom,lengths[k]));
+        fv_kmac256_prepared_t saved=prepared;
+        for (size_t m=0; m<sizeof(lengths)/sizeof(lengths[0]); ++m) {
+            for (size_t n=0; n<sizeof(lengths)/sizeof(lengths[0]); ++n) {
+                CHECK(fv_kmac256(key,lengths[k],message,lengths[m],custom,lengths[k],expected,lengths[n]));
+                CHECK(fv_kmac256_compute(&prepared,message,lengths[m],actual,lengths[n]));
+                CHECK(memcmp(expected,actual,lengths[n])==0);
+                CHECK(memcmp(&saved,&prepared,sizeof(saved))==0);
+            }
+        }
+    }
+    fv_kmac256_clear(&prepared);
+    uint8_t zero[sizeof(prepared)]={0};
+    CHECK(memcmp(&prepared,zero,sizeof(prepared))==0);
+    CHECK(!fv_kmac256_compute(&prepared,message,1,actual,16));
+    CHECK(fv_kmac256_prepare(&prepared,key,32,NULL,0));
+    CHECK(!fv_kmac256_prepare(&prepared,NULL,32,NULL,0));
+    CHECK(memcmp(&prepared,zero,sizeof(prepared))==0);
+}
+
 int main(void) {
+    test_prepared_kmac();
     test_kmac256_256_bit_output();
     test_nist_kmac256_sample_four();
     test_distinct_roots_produce_distinct_tags();

@@ -1,4 +1,5 @@
 #include "fuse_vault/crypto_pipeline.h"
+#include "fuse_vault/storage_profile.h"
 
 #include "fuse_vault/journal_authenticator.h"
 
@@ -82,10 +83,9 @@ static bool derive_iv(const fv_crypto_pipeline_t *pipeline, size_t layer_index,
     memcpy(message + position, epoch, 16u);
     position += 16u;
     put64(message + position, counter);
-    const bool ok = fv_kmac256(
-        pipeline->layers[layer_index].key,
-        FV_CRYPTO_PIPELINE_KEY_CAPACITY, message, sizeof(message), iv_domain,
-        sizeof(iv_domain) - 1u, output, output_length);
+    const bool ok = fv_kmac256_compute(
+        &pipeline->layers[layer_index].iv_prepared, message, sizeof(message),
+        output, output_length);
     clear(message, sizeof(message));
     return ok;
 }
@@ -174,7 +174,10 @@ bool fv_crypto_pipeline_init(
         pipeline->layers[index].algorithm_version =
             descriptor->layers[index].algorithm_version;
         if (!derive_layer_key(vmk, vault_id, index, &descriptor->layers[index],
-                              pipeline->layers[index].key)) {
+                              pipeline->layers[index].key) ||
+            !fv_kmac256_prepare(&pipeline->layers[index].iv_prepared,
+                pipeline->layers[index].key, FV_CRYPTO_PIPELINE_KEY_CAPACITY,
+                iv_domain, sizeof(iv_domain) - 1u)) {
             fv_crypto_pipeline_clear(pipeline);
             return false;
         }
@@ -188,18 +191,24 @@ static bool transform_layer(const fv_crypto_pipeline_t *pipeline, size_t index,
                             const uint8_t epoch[16], uint64_t counter,
                             bool encrypt, uint8_t block[512]) {
     uint8_t iv[16];
-    if (!derive_iv(pipeline, index, logical_block, generation, epoch, counter,
-                   iv, sizeof(iv))) {
+    uint64_t start = fv_storage_profile_begin();
+    bool iv_ok = derive_iv(pipeline, index, logical_block, generation, epoch, counter,
+                           iv, sizeof(iv));
+    fv_storage_profile_end(FV_PERF_LAYER_IV, start);
+    if (!iv_ok) {
         clear(iv, sizeof(iv));
         return false;
     }
     bool ok = false;
+    start = fv_storage_profile_begin();
     switch (pipeline->layers[index].algorithm_id) {
         case FV_ENCRYPTION_ALGORITHM_AES_256_XTS:
             ok = aes_xts(pipeline->layers[index].key, iv, encrypt, block);
+            fv_storage_profile_end(FV_PERF_AES, start);
             break;
         case FV_ENCRYPTION_ALGORITHM_CHACHA20:
             ok = chacha20(pipeline->layers[index].key, iv, block);
+            fv_storage_profile_end(FV_PERF_CHACHA, start);
             break;
         default:
             ok = false;

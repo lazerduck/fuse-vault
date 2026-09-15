@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "label": "Board 1 current USB-C diagnostic identity",
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-14T20:11:09Z",
+  "erase_sd": false,
+  "runs": [
+    {
+      "command": "B",
+      "rows": [
+        {
+          "error": "Lock the vault before entering bench mode"
+        },
+        {
+          "done": true
+        }
+      ]
+    }
+  ],
+  "complete": false,
+  "uf2_sha256": "586170720357fbd9899299dbec29cfb815896e7f6395ca952dda027f291ccea8",
+  "port": "/dev/ttyACM0",
+  "error": "Firmware did not enter baseline mode; no tests sent"
+}

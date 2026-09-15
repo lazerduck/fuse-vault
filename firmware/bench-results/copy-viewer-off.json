@@ -1,0 +1,394 @@
+{
+  "version": 1,
+  "uptime_ms": 590495,
+  "read_requests": 711,
+  "write_requests": 3860,
+  "partial_requests": 0,
+  "overwritten_runs": 0,
+  "timings": {
+    "authentication": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "password_pbkdf2": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "password_kmac": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "storage_activation": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "usb_attach_marker": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "usb_task": {
+      "count": 2259468,
+      "total_us": 36322671,
+      "mean_ms": 0.01607576252462969,
+      "max_ms": 17.458,
+      "first_start_ms": 503895,
+      "last_end_ms": 590495
+    },
+    "input_update": {
+      "count": 2259468,
+      "total_us": 4469401,
+      "mean_ms": 0.0019780766977005207,
+      "max_ms": 0.03,
+      "first_start_ms": 503895,
+      "last_end_ms": 590495
+    },
+    "display_loop_pass": {
+      "count": 2259468,
+      "total_us": 15668561,
+      "mean_ms": 0.006934623991134196,
+      "max_ms": 0.056,
+      "first_start_ms": 503895,
+      "last_end_ms": 590495
+    },
+    "debug_task": {
+      "count": 2259468,
+      "total_us": 5910138,
+      "mean_ms": 0.002615721045839109,
+      "max_ms": 0.131,
+      "first_start_ms": 503895,
+      "last_end_ms": 590491
+    },
+    "usb_service_gap": {
+      "count": 2259467,
+      "total_us": 87301938,
+      "mean_ms": 0.03863828858752971,
+      "max_ms": 17.604,
+      "first_start_ms": 503895,
+      "last_end_ms": 590491
+    },
+    "input_service_gap": {
+      "count": 2259467,
+      "total_us": 87325957,
+      "mean_ms": 0.03864891897071301,
+      "max_ms": 17.517,
+      "first_start_ms": 503895,
+      "last_end_ms": 590495
+    },
+    "display_service_gap": {
+      "count": 2259467,
+      "total_us": 87298196,
+      "mean_ms": 0.03863663244473143,
+      "max_ms": 17.538,
+      "first_start_ms": 503895,
+      "last_end_ms": 590495
+    },
+    "display_present": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    }
+  },
+  "read_regions": [
+    {
+      "first_lba": 2048,
+      "last_lba": 3071,
+      "requests": 631
+    },
+    {
+      "first_lba": 3072,
+      "last_lba": 4095,
+      "requests": 8
+    },
+    {
+      "first_lba": 4096,
+      "last_lba": 5119,
+      "requests": 8
+    },
+    {
+      "first_lba": 6144,
+      "last_lba": 7167,
+      "requests": 8
+    },
+    {
+      "first_lba": 10240,
+      "last_lba": 11263,
+      "requests": 8
+    },
+    {
+      "first_lba": 31744,
+      "last_lba": 32767,
+      "requests": 16
+    },
+    {
+      "first_lba": 65536,
+      "last_lba": null,
+      "requests": 32
+    }
+  ],
+  "recent_runs": [
+    {
+      "lba": 47328,
+      "requests": 3852,
+      "first_ms": 533349,
+      "last_ms": 566074,
+      "operation": "write",
+      "partial": false
+    },
+    {
+      "lba": 2087,
+      "requests": 3,
+      "first_ms": 566083,
+      "last_ms": 566108,
+      "operation": "write",
+      "partial": false
+    },
+    {
+      "lba": 2049,
+      "requests": 1,
+      "first_ms": 566120,
+      "last_ms": 566120,
+      "operation": "write",
+      "partial": false
+    },
+    {
+      "lba": 17079,
+      "requests": 3,
+      "first_ms": 566134,
+      "last_ms": 566159,
+      "operation": "write",
+      "partial": false
+    },
+    {
+      "lba": 32064,
+      "requests": 1,
+      "first_ms": 566171,
+      "last_ms": 566171,
+      "operation": "write",
+      "partial": false
+    },
+    {
+      "lba": 2048,
+      "requests": 8,
+      "first_ms": 587557,
+      "last_ms": 587593,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2080,
+      "requests": 8,
+      "first_ms": 587598,
+      "last_ms": 587646,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2112,
+      "requests": 8,
+      "first_ms": 587653,
+      "last_ms": 587683,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2176,
+      "requests": 8,
+      "first_ms": 587687,
+      "last_ms": 587717,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2304,
+      "requests": 8,
+      "first_ms": 587721,
+      "last_ms": 587750,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2560,
+      "requests": 8,
+      "first_ms": 587755,
+      "last_ms": 587784,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 3072,
+      "requests": 8,
+      "first_ms": 587789,
+      "last_ms": 587818,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 4096,
+      "requests": 8,
+      "first_ms": 587822,
+      "last_ms": 587852,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 6144,
+      "requests": 8,
+      "first_ms": 587856,
+      "last_ms": 587886,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 10240,
+      "requests": 8,
+      "first_ms": 587890,
+      "last_ms": 587920,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 30726016,
+      "requests": 8,
+      "first_ms": 587924,
+      "last_ms": 587933,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 30726128,
+      "requests": 8,
+      "first_ms": 587935,
+      "last_ms": 587944,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2056,
+      "requests": 8,
+      "first_ms": 587946,
+      "last_ms": 587975,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 30726136,
+      "requests": 8,
+      "first_ms": 587980,
+      "last_ms": 587989,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 30725880,
+      "requests": 8,
+      "first_ms": 587991,
+      "last_ms": 588000,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 32064,
+      "requests": 16,
+      "first_ms": 588001,
+      "last_ms": 588072,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2088,
+      "requests": 16,
+      "first_ms": 588077,
+      "last_ms": 588145,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2072,
+      "requests": 8,
+      "first_ms": 588150,
+      "last_ms": 588179,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2104,
+      "requests": 8,
+      "first_ms": 588184,
+      "last_ms": 588213,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2168,
+      "requests": 8,
+      "first_ms": 588218,
+      "last_ms": 588247,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2064,
+      "requests": 8,
+      "first_ms": 588252,
+      "last_ms": 588281,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2120,
+      "requests": 48,
+      "first_ms": 588286,
+      "last_ms": 588483,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2184,
+      "requests": 120,
+      "first_ms": 588487,
+      "last_ms": 588986,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2312,
+      "requests": 248,
+      "first_ms": 588990,
+      "last_ms": 590025,
+      "operation": "read",
+      "partial": false
+    },
+    {
+      "lba": 2568,
+      "requests": 111,
+      "first_ms": 590030,
+      "last_ms": 590491,
+      "operation": "read",
+      "partial": false
+    }
+  ],
+  "label": ""
+}

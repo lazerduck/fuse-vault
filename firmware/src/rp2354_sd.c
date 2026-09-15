@@ -102,14 +102,13 @@ static uint8_t crc7(const uint8_t *data, size_t length) {
 }
 
 static uint16_t crc16(const uint8_t *data, size_t length) {
+    static const uint16_t table[16] = {
+        0x0000u, 0x1021u, 0x2042u, 0x3063u, 0x4084u, 0x50a5u, 0x60c6u, 0x70e7u, 0x8108u, 0x9129u, 0xa14au, 0xb16bu, 0xc18cu, 0xd1adu, 0xe1ceu, 0xf1efu
+    };
     uint16_t crc = 0u;
     for (size_t index = 0u; index < length; ++index) {
-        crc ^= (uint16_t)data[index] << 8u;
-        for (unsigned bit = 0u; bit < 8u; ++bit) {
-            crc = (crc & 0x8000u) != 0u
-                ? (uint16_t)((crc << 1u) ^ 0x1021u)
-                : (uint16_t)(crc << 1u);
-        }
+        crc = (uint16_t)((crc << 4u) ^ table[(crc >> 12u) ^ (data[index] >> 4u)]);
+        crc = (uint16_t)((crc << 4u) ^ table[(crc >> 12u) ^ (data[index] & 15u)]);
     }
     return crc;
 }

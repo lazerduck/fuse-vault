@@ -105,7 +105,7 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
                      app->selected_mode == FV_MODE_VAULT ? ">" : " ");
             snprintf(view->lines[1], sizeof(view->lines[1]), "%s FIDO2 %s",
                      app->selected_mode == FV_MODE_FIDO ? ">" : " ",
-                     app->fido_available ? "" : "(planned)");
+                     app->fido_available ? "" : "unavailable");
             snprintf(view->lines[2], sizeof(view->lines[2]), "%s Settings",
                      app->selected_mode == FV_MODE_SETTINGS ? ">" : " ");
             snprintf(view->lines[3], sizeof(view->lines[3]), "Up/down + select");
@@ -182,4 +182,3 @@ void fv_app_render(const fv_app_t *app, fv_ui_view_t *view) {
     }
 
 }
-

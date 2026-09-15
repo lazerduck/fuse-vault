@@ -5,17 +5,32 @@
 #include "fuse_vault/ui.h"
 #include "fuse_vault/virtual_msc.h"
 #include "host_services.h"
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+#include "simulator_fido.h"
+#include <signal.h>
+#include <sys/wait.h>
+#endif
 
 #include <gtk/gtk.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <fcntl.h>
+#include <errno.h>
 #include <unistd.h>
 
 enum { DISPLAY_SCALE = 4 };
 typedef struct {
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    fv_simulator_fido_t fido;
+    bool host_busy, cancel_host, close_pending, lock_pending;
+    int approval;
+    GtkWidget *fido_panel, *rp, *account, *fido_result;
+    char host_result[512];
+    bool host_success;
+#endif
     fv_app_t app;
     fv_platform_services_t services;
     fv_host_services_context_t services_context;
@@ -39,6 +54,9 @@ static bool attach(void *context, fv_block_device_t *blocks) {
 }
 static bool detach(void *context) {
     simulator_t *s = context;
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    fv_simulator_fido_close(&s->fido);
+#endif
     bool ok = true;
     if (s->msc.attached) {
         ok = fv_virtual_msc_synchronize_cache(&s->msc) == FV_MSC_OK;
@@ -47,8 +65,26 @@ static bool detach(void *context) {
     fv_virtual_msc_detach(&s->msc);
     return ok;
 }
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+static int fido_presence(void *context, bool reset);
+static uint32_t fido_clock(void *context) {
+    (void)context;
+    return (uint32_t)((uint64_t)g_get_monotonic_time() / 1000u);
+}
+static bool attach_fido(void *context, const fv_volume_master_key_t *vmk,
+    const fv_media_layout_t *layout, const fv_encryption_stack_descriptor_t *stack) {
+    return fv_simulator_fido_attach(&((simulator_t *)context)->fido, vmk, layout, stack);
+}
+static bool manage_fido(void *context, fv_passkey_action_t action,
+    uint16_t *index, uint16_t *count, fv_passkey_t *entry) {
+    return fv_simulator_fido_manage(&((simulator_t *)context)->fido, action, index, count, entry);
+}
+#endif
 static const fv_runtime_usb_ops_t USB_OPS = {
-    .attach_msc = attach, .detach_usb = detach, .attach_fido = NULL
+    .attach_msc = attach, .detach_usb = detach,
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    .attach_fido = attach_fido, .manage_passkeys = manage_fido
+#endif
 };
 static uint32_t monotonic_ms(void) {
     return (uint32_t)((uint64_t)g_get_monotonic_time() / 1000u);
@@ -64,8 +100,15 @@ static bool boot(simulator_t *s) {
     s->started = false;
     s->keyboard_inputs = s->mouse_inputs = 0u;
     fv_virtual_msc_init(&s->msc);
-    if (!fv_host_services_init(&s->services, &s->services_context,
-                               s->directory)) return false;
+    /* Preserve older 128 KiB storage-only images exactly as they are. New
+     * devices reserve enough encrypted media for both FIDO snapshot banks. */
+    char *media_path = g_build_filename(s->directory, "vault-media.bin", NULL);
+    struct stat media_stat;
+    bool legacy = stat(media_path, &media_stat) == 0 && media_stat.st_size == 256 * FV_BLOCK_SIZE;
+    g_free(media_path);
+    if (!fv_host_services_init_sized(&s->services, &s->services_context,
+        s->directory, legacy ? 256u : 4096u,
+        legacy ? 16u : FV_MEDIA_DEFAULT_FIDO_BLOCKS)) return false;
     fv_security_state_t state = {0};
     fv_device_secret_status_t roots;
     const fv_persist_result_t loaded =
@@ -86,6 +129,13 @@ static bool boot(simulator_t *s) {
                roots == FV_DEVICE_SECRET_ACTIVE;
     }
     fv_app_init(&s->app, state.provisioned, state.failed_attempts, method);
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    fv_app_set_fido_available(&s->app, !legacy);
+    g_strlcpy(s->host_result, legacy
+        ? "This older device has no room for FIDO. New device creates a separate FIDO-capable device."
+        : "Unlock and select FIDO2. OK opens saved passkeys when idle.", sizeof(s->host_result));
+    fv_simulator_fido_init(&s->fido, &s->runtime, fido_clock, fido_presence, s);
+#endif
     clear(&state, sizeof(state));
     const fv_credential_costs_t costs = {
         .pbkdf2_iterations = 100000u, .kmac_iterations = 10000u
@@ -152,6 +202,11 @@ static gboolean draw_display(GtkWidget *widget, cairo_t *cr, gpointer data) {
 
 
 static void refresh(simulator_t *s) {
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    if (s->fido_panel) gtk_widget_set_sensitive(s->fido_panel,
+        s->fido.attached && s->app.state == FV_STATE_FIDO_READY && !s->host_busy);
+    if (s->fido_result) gtk_label_set_text(GTK_LABEL(s->fido_result), s->host_result);
+#endif
     if (s->status == NULL) return;
     char *text = g_strdup_printf("%s  ·  USB storage %s\nDevice: %s",
         fv_state_name(s->app.state), s->msc.attached ? "connected" : "locked",
@@ -181,7 +236,20 @@ static bool present_settings_work(void *context, const fv_app_t *app) {
 }
 
 static void dispatch_event(simulator_t *s, fv_event_t event) {
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    if (s->host_busy) {
+        if (event == FV_EVENT_LOCK_REQUESTED || event == FV_EVENT_USB_EJECTED) {
+            s->cancel_host = true; s->lock_pending = true;
+        } else if (s->app.fido_waiting && event == FV_EVENT_SELECT) s->approval = 0;
+        else if (event == FV_EVENT_BACK) { s->approval = 2; s->cancel_host = true; }
+        return;
+    }
+    bool was_unlocked = s->app.session_unlocked;
+#endif
     fv_device_runtime_handle_event(&s->runtime, event);
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    fv_simulator_fido_session(&s->fido, was_unlocked);
+#endif
     refresh_input_map(s);
     refresh(s);
 }
@@ -213,7 +281,8 @@ static bool key_to_input(guint key, fv_input_id_t *input) {
 static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer data) {
     (void)widget;
     simulator_t *s = data;
-    if (gtk_window_get_focus(GTK_WINDOW(s->window)) == s->note) return FALSE;
+    GtkWidget *focus = gtk_window_get_focus(GTK_WINDOW(s->window));
+    if (GTK_IS_ENTRY(focus)) return FALSE;
     fv_input_id_t input;
     if (!key_to_input(event->keyval, &input)) return FALSE;
     s->keyboard_inputs |= FV_INPUT_BIT(input);
@@ -247,6 +316,9 @@ static void control_release(GtkButton *button, gpointer data) {
 static void action(GtkButton *button, gpointer data) {
     simulator_t *s = data;
     const char *name = g_object_get_data(G_OBJECT(button), "action");
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    if (s->host_busy && (strcmp(name, "Restart") == 0 || strcmp(name, "New device") == 0)) return;
+#endif
     if (strcmp(name, "Restart") == 0) {
         if (!boot(s)) dispatch_event(s, FV_EVENT_FATAL_ERROR);
     } else if (strcmp(name, "New device") == 0) {
@@ -298,6 +370,132 @@ static void storage_action(GtkButton *button, gpointer data) {
             : "Sample note read through the decrypted storage interface.");
     }
 }
+
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+/* The engine is synchronous. Pump the GUI only while guarded against runtime
+ * reentry: lock and window closure are deferred until its stack unwinds. */
+static void host_pump(void) {
+    while (g_main_context_iteration(NULL, FALSE)) {}
+    g_usleep(1000u);
+}
+static int fido_presence(void *context, bool reset) {
+    simulator_t *s = context;
+    s->approval = -1;
+    s->app.fido_waiting = true;
+    s->app.fido_reset_pending = reset;
+    refresh(s);
+    uint32_t start = monotonic_ms();
+    while (s->approval < 0 && !s->cancel_host &&
+        (uint32_t)(monotonic_ms() - start) < 30000u) host_pump();
+    int result = s->cancel_host ? 2 : s->approval < 0 ? 1 : s->approval;
+    s->app.fido_waiting = s->app.fido_reset_pending = false;
+    refresh(s);
+    return result;
+}
+static bool host_line(simulator_t *s, const char *line, int output) {
+    if (g_str_has_prefix(line, "DONE ") || g_str_has_prefix(line, "ERROR ")) {
+        s->host_success = g_str_has_prefix(line, "DONE ");
+        g_strlcpy(s->host_result, line + (s->host_success ? 5 : 6), sizeof(s->host_result));
+        return true;
+    }
+    if (!g_str_has_prefix(line, "CTAP ")) return false;
+    const char *hex = line + 5;
+    size_t length = strlen(hex);
+    uint8_t request[2048], response[4096];
+    if (length == 0 || length % 2 || length / 2 > sizeof(request)) return false;
+    for (size_t i = 0; i < length / 2; ++i) {
+        int a = g_ascii_xdigit_value(hex[2*i]), b = g_ascii_xdigit_value(hex[2*i+1]);
+        if (a < 0 || b < 0) return false;
+        request[i] = (uint8_t)(a * 16 + b);
+    }
+    size_t count = fv_simulator_fido_command(&s->fido, request, length / 2, response, sizeof(response));
+    if (!count || s->fido.failed) return false;
+    char encoded[8193];
+    const char digits[] = "0123456789abcdef";
+    for (size_t i = 0; i < count; ++i) {
+        encoded[2*i] = digits[response[i] >> 4];
+        encoded[2*i+1] = digits[response[i] & 15];
+    }
+    encoded[2*count] = '\n';
+    size_t sent = 0;
+    while (sent < 2*count+1) {
+        ssize_t n = write(output, encoded + sent, 2*count+1-sent);
+        if (n < 0 && errno == EINTR) continue;
+        if (n <= 0) return false;
+        sent += (size_t)n;
+    }
+    return true;
+}
+static void run_fido_host(simulator_t *s, const char *operation, const char *rp, const char *account) {
+    if (s->host_busy || !s->fido.attached || s->app.state != FV_STATE_FIDO_READY) return;
+    s->host_busy = true; s->cancel_host = false; s->host_success = false;
+    g_strlcpy(s->host_result, "Waiting for device approval: press OK when prompted.", sizeof(s->host_result));
+    refresh(s);
+    gchar *argv[] = {FUSE_VAULT_FIDO_PYTHON, FUSE_VAULT_FIDO_CLIENT,
+        s->directory, (char *)operation, (char *)rp, (char *)account, NULL};
+    GPid pid = 0;
+    int input = -1, output = -1;
+    GError *error = NULL;
+    void (*old_pipe)(int) = signal(SIGPIPE, SIG_IGN);
+    if (g_spawn_async_with_pipes(NULL, argv, NULL,
+        G_SPAWN_DO_NOT_REAP_CHILD | G_SPAWN_STDERR_TO_DEV_NULL, NULL, NULL,
+        &pid, &output, &input, NULL, &error)) {
+        (void)fcntl(input, F_SETFL, O_NONBLOCK);
+        char line[8192]; size_t used = 0;
+        uint32_t start = monotonic_ms();
+        bool done = false, valid = true;
+        while (!done && valid && !s->cancel_host && (uint32_t)(monotonic_ms()-start) < 45000u) {
+            char c;
+            ssize_t n = read(input, &c, 1);
+            if (n == 0) break;
+            if (n < 0) {
+                if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) break;
+                host_pump(); continue;
+            }
+            if (c == '\n') {
+                line[used] = 0;
+                done = g_str_has_prefix(line, "DONE ") || g_str_has_prefix(line, "ERROR ");
+                valid = host_line(s, line, output); used = 0;
+            } else if (used + 1 < sizeof(line)) line[used++] = c;
+            else valid = false;
+        }
+        close(input); close(output);
+        if (!done || !valid || s->cancel_host) {
+            s->host_success = false;
+            g_strlcpy(s->host_result, s->cancel_host ? "FIDO request cancelled." : "FIDO host request failed or timed out.", sizeof(s->host_result));
+        }
+        /* No child or pipe callbacks survive this operation. */
+        (void)kill(pid, SIGTERM);
+        while (waitpid(pid, NULL, 0) < 0 && errno == EINTR) {}
+        g_spawn_close_pid(pid);
+    } else {
+        g_strlcpy(s->host_result, error->message, sizeof(s->host_result));
+        g_clear_error(&error);
+    }
+    signal(SIGPIPE, old_pipe);
+    s->host_busy = false;
+    if (s->fido.failed) dispatch_event(s, FV_EVENT_FATAL_ERROR);
+    if (s->lock_pending) { s->lock_pending = false; dispatch_event(s, FV_EVENT_LOCK_REQUESTED); }
+    refresh(s);
+    if (s->close_pending && s->window) gtk_widget_destroy(s->window);
+}
+static void fido_action(GtkButton *button, gpointer context) {
+    simulator_t *s = context;
+    char *rp = g_strdup(gtk_entry_get_text(GTK_ENTRY(s->rp)));
+    char *account = g_strdup(gtk_entry_get_text(GTK_ENTRY(s->account)));
+    gtk_widget_grab_focus(s->display);
+    run_fido_host(s, g_object_get_data(G_OBJECT(button), "operation"), rp, account);
+    g_free(rp); g_free(account);
+}
+static gboolean close_window(GtkWidget *widget, GdkEvent *event, gpointer context) {
+    (void)widget; (void)event;
+    simulator_t *s = context;
+    if (!s->host_busy) return FALSE;
+    s->cancel_host = s->close_pending = true;
+    return TRUE;
+}
+#endif
+
 int main(int argc, char **argv) {
     const char *directory = NULL;
     bool fresh = false;
@@ -328,7 +526,13 @@ int main(int argc, char **argv) {
     gtk_window_set_title(GTK_WINDOW(s.window), "Fuse Vault — local device");
     gtk_container_set_border_width(GTK_CONTAINER(s.window), 18u);
     GtkWidget *layout = gtk_box_new(GTK_ORIENTATION_VERTICAL, 12);
-    gtk_container_add(GTK_CONTAINER(s.window), layout);
+    GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
+    gtk_scrolled_window_set_propagate_natural_width(GTK_SCROLLED_WINDOW(scroll), TRUE);
+    gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(scroll), TRUE);
+    gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(scroll), 850);
+    gtk_container_add(GTK_CONTAINER(s.window), scroll);
+    gtk_container_add(GTK_CONTAINER(scroll), layout);
     s.display = gtk_drawing_area_new();
     gtk_widget_set_can_focus(s.display, TRUE);
     gtk_widget_set_halign(s.display, GTK_ALIGN_CENTER);
@@ -378,6 +582,29 @@ int main(int argc, char **argv) {
         gtk_box_pack_start(GTK_BOX(s.storage), b, FALSE, FALSE, 0u);
     }
     gtk_box_pack_start(GTK_BOX(layout), s.storage, FALSE, FALSE, 0u);
+#ifdef FUSE_VAULT_SIMULATOR_FIDO2
+    gtk_box_pack_start(GTK_BOX(layout), gtk_label_new(
+        "Simulated FIDO host — register/authenticate locally (no browser USB device)"), FALSE, FALSE, 0u);
+    s.fido_panel = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+    s.rp = gtk_entry_new(); s.account = gtk_entry_new();
+    gtk_entry_set_text(GTK_ENTRY(s.rp), "example.com");
+    gtk_entry_set_text(GTK_ENTRY(s.account), "alice@example.com");
+    gtk_widget_set_tooltip_text(s.rp, "Relying party / site");
+    gtk_widget_set_tooltip_text(s.account, "Account");
+    gtk_box_pack_start(GTK_BOX(s.fido_panel), s.rp, TRUE, TRUE, 0u);
+    gtk_box_pack_start(GTK_BOX(s.fido_panel), s.account, TRUE, TRUE, 0u);
+    for (unsigned i = 0; i < 2; ++i) {
+        GtkWidget *b = gtk_button_new_with_label(i == 0 ? "Register" : "Authenticate");
+        g_object_set_data(G_OBJECT(b), "operation", i == 0 ? "register" : "authenticate");
+        g_signal_connect(b, "clicked", G_CALLBACK(fido_action), &s);
+        gtk_box_pack_start(GTK_BOX(s.fido_panel), b, FALSE, FALSE, 0u);
+    }
+    gtk_box_pack_start(GTK_BOX(layout), s.fido_panel, FALSE, FALSE, 0u);
+    s.fido_result = gtk_label_new("Unlock and select FIDO2. OK opens saved passkeys when idle.");
+    gtk_label_set_line_wrap(GTK_LABEL(s.fido_result), TRUE);
+    gtk_box_pack_start(GTK_BOX(layout), s.fido_result, FALSE, FALSE, 0u);
+    g_signal_connect(s.window, "delete-event", G_CALLBACK(close_window), &s);
+#endif
     s.status = gtk_label_new(NULL);
     gtk_label_set_xalign(GTK_LABEL(s.status), 0.0F);
     gtk_label_set_line_wrap(GTK_LABEL(s.status), TRUE);

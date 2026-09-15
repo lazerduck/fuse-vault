@@ -1,3 +1,4 @@
+#include "fuse_vault/diagnostics.h"
 #include "fuse_vault/authentication_coordinator.h"
 
 #include "fuse_vault/secret_input.h"
@@ -24,6 +25,7 @@ fv_authenticate_result_t fv_authenticate(
     const fv_app_t *app, fv_platform_services_t *services,
     fv_authentication_session_t *session,
     fv_authentication_workspace_t *workspace) {
+    uint64_t diag_start=fv_diag_begin();
     if (session == NULL) return FV_AUTHENTICATE_FATAL;
     fv_authentication_session_clear(session);
     if (workspace == NULL) return FV_AUTHENTICATE_FATAL;
@@ -70,5 +72,6 @@ fv_authenticate_result_t fv_authenticate(
 cleanup:
     secure_clear(workspace, sizeof(*workspace));
     if (result != FV_AUTHENTICATE_OK) fv_authentication_session_clear(session);
+    fv_diag_end(FV_DIAG_AUTH,diag_start);
     return result;
 }
