@@ -1,4 +1,4 @@
-/firmware/build/
-/firmware/build-*/
 __pycache__/
 *.py[cod]
+/v1/firmware/build/
+/v1/firmware/build-*/
