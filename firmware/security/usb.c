@@ -1,6 +1,7 @@
 #include "bringup.h"
 #include "tusb.h"
 #include "pico/unique_id.h"
+#include "pico/stdlib.h"
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
@@ -57,6 +58,20 @@ void security_usb_poll(void) {
         if(tud_cdc_read(&ch,1)!=1)return;
         if(ch=='\n') {
             command.text[used]=0;
+#if FV_DEBUG_STARTUP
+            /* Handled on core0 without touching authority or worker-owned state.
+             * No worker request is outstanding here (busy was checked above). */
+            bool boot=!strcmp(command.text,"BOOT"),start=!strcmp(command.text,"START");
+            if(boot || start || startup_stage!=14) {
+                if(start)startup_requested=true;
+                int n=snprintf(reply,FV_REPLY_BYTES,
+                    "{\"command\":\"boot\",\"ok\":%s,\"stage\":%u,\"start_requested\":%s,"
+                    "\"sense_a\":%u,\"sense_c\":%u,\"sense_a_duplicate\":%u,\"sense_c_duplicate\":%u}\n",
+                    (boot||start)?"true":"false",(unsigned)startup_stage,startup_requested?"true":"false",
+                    (unsigned)gpio_get(2),(unsigned)gpio_get(3),(unsigned)gpio_get(16),(unsigned)gpio_get(17));
+                total=(size_t)n;sent=0;sending=true;used=0;return;
+            }
+#endif
             if(queue_try_add(&commands,&command)){busy=true;used=0;}
             return;
         }

@@ -295,12 +295,27 @@ void security_execute(const char *command) {
     if(overflow)snprintf(reply,FV_REPLY_BYTES,"{\"command\":\"error\",\"ok\":false,\"error\":\"reply overflow\"}\n");
 }
 void security_worker(void) {
+#if FV_DEBUG_STARTUP
+    startup_stage=10;
+#endif
     if(!flash_safe_execute_core_init())panic("flash lockout init");
+#if FV_DEBUG_STARTUP
+    startup_stage=11;
+#endif
     fv_rp2354_authority_init(&persistent_device);
     persistent_platform=(fv_vault_platform){.sd=&sd.interface,.authority=fv_enrollment_authority(&persistent_device),
         .random=fv_random_generate,.random_context=&random_source,.kdf_limits=FV_ENROLLMENT_KDF_LIMITS};
+#if FV_DEBUG_STARTUP
+    startup_stage=12;
+#endif
     boot_recovery=fv_enrollment_open(&persistent_device);
+#if FV_DEBUG_STARTUP
+    startup_stage=13;
+#endif
     if(!boot_recovery)boot_recovery=fv_vault_recover(&persistent_platform);
+#if FV_DEBUG_STARTUP
+    startup_stage=14;
+#endif
     for(;;) {
         fv_command command;queue_remove_blocking(&commands,&command);
         security_execute(command.text);

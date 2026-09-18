@@ -150,3 +150,18 @@ and an explicit `prepare-flash --confirm-device ID` command guarded by entirely
 blank/readable enrollment OTP. See the
 [hardware run record](../../results/security-persistence-20260918.md). The cause
 is not yet confirmed; a new flash is needed to run those diagnostics.
+
+## Startup isolation image
+
+`FV_DEBUG_STARTUP=ON` (default OFF) delays worker launch and authority recovery
+until an explicit `START` command. This is diagnostic-only: it deliberately delays
+pending-policy recovery and must not appear in production. Build output lives in
+`build-pico-security-startup/`; journal reservation and OTP allocation are unchanged.
+
+Use `python3 tools/security_startup.py --port "$PORT" boot` for core0 startup stage
+and USB A/C sense inputs; `start` requests the worker. Neither unlocks. START runs
+normal authority recovery, which can complete an already pending destruction.
+Normal `security_probe.py` commands work after stage 14. Stages: 0 awaiting START,
+1 core0 flash-lockout setup, 2 core1 launch, 10 worker entered, 11 worker lockout
+ready, 12 authority adapter ready/open starting, 13 open finished/recovery starting,
+14 worker ready. The existing USB mux selection/interlock remains unchanged.

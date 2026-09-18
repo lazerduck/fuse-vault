@@ -77,3 +77,19 @@ Built USB-enabled picotool in /tmp/fv-picotool-usb from existing source.
 Read-only metadata/program-range inspection was blocked by Linux USB permissions
 (root:root 0664); noninteractive sudo required a password. No firmware or
 authority writes occurred. Await per-device USB access to continue diagnosis.
+
+### Firmware readback and normal restart
+
+After per-device USB access was granted, picotool recognized the installed ARM
+Secure image. The 146,688-byte firmware BIN matches flash at 0x10000000 byte for
+byte (zero differences). BIN SHA256:
+`09b31f59fe8864ddc511b63c31c7f72eada11ab6e1f5dce7c6772d67f42e9c83`.
+Only range 0x10000000–0x10026000 was read; journal and OTP secrets were excluded.
+A bootloader-triggered restart of the unchanged image also failed to enumerate.
+This does not identify the cause; the enrolled attempt/data persistence is still
+unverified because no normal-firmware commands can be sent.
+
+Prepared separate `FV_DEBUG_STARTUP=ON` image to expose USB before explicit worker
+launch, with BOOT/START diagnostics. Normal and diagnostic builds pass. Confirmed
+UF2 payload excludes the reserved journal banks. Next action requires BOOTSEL and
+flashing this diagnostic image; no reprovisioning or journal reset is intended.

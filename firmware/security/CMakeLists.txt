@@ -10,6 +10,7 @@ set(FV_MBEDTLS_DIR "${PICO_SDK_PATH}/lib/mbedtls" CACHE PATH "Mbed TLS source")
 option(FV_HMAC_PICO "Use SHA accelerator" ON)
 option(FV_CIPHERS_RAM "Run cipher hot paths from SRAM" ON)
 option(FV_DEBUG_ENROLLMENT "Expose fixed-allocation OTP provisioning and persistent test commands" OFF)
+option(FV_DEBUG_STARTUP "Defer worker until START and expose core0 BOOT diagnostics" OFF)
 option(FV_DEBUG_OTP_INSPECT "Include read-only OTP diagnostics (development only)" OFF)
 add_subdirectory(../../src/crypto crypto)
 add_subdirectory(../../src/storage storage)
@@ -25,6 +26,7 @@ target_include_directories(fuse_vault_security PRIVATE . ../../src/platform/rp23
 target_compile_definitions(fuse_vault_security PRIVATE FV_SD_CLOCK_HZ=${FV_SD_CLOCK_HZ}
   FV_DEBUG_OTP_INSPECT=$<BOOL:${FV_DEBUG_OTP_INSPECT}>
   FV_DEBUG_ENROLLMENT=$<BOOL:${FV_DEBUG_ENROLLMENT}>
+  FV_DEBUG_STARTUP=$<BOOL:${FV_DEBUG_STARTUP}>
   PICO_CORE1_STACK_SIZE=4096 PICO_STACK_SIZE=4096)
 target_compile_options(fuse_vault_security PRIVATE -Wall -Wextra -Werror -fstack-usage)
 target_compile_options(fv_security PRIVATE -fstack-usage)
