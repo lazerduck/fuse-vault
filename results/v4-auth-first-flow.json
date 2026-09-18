@@ -1,0 +1,92 @@
+{
+  "protocol": 4,
+  "complete": true,
+  "results": [
+    {
+      "integrity": true,
+      "stack": "aes",
+      "batch_bytes": 4096,
+      "total_bytes": 65536,
+      "verified": true,
+      "physical_bytes": 70144,
+      "configuration": {
+        "sequence": 2,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 656,
+        "capacity_blocks": 122909696,
+        "hmac_us": 0,
+        "metadata_us": 10826,
+        "metadata_read_blocks": 0,
+        "metadata_write_blocks": 9,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.03738411801168695
+      },
+      "write": {
+        "completed_bytes": 65536,
+        "requests": 16,
+        "crypto_us": 45049,
+        "sd_us": 17432,
+        "hmac_us": 30374,
+        "metadata_us": 22706,
+        "metadata_read_blocks": 16,
+        "metadata_write_blocks": 23,
+        "transaction_seconds": 0.21412295402842574,
+        "wall_seconds": 0.21447929501300678,
+        "kib_per_second": 298.8936907320255,
+        "wall_kib_per_second": 298.3971016695053
+      },
+      "read": {
+        "completed_bytes": 65536,
+        "requests": 16,
+        "crypto_us": 45019,
+        "sd_us": 7868,
+        "hmac_us": 30516,
+        "metadata_us": 2336,
+        "metadata_read_blocks": 16,
+        "metadata_write_blocks": 0,
+        "transaction_seconds": 0.16838103398913518,
+        "wall_seconds": 0.16857579999486916,
+        "kib_per_second": 380.09031352147184,
+        "wall_kib_per_second": 379.65117176930454
+      },
+      "end": {
+        "sequence": 35,
+        "crypto_us": 0,
+        "sd_us": 37,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "hmac_us": 0,
+        "metadata_us": 0,
+        "metadata_read_blocks": 0,
+        "metadata_write_blocks": 0,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0003054350090678781
+      }
+    }
+  ],
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-16T21:02:37.478942+00:00",
+  "port": "/dev/serial/by-id/usb-Fuse_Vault_Fuse_Vault_V2_PIPELINE_317741A1459A6F94-if00",
+  "integrity": true,
+  "seed": "fuse-vault-v3-public-test-data",
+  "label": "Protocol 4 authenticated smoke test",
+  "scratch_write_authorized": true,
+  "firmware_sha256": "075e89d60aaa81450c36dcaf07749ad5d9d946e0ed6139f20e4ef6a162ac1945",
+  "info": {
+    "sequence": 1,
+    "crypto_us": 0,
+    "sd_us": 0,
+    "setup_us": 0,
+    "capacity_blocks": 0,
+    "hmac_us": 0,
+    "metadata_us": 0,
+    "metadata_read_blocks": 0,
+    "metadata_write_blocks": 0,
+    "cpu_hz": 150000000,
+    "sd_hz_requested": 25000000,
+    "transaction_seconds": 0.0003024890029337257
+  }
+}

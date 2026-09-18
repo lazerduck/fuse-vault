@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "label": "Board 1, disposable card",
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-14T19:29:05Z",
+  "erase_sd": true,
+  "runs": [],
+  "complete": false,
+  "uf2_sha256": "e2c08d29499d7c59340ad63e60bf0406ec788fe2555de689cad09a9099499220",
+  "error": "Expected one benchmark board, found 0; connect one or use --port"
+}

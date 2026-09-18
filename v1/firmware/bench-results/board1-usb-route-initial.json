@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "label": "Board 1 fixed USB-C initial",
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-14T20:04:12Z",
+  "erase_sd": false,
+  "runs": [],
+  "complete": false,
+  "uf2_sha256": "586170720357fbd9899299dbec29cfb815896e7f6395ca952dda027f291ccea8",
+  "error": "Expected one benchmark board, found 0; connect one or use --port"
+}

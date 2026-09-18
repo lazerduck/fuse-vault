@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "uptime_ms": 56106,
+  "read_requests": 0,
+  "write_requests": 0,
+  "partial_requests": 0,
+  "overwritten_runs": 0,
+  "timings": {
+    "authentication": {
+      "count": 1,
+      "total_us": 12268308,
+      "mean_ms": 12268.308,
+      "max_ms": 12268.308,
+      "first_start_ms": 16844,
+      "last_end_ms": 29112
+    },
+    "password_pbkdf2": {
+      "count": 1,
+      "total_us": 3156061,
+      "mean_ms": 3156.061,
+      "max_ms": 3156.061,
+      "first_start_ms": 16869,
+      "last_end_ms": 20025
+    },
+    "password_kmac": {
+      "count": 1,
+      "total_us": 9084509,
+      "mean_ms": 9084.509,
+      "max_ms": 9084.509,
+      "first_start_ms": 20025,
+      "last_end_ms": 29110
+    },
+    "storage_activation": {
+      "count": 1,
+      "total_us": 29109,
+      "mean_ms": 29.109,
+      "max_ms": 29.109,
+      "first_start_ms": 29112,
+      "last_end_ms": 29141
+    },
+    "usb_attach_marker": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "usb_task": {
+      "count": 1222334,
+      "total_us": 2058252,
+      "mean_ms": 0.0016838703660374333,
+      "max_ms": 0.136,
+      "first_start_ms": 71,
+      "last_end_ms": 56106
+    },
+    "input_update": {
+      "count": 1222334,
+      "total_us": 14798647,
+      "mean_ms": 0.01210687668018725,
+      "max_ms": 12419.303,
+      "first_start_ms": 71,
+      "last_end_ms": 56106
+    },
+    "display_loop_pass": {
+      "count": 1222334,
+      "total_us": 23490790,
+      "mean_ms": 0.019217979701129154,
+      "max_ms": 0.059,
+      "first_start_ms": 71,
+      "last_end_ms": 56106
+    },
+    "debug_task": {
+      "count": 1222333,
+      "total_us": 2427701,
+      "mean_ms": 0.0019861208034144544,
+      "max_ms": 0.209,
+      "first_start_ms": 71,
+      "last_end_ms": 56106
+    },
+    "usb_service_gap": {
+      "count": 1222333,
+      "total_us": 56610366,
+      "mean_ms": 0.04631337450596523,
+      "max_ms": 12419.416,
+      "first_start_ms": 71,
+      "last_end_ms": 56106
+    },
+    "input_service_gap": {
+      "count": 1222333,
+      "total_us": 56606700,
+      "mean_ms": 0.04631037532325479,
+      "max_ms": 12419.551,
+      "first_start_ms": 71,
+      "last_end_ms": 56106
+    },
+    "display_service_gap": {
+      "count": 1222333,
+      "total_us": 56409456,
+      "mean_ms": 0.04614900849441192,
+      "max_ms": 12419.349,
+      "first_start_ms": 71,
+      "last_end_ms": 56106
+    },
+    "display_present": {
+      "count": 7,
+      "total_us": 3105,
+      "mean_ms": 0.44357142857142856,
+      "max_ms": 0.528,
+      "first_start_ms": 71,
+      "last_end_ms": 29204
+    }
+  },
+  "read_regions": [],
+  "recent_runs": [],
+  "label": ""
+}

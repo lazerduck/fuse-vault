@@ -1,0 +1,117 @@
+{
+  "version": 1,
+  "uptime_ms": 503895,
+  "read_requests": 0,
+  "write_requests": 0,
+  "partial_requests": 0,
+  "overwritten_runs": 0,
+  "timings": {
+    "authentication": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "password_pbkdf2": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "password_kmac": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "storage_activation": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "usb_attach_marker": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "usb_task": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "input_update": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "display_loop_pass": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "debug_task": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "usb_service_gap": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "input_service_gap": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "display_service_gap": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    },
+    "display_present": {
+      "count": 0,
+      "total_us": 0,
+      "mean_ms": 0,
+      "max_ms": 0.0,
+      "first_start_ms": 0,
+      "last_end_ms": 0
+    }
+  },
+  "read_regions": [],
+  "recent_runs": [],
+  "label": ""
+}

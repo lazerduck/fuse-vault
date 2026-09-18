@@ -1,0 +1,10 @@
+{
+  "command": "persistent",
+  "ok": true,
+  "operation": 0,
+  "phase": "complete",
+  "result": 0,
+  "elapsed_us": 4768050,
+  "authority": "OTP-and-flash",
+  "iterations": 60000
+}

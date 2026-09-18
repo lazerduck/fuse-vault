@@ -1,0 +1,433 @@
+{
+  "placement_history": [
+    {
+      "header": {
+        "type": "COMPONENT",
+        "ticket": 11172,
+        "id": "ec90907c7ad7b679"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupId": 0,
+        "layerId": 1,
+        "x": 3786.055,
+        "y": -3875.2184,
+        "angle": 0,
+        "attrs": {
+          "Reuse Block": "",
+          "Group ID": "",
+          "Channel ID": "$1I51",
+          "Unique ID": "gge28"
+        },
+        "locked": false,
+        "zIndex": -1
+      },
+      "history_row": 103,
+      "line": 732
+    },
+    {
+      "header": {
+        "type": "COMPONENT",
+        "ticket": 12214,
+        "id": "ec90907c7ad7b679"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupId": 0,
+        "layerId": 1,
+        "x": 935,
+        "y": -345,
+        "angle": 270,
+        "attrs": {
+          "Reuse Block": "",
+          "Group ID": "",
+          "Channel ID": "$1I51",
+          "Unique ID": "gge28"
+        },
+        "locked": false,
+        "zIndex": -1
+      },
+      "history_row": 107,
+      "line": 75
+    },
+    {
+      "header": {
+        "type": "COMPONENT",
+        "ticket": 12354,
+        "id": "ec90907c7ad7b679"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupId": 0,
+        "layerId": 2,
+        "x": 955,
+        "y": -330,
+        "angle": 90,
+        "attrs": {
+          "Reuse Block": "",
+          "Group ID": "",
+          "Channel ID": "$1I51",
+          "Unique ID": "gge28"
+        },
+        "locked": false,
+        "zIndex": -1
+      },
+      "history_row": 108,
+      "line": 20
+    },
+    {
+      "header": {
+        "type": "COMPONENT",
+        "ticket": 15112,
+        "id": "ec90907c7ad7b679"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupId": 0,
+        "layerId": 2,
+        "x": 1015,
+        "y": -350,
+        "angle": 90,
+        "attrs": {
+          "Reuse Block": "",
+          "Group ID": "",
+          "Channel ID": "$1I51",
+          "Unique ID": "gge28"
+        },
+        "locked": true,
+        "zIndex": -1
+      },
+      "history_row": 109,
+      "line": 434
+    },
+    {
+      "header": {
+        "type": "COMPONENT",
+        "ticket": 18424,
+        "id": "ec90907c7ad7b679"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupId": 0,
+        "layerId": 2,
+        "x": 1059.836,
+        "y": -1323.7454,
+        "angle": 90,
+        "attrs": {
+          "Reuse Block": "",
+          "Group ID": "",
+          "Channel ID": "$1I51",
+          "Unique ID": "gge28"
+        },
+        "locked": false,
+        "zIndex": -1
+      },
+      "history_row": 112,
+      "line": 47
+    },
+    {
+      "header": {
+        "type": "COMPONENT",
+        "ticket": 21967,
+        "id": "ec90907c7ad7b679"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupId": 0,
+        "layerId": 2,
+        "x": 915,
+        "y": -455,
+        "angle": 90,
+        "attrs": {
+          "Reuse Block": "",
+          "Group ID": "",
+          "Channel ID": "$1I51",
+          "Unique ID": "gge28"
+        },
+        "locked": false,
+        "zIndex": -1
+      },
+      "history_row": 115,
+      "line": 16
+    }
+  ],
+  "latest_records": [
+    {
+      "history_row": 115,
+      "line": 16,
+      "header": {
+        "type": "COMPONENT",
+        "ticket": 21967,
+        "id": "ec90907c7ad7b679"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupId": 0,
+        "layerId": 2,
+        "x": 915,
+        "y": -455,
+        "angle": 90,
+        "attrs": {
+          "Reuse Block": "",
+          "Group ID": "",
+          "Channel ID": "$1I51",
+          "Unique ID": "gge28"
+        },
+        "locked": false,
+        "zIndex": -1
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 17,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21968,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"8\",\"e4\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "TFT_CS",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 18,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21969,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"7\",\"e5\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "3V3",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 19,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21970,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"6\",\"e6\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "TFT_SCK",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 20,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21971,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"5\",\"e7\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "TFT_MOSI",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 21,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21972,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"4\",\"e8\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "TFT_DC",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 22,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21973,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"3\",\"e9\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "TFT_RST",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 23,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21974,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"2\",\"e10\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "GND",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 24,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21975,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"1\",\"e11\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "LEDA",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 25,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21976,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"9\",\"e12\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "GND",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 26,
+      "header": {
+        "type": "PAD_NET",
+        "ticket": 21977,
+        "id": "[\"PAD_NET\",\"ec90907c7ad7b679\",\"10\",\"e13\"]"
+      },
+      "payload": {
+        "partitionId": "",
+        "padNet": "GND",
+        "padLen": null,
+        "attrsMap": {}
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 27,
+      "header": {
+        "type": "ATTR",
+        "ticket": 21978,
+        "id": "ec90907c7ad7b679e30"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupID": 0,
+        "parentId": "ec90907c7ad7b679",
+        "layerId": 4,
+        "x": null,
+        "y": null,
+        "key": "Footprint",
+        "value": "b71b10e9dd10b0db",
+        "keyVisible": false,
+        "valueVisible": false,
+        "fontFamily": "default",
+        "fontSize": 45,
+        "strokeWidth": 6,
+        "bold": 0,
+        "italic": 0,
+        "origin": "LEFT_BOTTOM",
+        "angle": 90,
+        "reverse": false,
+        "expansion": 0,
+        "mirror": false,
+        "locked": false,
+        "zIndex": 30,
+        "specialColor": null
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 28,
+      "header": {
+        "type": "ATTR",
+        "ticket": 21979,
+        "id": "ec90907c7ad7b679e31"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupID": 0,
+        "parentId": "ec90907c7ad7b679",
+        "layerId": 4,
+        "x": 992.833,
+        "y": -649.8825,
+        "key": "Designator",
+        "value": "U3",
+        "keyVisible": false,
+        "valueVisible": true,
+        "fontFamily": "default",
+        "fontSize": 45,
+        "strokeWidth": 6,
+        "bold": 0,
+        "italic": 0,
+        "origin": "LEFT_BOTTOM",
+        "angle": 90,
+        "reverse": false,
+        "expansion": 0,
+        "mirror": false,
+        "locked": false,
+        "zIndex": 31,
+        "specialColor": null
+      }
+    },
+    {
+      "history_row": 115,
+      "line": 29,
+      "header": {
+        "type": "ATTR",
+        "ticket": 21980,
+        "id": "ec90907c7ad7b679e0"
+      },
+      "payload": {
+        "partitionId": "",
+        "groupID": 0,
+        "parentId": "ec90907c7ad7b679",
+        "layerId": 4,
+        "x": null,
+        "y": null,
+        "key": "Device",
+        "value": "ef96e276abfd6d99",
+        "keyVisible": false,
+        "valueVisible": false,
+        "fontFamily": "default",
+        "fontSize": 45,
+        "strokeWidth": 6,
+        "bold": 0,
+        "italic": 0,
+        "origin": "LEFT_BOTTOM",
+        "angle": 90,
+        "reverse": false,
+        "expansion": 0,
+        "mirror": false,
+        "locked": false,
+        "zIndex": -1,
+        "specialColor": null
+      }
+    }
+  ]
+}

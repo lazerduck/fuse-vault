@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "label": "Board 1 USB check after power cycle",
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-14T19:30:34Z",
+  "erase_sd": false,
+  "runs": [],
+  "complete": false,
+  "error": "Expected one benchmark board, found 0; connect one or use --port"
+}
