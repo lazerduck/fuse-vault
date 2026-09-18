@@ -1,0 +1,27 @@
+{
+  "protocol": 4,
+  "complete": true,
+  "results": [],
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-16T21:02:26.381082+00:00",
+  "port": "/dev/serial/by-id/usb-Fuse_Vault_Fuse_Vault_V2_PIPELINE_317741A1459A6F94-if00",
+  "integrity": false,
+  "seed": "fuse-vault-v3-public-test-data",
+  "label": "",
+  "scratch_write_authorized": false,
+  "firmware_sha256": "075e89d60aaa81450c36dcaf07749ad5d9d946e0ed6139f20e4ef6a162ac1945",
+  "info": {
+    "sequence": 1,
+    "crypto_us": 0,
+    "sd_us": 0,
+    "setup_us": 0,
+    "capacity_blocks": 0,
+    "hmac_us": 0,
+    "metadata_us": 0,
+    "metadata_read_blocks": 0,
+    "metadata_write_blocks": 0,
+    "cpu_hz": 150000000,
+    "sd_hz_requested": 25000000,
+    "transaction_seconds": 0.0003594270092435181
+  }
+}

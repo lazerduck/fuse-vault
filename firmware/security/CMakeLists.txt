@@ -1,0 +1,36 @@
+cmake_minimum_required(VERSION 3.20)
+set(PICO_BOARD fuse_vault CACHE STRING "Board")
+list(APPEND PICO_BOARD_HEADER_DIRS "${CMAKE_CURRENT_LIST_DIR}/../../src/platform/rp2354/boards")
+include(${PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+project(fuse_vault_security_bringup C CXX ASM)
+set(CMAKE_C_STANDARD 11)
+pico_sdk_init()
+set(FV_SD_CLOCK_HZ 25000000 CACHE STRING "SD data clock in Hz")
+set(FV_MBEDTLS_DIR "${PICO_SDK_PATH}/lib/mbedtls" CACHE PATH "Mbed TLS source")
+option(FV_HMAC_PICO "Use SHA accelerator" ON)
+option(FV_CIPHERS_RAM "Run cipher hot paths from SRAM" ON)
+option(FV_DEBUG_ENROLLMENT "Expose fixed-allocation OTP provisioning and persistent test commands" OFF)
+option(FV_DEBUG_OTP_INSPECT "Include read-only OTP diagnostics (development only)" OFF)
+add_subdirectory(../../src/crypto crypto)
+add_subdirectory(../../src/storage storage)
+add_subdirectory(../../src/security security)
+add_subdirectory(../../third_party/pico_sd/src pico_sd)
+add_executable(fuse_vault_security main.c usb.c commands.c
+  ../../src/platform/rp2354/entropy.c ../../src/platform/rp2354/sd_native.c
+  ../../src/platform/rp2354/authority.c)
+if(FV_DEBUG_OTP_INSPECT)
+  target_sources(fuse_vault_security PRIVATE ../../src/platform/rp2354/otp_inspect.c)
+endif()
+target_include_directories(fuse_vault_security PRIVATE . ../../src/platform/rp2354/include)
+target_compile_definitions(fuse_vault_security PRIVATE FV_SD_CLOCK_HZ=${FV_SD_CLOCK_HZ}
+  FV_DEBUG_OTP_INSPECT=$<BOOL:${FV_DEBUG_OTP_INSPECT}>
+  FV_DEBUG_ENROLLMENT=$<BOOL:${FV_DEBUG_ENROLLMENT}>
+  PICO_CORE1_STACK_SIZE=4096 PICO_STACK_SIZE=4096)
+target_compile_options(fuse_vault_security PRIVATE -Wall -Wextra -Werror -fstack-usage)
+target_compile_options(fv_security PRIVATE -fstack-usage)
+target_link_libraries(fuse_vault_security PRIVATE fv_security pico_stdlib pico_multicore
+  pico_unique_id tinyusb_device no-OS-FatFS-SD-SDIO-SPI-RPi-Pico)
+pico_enable_stdio_usb(fuse_vault_security 0)
+pico_enable_stdio_uart(fuse_vault_security 0)
+pico_add_linker_script_override_path(fuse_vault_security ${CMAKE_CURRENT_LIST_DIR}/linker FILES pico_flash_region.ld)
+pico_add_extra_outputs(fuse_vault_security)

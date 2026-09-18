@@ -1,0 +1,1173 @@
+{
+  "protocol": 3,
+  "complete": true,
+  "results": [
+    {
+      "stack": "raw",
+      "batch_bytes": 512,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 2,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006442399026127532
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 0,
+        "sd_us": 5407671,
+        "transaction_seconds": 12.856557858322049,
+        "wall_seconds": 12.883394475007663,
+        "kib_per_second": 318.59227369701136,
+        "wall_kib_per_second": 317.92863347821725
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 0,
+        "sd_us": 1469493,
+        "transaction_seconds": 8.170777986641042,
+        "wall_seconds": 8.198418551008217,
+        "kib_per_second": 501.2986531633619,
+        "wall_kib_per_second": 499.60854944351263
+      },
+      "end": {
+        "sequence": 16387,
+        "crypto_us": 0,
+        "sd_us": 19,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0004048219998367131
+      }
+    },
+    {
+      "stack": "raw",
+      "batch_bytes": 4096,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 16388,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 1,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0063252479885704815
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 0,
+        "sd_us": 966376,
+        "transaction_seconds": 7.259386439342052,
+        "wall_seconds": 7.274110511003528,
+        "kib_per_second": 564.2350127280505,
+        "wall_kib_per_second": 563.0929023973436
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 0,
+        "sd_us": 506228,
+        "transaction_seconds": 5.796428289700998,
+        "wall_seconds": 5.802930448990082,
+        "kib_per_second": 706.6420552942418,
+        "wall_kib_per_second": 705.85026582782
+      },
+      "end": {
+        "sequence": 18437,
+        "crypto_us": 0,
+        "sd_us": 21,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00022891099797561765
+      }
+    },
+    {
+      "stack": "raw",
+      "batch_bytes": 8192,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 18438,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0062665089790243655
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 0,
+        "sd_us": 680716,
+        "transaction_seconds": 6.796256423171144,
+        "wall_seconds": 6.805874387995573,
+        "kib_per_second": 602.684734795336,
+        "wall_kib_per_second": 601.8330293054865
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 0,
+        "sd_us": 427969,
+        "transaction_seconds": 5.5836198000761215,
+        "wall_seconds": 5.593193623004481,
+        "kib_per_second": 733.5743024523553,
+        "wall_kib_per_second": 732.3186494301555
+      },
+      "end": {
+        "sequence": 19463,
+        "crypto_us": 0,
+        "sd_us": 18,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00021713899332098663
+      }
+    },
+    {
+      "stack": "raw",
+      "batch_bytes": 16384,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 19464,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0062332550005521625
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 0,
+        "sd_us": 503141,
+        "transaction_seconds": 6.458907723164884,
+        "wall_seconds": 6.465640331007307,
+        "kib_per_second": 634.162953793207,
+        "wall_kib_per_second": 633.5026061311809
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 0,
+        "sd_us": 388679,
+        "transaction_seconds": 5.465916299901437,
+        "wall_seconds": 5.471082008996746,
+        "kib_per_second": 749.3711530258632,
+        "wall_kib_per_second": 748.6636086361827
+      },
+      "end": {
+        "sequence": 19977,
+        "crypto_us": 0,
+        "sd_us": 19,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00023403001250699162
+      }
+    },
+    {
+      "stack": "raw",
+      "batch_bytes": 32768,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 19978,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 1,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006213539018062875
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 0,
+        "sd_us": 454027,
+        "transaction_seconds": 6.298883411975112,
+        "wall_seconds": 6.302790624991758,
+        "kib_per_second": 650.2739822446779,
+        "wall_kib_per_second": 649.8708657334395
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 0,
+        "sd_us": 370532,
+        "transaction_seconds": 5.424540258914931,
+        "wall_seconds": 5.428069782006787,
+        "kib_per_second": 755.0870312499666,
+        "wall_kib_per_second": 754.596046936907
+      },
+      "end": {
+        "sequence": 20235,
+        "crypto_us": 0,
+        "sd_us": 16,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0002211660030297935
+      }
+    },
+    {
+      "stack": "aes",
+      "batch_bytes": 512,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 20236,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 107,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006416379997972399
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 2845415,
+        "sd_us": 5435322,
+        "transaction_seconds": 16.2188180348312,
+        "wall_seconds": 16.25274301902391,
+        "kib_per_second": 252.54614677860707,
+        "wall_kib_per_second": 252.01899735974496
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 3472307,
+        "sd_us": 1529478,
+        "transaction_seconds": 12.20989603162161,
+        "wall_seconds": 12.23506873799488,
+        "kib_per_second": 335.4655919585259,
+        "wall_kib_per_second": 334.7753974834852
+      },
+      "end": {
+        "sequence": 36621,
+        "crypto_us": 0,
+        "sd_us": 23,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00020900301751680672
+      }
+    },
+    {
+      "stack": "aes",
+      "batch_bytes": 4096,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 36622,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 92,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006434583978261799
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 2817655,
+        "sd_us": 966031,
+        "transaction_seconds": 9.873754261090653,
+        "wall_seconds": 9.887270307983272,
+        "kib_per_second": 414.83714215382514,
+        "wall_kib_per_second": 414.27005355489973
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 3287854,
+        "sd_us": 512902,
+        "transaction_seconds": 8.95723327290034,
+        "wall_seconds": 8.964450163999572,
+        "kib_per_second": 457.28406029038484,
+        "wall_kib_per_second": 456.9159206717628
+      },
+      "end": {
+        "sequence": 38671,
+        "crypto_us": 0,
+        "sd_us": 19,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0002253740094602108
+      }
+    },
+    {
+      "stack": "aes",
+      "batch_bytes": 8192,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 38672,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 88,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006450433982536197
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 2815562,
+        "sd_us": 671722,
+        "transaction_seconds": 9.470141927304212,
+        "wall_seconds": 9.48032202597824,
+        "kib_per_second": 432.51727708435465,
+        "wall_kib_per_second": 432.0528341522607
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 3274525,
+        "sd_us": 431458,
+        "transaction_seconds": 8.790480856929207,
+        "wall_seconds": 8.797299490019213,
+        "kib_per_second": 465.9585825468554,
+        "wall_kib_per_second": 465.5974261927798
+      },
+      "end": {
+        "sequence": 39697,
+        "crypto_us": 0,
+        "sd_us": 22,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00028565802494995296
+      }
+    },
+    {
+      "stack": "aes",
+      "batch_bytes": 16384,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 39698,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 86,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006499195995274931
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 2814565,
+        "sd_us": 572765,
+        "transaction_seconds": 9.41050641509355,
+        "wall_seconds": 9.417530865001027,
+        "kib_per_second": 435.2581911458461,
+        "wall_kib_per_second": 434.933536052664
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 3267908,
+        "sd_us": 390228,
+        "transaction_seconds": 8.699693544127513,
+        "wall_seconds": 8.706276692013489,
+        "kib_per_second": 470.8211822892188,
+        "wall_kib_per_second": 470.46517643499374
+      },
+      "end": {
+        "sequence": 40211,
+        "crypto_us": 0,
+        "sd_us": 21,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00043210299918428063
+      }
+    },
+    {
+      "stack": "aes",
+      "batch_bytes": 32768,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 40212,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 84,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006440905999625102
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 2814020,
+        "sd_us": 456621,
+        "transaction_seconds": 9.214253351063235,
+        "wall_seconds": 9.218609656003537,
+        "kib_per_second": 444.5286930956117,
+        "wall_kib_per_second": 444.3186286049672
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 3264705,
+        "sd_us": 370907,
+        "transaction_seconds": 8.700874818256125,
+        "wall_seconds": 8.704557191987988,
+        "kib_per_second": 470.7572612590399,
+        "wall_kib_per_second": 470.5581122231143
+      },
+      "end": {
+        "sequence": 40469,
+        "crypto_us": 0,
+        "sd_us": 20,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00023997199605219066
+      }
+    },
+    {
+      "stack": "camellia",
+      "batch_bytes": 512,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 40470,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 245,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006788069003960118
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 4033327,
+        "sd_us": 5584970,
+        "transaction_seconds": 17.20634658835479,
+        "wall_seconds": 17.24263257102575,
+        "kib_per_second": 238.05169673684023,
+        "wall_kib_per_second": 237.55073264640887
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 4152103,
+        "sd_us": 1695832,
+        "transaction_seconds": 12.52240801093285,
+        "wall_seconds": 12.544950101000722,
+        "kib_per_second": 327.0936385736621,
+        "wall_kib_per_second": 326.50588220938863
+      },
+      "end": {
+        "sequence": 56855,
+        "crypto_us": 0,
+        "sd_us": 25,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0003285979910288006
+      }
+    },
+    {
+      "stack": "camellia",
+      "batch_bytes": 4096,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 56856,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 150,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006510617007734254
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 3777651,
+        "sd_us": 978854,
+        "transaction_seconds": 10.827414093655534,
+        "wall_seconds": 10.840272784000263,
+        "kib_per_second": 378.2990069992894,
+        "wall_kib_per_second": 377.85027015607074
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 3787804,
+        "sd_us": 522411,
+        "transaction_seconds": 9.475390489737038,
+        "wall_seconds": 9.484625174023677,
+        "kib_per_second": 432.277699207906,
+        "wall_kib_per_second": 431.85681298382275
+      },
+      "end": {
+        "sequence": 58905,
+        "crypto_us": 0,
+        "sd_us": 25,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00022994200116954744
+      }
+    },
+    {
+      "stack": "camellia",
+      "batch_bytes": 8192,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 58906,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 156,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0065131220035254955
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 3759158,
+        "sd_us": 684836,
+        "transaction_seconds": 10.459772775793681,
+        "wall_seconds": 10.470964946987806,
+        "kib_per_second": 391.5955047779896,
+        "wall_kib_per_second": 391.1769374395911
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 3766565,
+        "sd_us": 436858,
+        "transaction_seconds": 9.280048933869693,
+        "wall_seconds": 9.287481467996258,
+        "kib_per_second": 441.37698294355937,
+        "wall_kib_per_second": 441.02376022115476
+      },
+      "end": {
+        "sequence": 59931,
+        "crypto_us": 0,
+        "sd_us": 25,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0002456619986332953
+      }
+    },
+    {
+      "stack": "camellia",
+      "batch_bytes": 16384,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 59932,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 149,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0065350130025763065
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 3749966,
+        "sd_us": 584156,
+        "transaction_seconds": 10.272366528050043,
+        "wall_seconds": 10.279306709999219,
+        "kib_per_second": 398.7396661533966,
+        "wall_kib_per_second": 398.470452877489
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 3756067,
+        "sd_us": 392823,
+        "transaction_seconds": 9.21084559924202,
+        "wall_seconds": 9.216548088996205,
+        "kib_per_second": 444.69315611338317,
+        "wall_kib_per_second": 444.41801425528115
+      },
+      "end": {
+        "sequence": 60445,
+        "crypto_us": 0,
+        "sd_us": 27,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00042060099076479673
+      }
+    },
+    {
+      "stack": "camellia",
+      "batch_bytes": 32768,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 60446,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 153,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006559809989994392
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 3745377,
+        "sd_us": 450128,
+        "transaction_seconds": 10.11612427001819,
+        "wall_seconds": 10.12042368701077,
+        "kib_per_second": 404.89814979236456,
+        "wall_kib_per_second": 404.726138615825
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 3750837,
+        "sd_us": 372679,
+        "transaction_seconds": 9.183261721947929,
+        "wall_seconds": 9.18713015501271,
+        "kib_per_second": 446.0288864696723,
+        "wall_kib_per_second": 445.8410766897787
+      },
+      "end": {
+        "sequence": 60703,
+        "crypto_us": 0,
+        "sd_us": 25,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00032005200046114624
+      }
+    },
+    {
+      "stack": "aes,camellia",
+      "batch_bytes": 512,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 60704,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 221,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006641193001996726
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 6867502,
+        "sd_us": 5571359,
+        "transaction_seconds": 20.08108621838619,
+        "wall_seconds": 20.123174881009618,
+        "kib_per_second": 203.97302991756058,
+        "wall_kib_per_second": 203.54640975989452
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 7617272,
+        "sd_us": 1723566,
+        "transaction_seconds": 16.359041565447114,
+        "wall_seconds": 16.38545855600387,
+        "kib_per_second": 250.3814165159529,
+        "wall_kib_per_second": 249.97774618270702
+      },
+      "end": {
+        "sequence": 77089,
+        "crypto_us": 0,
+        "sd_us": 26,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00023206599871627986
+      }
+    },
+    {
+      "stack": "aes,camellia",
+      "batch_bytes": 4096,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 77090,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 230,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006713448005029932
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 6590899,
+        "sd_us": 1011843,
+        "transaction_seconds": 13.741906308569014,
+        "wall_seconds": 13.759759183012648,
+        "kib_per_second": 298.06636051985487,
+        "wall_kib_per_second": 297.67962836564675
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 7087320,
+        "sd_us": 528629,
+        "transaction_seconds": 12.79305373839452,
+        "wall_seconds": 12.805248039017897,
+        "kib_per_second": 320.1737508306623,
+        "wall_kib_per_second": 319.8688527953063
+      },
+      "end": {
+        "sequence": 79139,
+        "crypto_us": 0,
+        "sd_us": 25,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00024240600760094821
+      }
+    },
+    {
+      "stack": "aes,camellia",
+      "batch_bytes": 8192,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 79140,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 232,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006789672013837844
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 6571138,
+        "sd_us": 676405,
+        "transaction_seconds": 13.221125929965638,
+        "wall_seconds": 13.23291933798464,
+        "kib_per_second": 309.8071996059299,
+        "wall_kib_per_second": 309.53109403777387
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 7054697,
+        "sd_us": 439060,
+        "transaction_seconds": 12.610050900897477,
+        "wall_seconds": 12.62326164697879,
+        "kib_per_second": 324.82025902912744,
+        "wall_kib_per_second": 324.48032169089385
+      },
+      "end": {
+        "sequence": 80165,
+        "crypto_us": 0,
+        "sd_us": 29,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0002730230044107884
+      }
+    },
+    {
+      "stack": "aes,camellia",
+      "batch_bytes": 16384,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 80166,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 231,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006693451985483989
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 6561203,
+        "sd_us": 576401,
+        "transaction_seconds": 13.267625698266784,
+        "wall_seconds": 13.274729346012464,
+        "kib_per_second": 308.72140148897034,
+        "wall_kib_per_second": 308.55619675819446
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 7037859,
+        "sd_us": 394720,
+        "transaction_seconds": 12.515709828818217,
+        "wall_seconds": 12.522954003012273,
+        "kib_per_second": 327.26869318819615,
+        "wall_kib_per_second": 327.0793775186547
+      },
+      "end": {
+        "sequence": 80679,
+        "crypto_us": 0,
+        "sd_us": 24,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00025744500453583896
+      }
+    },
+    {
+      "stack": "aes,camellia",
+      "batch_bytes": 32768,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 80680,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 222,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006684655003482476
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 6556170,
+        "sd_us": 451202,
+        "transaction_seconds": 13.145133920159424,
+        "wall_seconds": 13.149745884002186,
+        "kib_per_second": 311.5981948056353,
+        "wall_kib_per_second": 311.48890907337926
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 7029922,
+        "sd_us": 372575,
+        "transaction_seconds": 12.46110392693663,
+        "wall_seconds": 12.46537720100605,
+        "kib_per_second": 328.70281991195446,
+        "wall_kib_per_second": 328.59013682068297
+      },
+      "end": {
+        "sequence": 80937,
+        "crypto_us": 0,
+        "sd_us": 25,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0002579549909569323
+      }
+    },
+    {
+      "stack": "camellia,aes",
+      "batch_bytes": 512,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 80938,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 220,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006661311024799943
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 6868503,
+        "sd_us": 5576083,
+        "transaction_seconds": 20.30634447024204,
+        "wall_seconds": 20.34615325400955,
+        "kib_per_second": 201.71035737143578,
+        "wall_kib_per_second": 201.31569584008784
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 8192,
+        "crypto_us": 7617979,
+        "sd_us": 1721081,
+        "transaction_seconds": 16.35028839093866,
+        "wall_seconds": 16.38495466398308,
+        "kib_per_second": 250.51545893649228,
+        "wall_kib_per_second": 249.98543383239902
+      },
+      "end": {
+        "sequence": 97323,
+        "crypto_us": 0,
+        "sd_us": 23,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0004192589840386063
+      }
+    },
+    {
+      "stack": "camellia,aes",
+      "batch_bytes": 4096,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 97324,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 231,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0066721109906211495
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 6590743,
+        "sd_us": 1004673,
+        "transaction_seconds": 14.06337892296142,
+        "wall_seconds": 14.086079800996231,
+        "kib_per_second": 291.2529074582794,
+        "wall_kib_per_second": 290.78352940399446
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 1024,
+        "crypto_us": 7089904,
+        "sd_us": 530333,
+        "transaction_seconds": 12.79382463276852,
+        "wall_seconds": 12.808041734999279,
+        "kib_per_second": 320.1544586994738,
+        "wall_kib_per_second": 319.7990828533345
+      },
+      "end": {
+        "sequence": 99373,
+        "crypto_us": 0,
+        "sd_us": 28,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00039646599907428026
+      }
+    },
+    {
+      "stack": "camellia,aes",
+      "batch_bytes": 8192,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 99374,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 239,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00670112602529116
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 6570942,
+        "sd_us": 676625,
+        "transaction_seconds": 13.532921785867075,
+        "wall_seconds": 13.545810208976036,
+        "kib_per_second": 302.66930266881485,
+        "wall_kib_per_second": 302.3813221069504
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 512,
+        "crypto_us": 7056871,
+        "sd_us": 439250,
+        "transaction_seconds": 12.604676794959232,
+        "wall_seconds": 12.616411380004138,
+        "kib_per_second": 324.9587487747438,
+        "wall_kib_per_second": 324.6565030759687
+      },
+      "end": {
+        "sequence": 100399,
+        "crypto_us": 0,
+        "sd_us": 26,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0002645069907885045
+      }
+    },
+    {
+      "stack": "camellia,aes",
+      "batch_bytes": 16384,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 100400,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 232,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006668033020105213
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 6560812,
+        "sd_us": 568804,
+        "transaction_seconds": 13.35332635731902,
+        "wall_seconds": 13.360617102996912,
+        "kib_per_second": 306.740050411107,
+        "wall_kib_per_second": 306.5726656503934
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 256,
+        "crypto_us": 7040144,
+        "sd_us": 393916,
+        "transaction_seconds": 12.516059800836956,
+        "wall_seconds": 12.523029601987218,
+        "kib_per_second": 327.25954215448047,
+        "wall_kib_per_second": 327.07740300717853
+      },
+      "end": {
+        "sequence": 100913,
+        "crypto_us": 0,
+        "sd_us": 26,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.00029099700623191893
+      }
+    },
+    {
+      "stack": "camellia,aes",
+      "batch_bytes": 32768,
+      "total_bytes": 4194304,
+      "verified": true,
+      "configuration": {
+        "sequence": 100914,
+        "crypto_us": 0,
+        "sd_us": 0,
+        "setup_us": 233,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.006677892000880092
+      },
+      "write": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 6555811,
+        "sd_us": 453910,
+        "transaction_seconds": 13.212929252069443,
+        "wall_seconds": 13.216952046001097,
+        "kib_per_second": 309.9993893752571,
+        "wall_kib_per_second": 309.9050360282786
+      },
+      "read": {
+        "completed_bytes": 4194304,
+        "requests": 128,
+        "crypto_us": 7032118,
+        "sd_us": 373146,
+        "transaction_seconds": 12.463851337030064,
+        "wall_seconds": 12.467830440989928,
+        "kib_per_second": 328.63036386119245,
+        "wall_kib_per_second": 328.5254815893039
+      },
+      "end": {
+        "sequence": 101171,
+        "crypto_us": 0,
+        "sd_us": 27,
+        "setup_us": 0,
+        "capacity_blocks": 122909696,
+        "cpu_hz": 150000000,
+        "sd_hz_requested": 25000000,
+        "transaction_seconds": 0.0002507210010662675
+      }
+    }
+  ],
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-16T19:54:15.620165+00:00",
+  "port": "/dev/serial/by-id/usb-Fuse_Vault_Fuse_Vault_V2_PIPELINE_317741A1459A6F94-if00",
+  "seed": "fuse-vault-v3-public-test-data",
+  "label": "Board 317741A1459A6F94 first pipeline matrix",
+  "scratch_write_authorized": true,
+  "firmware_sha256": "ac1422b7366f533b088f035461b3c845fc771bcece243ae55d47f945d3dc2fa7",
+  "info": {
+    "sequence": 1,
+    "crypto_us": 0,
+    "sd_us": 0,
+    "setup_us": 0,
+    "capacity_blocks": 122909696,
+    "cpu_hz": 150000000,
+    "sd_hz_requested": 25000000,
+    "transaction_seconds": 0.00022558399359695613
+  }
+}

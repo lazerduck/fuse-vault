@@ -1,0 +1,1 @@
+#define OTP_DATA_PAGE0_LOCK0_ROW 0xf80u

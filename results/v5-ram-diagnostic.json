@@ -1,0 +1,14 @@
+{
+  "protocol": 5,
+  "complete": false,
+  "results": [],
+  "host": "Linux-7.0.0-31-generic-x86_64-with-glibc2.39",
+  "started_utc": "2026-09-16T21:28:38.071023+00:00",
+  "port": "/dev/serial/by-id/usb-Fuse_Vault_Fuse_Vault_V2_PIPELINE_317741A1459A6F94-if00",
+  "integrity": true,
+  "seed": "fuse-vault-v3-public-test-data",
+  "label": "RAM execution diagnostic",
+  "scratch_write_authorized": true,
+  "firmware_sha256": "4604a8b2d4be2e2b3b5ce26557ebd69cb4ccea776408ad9f0c164fbe839c49e2",
+  "error": "Expected cafe:4021 V2 pipeline firmware CDC port"
+}
