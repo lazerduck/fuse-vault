@@ -120,8 +120,9 @@ disconnection; deferred invalidation locks it before storage can be exposed agai
 During a UI operation, MSC returns not-ready without waiting behind a long metadata
 format, while CDC screen/button handling remains responsive. USB invalidation is
 retained until the worker is available. Screen updates use no shared worker reply
-buffer while a diagnostic CDC command is outstanding. Existing synchronous 4 KiB
-MSC transfers are unchanged.
+buffer while a diagnostic CDC command is outstanding. MSC now uses a
+[two-buffer 32 KiB pipeline](../../docs/v2-usb-pipeline.md), overlapping USB with
+worker encryption/authentication and SD work.
 
 ## Release boundary
 

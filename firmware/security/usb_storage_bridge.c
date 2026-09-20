@@ -8,7 +8,37 @@
 #endif
 /* ISR only marks invalidation. Vault operations always execute on core 1. */
 static atomic_bool invalidate;
+/* Core-0-owned queue state. The worker owns its buffer until its response. */
+static bool async_pending,async_ready;
+static fv_usb_response async_response;
+void fv_usb_async_wait(void){
+    if(async_pending){
+        queue_remove_blocking(&storage_responses,&async_response);
+        async_pending=false;async_ready=true;
+    }
+}
+bool fv_usb_async_take(fv_usb_response *response){
+    if(async_pending && queue_try_remove(&storage_responses,&async_response)){
+        async_pending=false;async_ready=true;
+    }
+    if(!async_ready)return false;
+    *response=async_response;async_ready=false;
+#if FV_DEVICE_UI
+    fv_device_ui_media_changed(response->unlocked);
+#endif
+    return true;
+}
+bool fv_usb_async_submit(fv_usb_request request){
+#if FV_DEVICE_UI
+    if(atomic_load(&fv_ui_maintenance))return false;
+#endif
+    if(atomic_load(&invalidate) || async_pending || async_ready)return false;
+    fv_command command={0};command.storage=request;
+    if(!queue_try_add(&commands,&command))return false;
+    async_pending=true;return true;
+}
 static fv_usb_response transact(fv_usb_request request) {
+    fv_usb_async_wait();
     fv_command command={0};command.storage=request;
     queue_add_blocking(&commands,&command);
     fv_usb_response response;queue_remove_blocking(&storage_responses,&response);

@@ -36,3 +36,15 @@ if(FV_HMAC_PICO)
   target_compile_definitions(fv_crypto PRIVATE FV_HMAC_PICO=1)
   target_link_libraries(fv_crypto PRIVATE pico_sha256)
 endif()
+
+# FIDO shares the same Mbed TLS ABI and AES/SHA implementation as vault crypto.
+if(FV_ENABLE_FIDO_ENGINE)
+  target_compile_definitions(fv_crypto PUBLIC FV_ENABLE_FIDO_ENGINE=1)
+  foreach(module asn1parse asn1write base64 bignum bignum_core bignum_mod
+      bignum_mod_raw block_cipher chacha20 chachapoly cipher cipher_wrap
+      constant_time ecdh ecdsa ecp ecp_curves ecp_curves_new gcm hkdf md oid
+      pk pk_ecc pk_wrap pkcs5 pkparse pkwrite poly1305 rsa rsa_alt_helpers
+      sha1 sha512 x509 x509_create x509_crt x509write x509write_crt)
+    target_sources(fv_crypto PRIVATE ${FV_MBEDTLS_DIR}/library/${module}.c)
+  endforeach()
+endif()

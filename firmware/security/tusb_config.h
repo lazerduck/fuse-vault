@@ -12,7 +12,8 @@
 #define CFG_TUD_CDC_EP_BUFSIZE 64
 #if FV_USB_MSC
 #define CFG_TUD_MSC 1
-#define CFG_TUD_MSC_EP_BUFSIZE 4096
+#include "usb_storage.h"
+#define CFG_TUD_MSC_EP_BUFSIZE FV_USB_IO_BYTES
 #else
 #define CFG_TUD_MSC 0
 #endif

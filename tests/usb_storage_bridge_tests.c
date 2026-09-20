@@ -18,7 +18,7 @@ void tud_suspend_cb(bool);
 queue_t commands,responses,storage_responses;
 static fv_usb_request request;
 static unsigned locks,reads;
-void fv_usb_storage_clear_transport(void){}
+void fv_usb_storage_clear_transport(void){fv_usb_async_wait();fv_usb_response r;(void)fv_usb_async_take(&r);}
 static bool open=true,reset_during_read;
 void queue_add_blocking(queue_t *q,const void *p){CHECK(q==&commands);request=((const fv_command*)p)->storage;}
 void queue_remove_blocking(queue_t *q,void *p) {
@@ -30,6 +30,8 @@ void queue_remove_blocking(queue_t *q,void *p) {
     }
     *(fv_usb_response*)p=(fv_usb_response){.unlocked=open,.blocks=open?16:0};
 }
+bool queue_try_add(queue_t *q,const void *p){queue_add_blocking(q,p);return true;}
+bool queue_try_remove(queue_t *q,void *p){queue_remove_blocking(q,p);return true;}
 int main(void) {
     fv_usb_response r=fv_usb_rpc((fv_usb_request){.op=FV_USB_STATUS});CHECK(r.unlocked);
     tud_event_hook_cb(0,DCD_EVENT_BUS_RESET,true);
@@ -53,5 +55,15 @@ int main(void) {
     atomic_store(&fv_ui_maintenance,false);fv_usb_storage_poll();
     CHECK(locks==previous_locks+1 && !open);
 #endif
+    open=true;
+    CHECK(fv_usb_async_submit((fv_usb_request){.op=FV_USB_READ}));
+    CHECK(!fv_usb_async_submit((fv_usb_request){.op=FV_USB_READ}));
+    CHECK(fv_usb_async_take(&r) && r.unlocked);
+    CHECK(!fv_usb_async_take(&r));
+    CHECK(fv_usb_async_submit((fv_usb_request){.op=FV_USB_READ}));
+    fv_usb_async_wait();CHECK(fv_usb_async_take(&r));
+    open=true;CHECK(fv_usb_async_submit((fv_usb_request){.op=FV_USB_READ}));
+    tud_event_hook_cb(0,DCD_EVENT_BUS_RESET,true);fv_usb_storage_poll();
+    CHECK(!open && !fv_usb_async_take(&r)); /* No stale completion after invalidation. */
     puts("USB reset/suspend invalidation checks passed");return 0;
 }

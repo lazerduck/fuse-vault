@@ -1,0 +1,8 @@
+include(../../third_party/pico_fido/engine.cmake)
+if(FV_BUILD_TESTS)
+  add_executable(fido_engine_tests ../../tests/fido_engine_tests.c)
+  target_link_libraries(fido_engine_tests PRIVATE fv_fido_engine OpenSSL::Crypto)
+  target_compile_options(fido_engine_tests PRIVATE -UNDEBUG)
+  target_link_options(fido_engine_tests PRIVATE -Wl,--gc-sections)
+  add_test(NAME fido_engine COMMAND fido_engine_tests)
+endif()

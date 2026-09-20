@@ -133,7 +133,10 @@ they do not certify the complete assembled device or all firmware integrations.
 - [ ] Validate real-host enumeration, lock/unlock, eject, suspend/reset and reconnect.
 - [ ] Validate filesystem durability and USB interruption during authenticated writes;
       current writes sync per batch but do not promise atomic multi-sector updates.
-- [ ] Measure synchronous 4 KiB MSC callback latency/throughput and define worker-fault recovery.
+- [x] Implement two-buffer USB/worker overlap with 32 KiB buffers; host tests verify
+      command completion, read prefetch, error propagation and buffer ownership.
+      See [pipeline design](v2-usb-pipeline.md).
+- [ ] Measure pipelined MSC latency/throughput on hardware and define worker-fault recovery.
 - [ ] Validate host-visible capacity and metadata isolation; no raw SD access.
 - [ ] Integrate FIDO HID and physical approvals without allowing storage I/O to approve FIDO.
 
