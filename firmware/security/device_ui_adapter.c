@@ -49,6 +49,20 @@ void fv_device_ui_poll(void){
             fv_ui_render(&ui);format_redraw=now;
         }
     }
+    /* USB callbacks and UI polling run on core 0; no cross-core counters. */
+    static uint64_t activity_sample;
+    uint64_t activity_now=time_us_64();
+    if(activity_now-activity_sample>=500000){
+        uint32_t reads,writes;
+        fv_usb_storage_take_activity(&reads,&writes);
+        uint64_t elapsed=activity_now-activity_sample;
+        activity_sample=activity_now;
+        ui.read_active=ui.device.unlocked && reads!=0;
+        ui.write_active=ui.device.unlocked && writes!=0;
+        ui.read_kib_tenths=ui.read_active?(uint32_t)((uint64_t)reads*10000000/(elapsed*1024)):0;
+        ui.write_kib_tenths=ui.write_active?(uint32_t)((uint64_t)writes*10000000/(elapsed*1024)):0;
+        if(ui.screen==UI_HOME && ui.device.unlocked)fv_ui_render(&ui);
+    }
     if(ui.pending){
         atomic_store(&format_done,0);atomic_store(&format_total,0);
         format_redraw=0;

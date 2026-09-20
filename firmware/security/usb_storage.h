@@ -11,4 +11,6 @@ fv_usb_response fv_usb_rpc(fv_usb_request request);
 void fv_usb_storage_execute(const fv_usb_request *,fv_usb_response *);
 void fv_usb_storage_poll(void);
 void fv_usb_storage_clear_transport(void);
+/* Core 0 only: successful MSC payload bytes since the previous sample. */
+void fv_usb_storage_take_activity(uint32_t *read_bytes,uint32_t *write_bytes);
 #endif

@@ -37,6 +37,7 @@ static uint8_t glyph_row(char character, unsigned row) {
         case '\004': { static const uint8_t g[7] = {0,4,14,21,4,4,4}; return g[row]; }
         case '\005': { static const uint8_t g[7] = {8,16,31,17,1,1,14}; return g[row]; }
         case '\006': { static const uint8_t g[7] = {1,1,5,9,31,8,4}; return g[row]; }
+        case '\007': { static const uint8_t g[7] = {14,17,17,31,27,27,31}; return g[row]; }
         case '>': { static const uint8_t g[7] = {16,8,4,2,4,8,16}; return g[row]; }
         case '<': { static const uint8_t g[7] = {1,2,4,8,4,2,1}; return g[row]; }
         case '[': { static const uint8_t g[7] = {14,8,8,8,8,8,14}; return g[row]; }
@@ -226,7 +227,7 @@ void fv_ui_keypress(fv_ui *u,fv_ui_key k){
  done:fv_ui_render(u);
 }
 void fv_ui_render(fv_ui *u){
-    memset(u->framebuffer,0,sizeof(u->framebuffer));char b[32];
+    memset(u->framebuffer,0,sizeof(u->framebuffer));char b[40];
     switch(u->screen){
     case UI_WAIT:
         line(u,0,"FUSE VAULT");
@@ -252,9 +253,13 @@ void fv_ui_render(fv_ui *u){
             uint64_t tenths=u->device.blocks*10/2097152;
             snprintf(b,sizeof(b),"%llu.%llu GIB VAULT",(unsigned long long)(tenths/10),(unsigned long long)(tenths%10));
             text_at(u,4,17,b,1,true);
+            /* Arrows point into the vault for writes, out of it for reads. */
+            snprintf(b,sizeof(b),"\001\007 %u  \003\007 %u KIB/S",(unsigned)(u->write_kib_tenths/10),(unsigned)(u->read_kib_tenths/10));
+            text_at(u,4,26,b,1,true);
+            rule(u,36);
             const char *items[]={"LOCK VAULT","SETTINGS"};
             for(unsigned i=0;i<2;i++){
-                unsigned y=34+i*15;bool selected=u->cursor==i;
+                unsigned y=43+i*12;bool selected=u->cursor==i;
                 if(selected)for(unsigned r=y;r<y+9;r++)for(unsigned x=3;x<157;x++)pixel(u,x,r,true);
                 text_at(u,7,y+1,items[i],1,!selected);
             }

@@ -44,6 +44,11 @@ int main(void) {
     CHECK(tud_msc_write10_cb(0,8,0,data,sizeof(data))==sizeof(data));
     CHECK(writes==1 && zero(data,sizeof(data)) && zero(last_scratch,FV_USB_IO_BYTES));
     CHECK(tud_msc_read10_cb(0,7,512,data,sizeof(data))==sizeof(data));
+    uint32_t read_bytes,write_bytes;
+    fv_usb_storage_take_activity(&read_bytes,&write_bytes);
+    CHECK(read_bytes==sizeof(data) && write_bytes==sizeof(data));
+    fv_usb_storage_take_activity(&read_bytes,&write_bytes);
+    CHECK(!read_bytes && !write_bytes);
     CHECK(last_lba==8 && last_count==8 && data[0]==0x5a && data[4095]==0x5a);
     CHECK(zero(last_scratch,FV_USB_IO_BYTES));
     CHECK(tud_msc_read10_cb(0,15,0,data,512)==512);

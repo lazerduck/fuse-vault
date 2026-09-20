@@ -33,6 +33,8 @@ typedef struct {
     unsigned cursor;
     uint8_t confirmation[64],confirmation_length;
     int error;
+    uint32_t read_kib_tenths,write_kib_tenths;
+    bool read_active,write_active;
     uint32_t format_done,format_total,format_milliseconds;
     uint8_t framebuffer[FV_SCREEN_BYTES];
 } fv_ui;

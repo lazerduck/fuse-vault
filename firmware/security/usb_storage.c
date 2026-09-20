@@ -5,12 +5,18 @@
 /* Never put keys on core 0. This aligned buffer contains at most one I/O batch. */
 static _Alignas(4) uint8_t scratch[FV_USB_IO_BYTES];
 static uint32_t observed_generation;
+static uint32_t activity_read,activity_write;
+void fv_usb_storage_take_activity(uint32_t *read_bytes,uint32_t *write_bytes){
+    *read_bytes=activity_read;*write_bytes=activity_write;
+    activity_read=activity_write=0;
+}
 static void *transport_buffer;
 static uint32_t transport_bytes;
 static void wipe(void *buffer,uint32_t bytes) {
     volatile uint8_t *p=buffer;while(bytes--)*p++=0;
 }
 void fv_usb_storage_clear_transport(void) {
+    activity_read=activity_write=0;
     wipe(scratch,sizeof(scratch));
     if(transport_buffer)wipe(transport_buffer,transport_bytes);
 }
@@ -72,6 +78,7 @@ static int32_t transfer(uint8_t lun,uint32_t lba,uint32_t offset,void *buffer,ui
     if(write)wipe(buffer,bytes);
     if(r.result!=FV_BLOCK_OK)return io_error(lun,r.result,write);
     if(!r.unlocked)return io_error(lun,FV_BLOCK_ERROR_NOT_READY,write);
+    if(write)activity_write+=bytes;else activity_read+=bytes;
     return (int32_t)bytes;
 }
 int32_t tud_msc_read10_cb(uint8_t lun,uint32_t lba,uint32_t offset,void *buffer,uint32_t bytes) {
