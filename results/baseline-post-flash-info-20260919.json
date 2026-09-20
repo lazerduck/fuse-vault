@@ -1,0 +1,16 @@
+{
+  "sequence": 1,
+  "crypto_us": 0,
+  "sd_us": 0,
+  "setup_us": 0,
+  "capacity_blocks": 0,
+  "hmac_backend": "pico-sha256-cpu-fed",
+  "hmac_self_test": true,
+  "hmac_us": 0,
+  "metadata_us": 0,
+  "metadata_read_blocks": 0,
+  "metadata_write_blocks": 0,
+  "cpu_hz": 150000000,
+  "sd_hz_requested": 25000000,
+  "transaction_seconds": 0.004929843998979777
+}

@@ -1,3 +1,7 @@
+> **Implementation update:** [volume layout version 2](v2-lazy-metadata.md)
+> adds a small initialization bitmap before the tag area. New vaults use lazy
+> metadata initialization; original version-1 volumes keep their existing layout.
+
 # V2 volume format and key lifecycle — review draft
 
 **Status: four-slot share envelope and portable vault lifecycle implemented and tested.
@@ -87,7 +91,7 @@ Labels are case-sensitive. Hashes are SHA-256; HMAC tags are full 32 bytes.
 The storage library takes a byte string plus explicit length for `user_secret`:
 no implicit terminator, trimming or Unicode conversion. Propose nonempty, at most
 256 bytes. Text input profile 1 is UTF-8 without normalization. Navigation input
-profile 2 is a sequence of bytes: up=1, right=2, down=3, left=4, select=5; back
+profile 2 is a sequence of bytes: up=1, down=2, left=3, right=4, reserved legacy input=5; back
 edits input and submit is out-of-band. The UI must use the selected profile
 consistently. Secret input comes from the on-device UI in production; desktop
 secret input is only a test adapter. Neither logs credentials nor derived keys.
@@ -415,3 +419,22 @@ See [the security module README](../src/security/README.md) for APIs, buffer
 ownership, validation and remaining limits. The benchmark firmware still uses
 public test keys: ARM compilation of this library does not activate production
 unlock, persistent flash state, Secure RAM isolation or OTP programming.
+
+
+### Additional credential profiles (implemented)
+
+The existing profile-2 firmware direction mapping is up=1, down=2, left=3,
+right=4; the earlier proposal's clockwise numbering was corrected above to match
+shipped firmware. Existing patterns keep their exact bytes.
+
+- Profile 3: exactly four bytes, each 0–99, in wheel order. Display uses two decimal
+  digits per wheel; encoding uses values, not ASCII or platform integers.
+- Profile 4: exactly four bytes, each 0–63, indexing the fixed word list in
+  `src/ui/credential_entry.c`. Changing that list/order requires a new profile ID.
+
+Profile ID is already bound into the envelope/KDF context. Profiles 1 and 2 stay
+compatible; out-of-range values, invalid lengths and unknown profiles are rejected.
+Four wheels have 100^4 possible combinations; four words have 64^4. These are
+on-device, attempt-limited credentials, not randomly generated 256-bit secrets.
+The VMK remains independent random key material. Changing methods rewraps the VMK
+and advances credential generation, without consuming another OTP token slot.

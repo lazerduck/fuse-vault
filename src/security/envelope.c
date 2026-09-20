@@ -8,15 +8,19 @@ static uint64_t get(const uint8_t *p,unsigned n){uint64_t v=0;for(unsigned i=0;i
 static bool allzero(const uint8_t *p,size_t n){unsigned x=0;for(size_t i=0;i<n;i++)x|=p[i];return !x;}
 static bool cost(uint32_t iterations,fv_kdf_limits l){return l.minimum && l.maximum>=l.minimum && iterations>=l.minimum && iterations<=l.maximum;}
 static bool profile_secret(uint16_t p,const uint8_t *secret,size_t n) {
-    if(!secret || !n || n>256 || (p!=1 && p!=2))return false;
+    if(!secret || !n || n>256 || (p<1 || p>4))return false;
     if(p==2)for(size_t i=0;i<n;i++)if(secret[i]<1 || secret[i]>5)return false;
+    if(p==3 || p==4){
+        if(n!=4)return false;
+        for(size_t i=0;i<n;i++)if(secret[i]>=(p==3?100:64))return false;
+    }
     /* Profile 1 accepts exact UTF-8 bytes from a validating text UI; no normalization here. */
     return true;
 }
 static bool encode(const fv_envelope_config *c,uint64_t capacity,fv_kdf_limits limits,uint8_t h[512]) {
     memset(h,0,512);
     if(!c || !cost(c->iterations,limits) || !c->credential_generation ||
-       (c->credential_profile!=1 && c->credential_profile!=2) || allzero(c->device_id,16) ||
+       (c->credential_profile<1 || c->credential_profile>4) || allzero(c->device_id,16) ||
        !fv_volume_descriptor_encode(&c->volume,capacity,h) || !fv_auth_policy_encode(&c->policy,h+208))return false;
     memcpy(h+128,c->device_id,16);put(h+144,c->credential_generation,8);
     put(h+152,c->credential_profile,2);put(h+154,1,2);put(h+156,c->iterations,4);

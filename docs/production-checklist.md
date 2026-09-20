@@ -36,12 +36,21 @@ it is finished when preparing a production image. FIDO is outside this milestone
   verify expected OTP occupancy/unchanged locks, create/write/unlock/read 1 MiB
   using OTP/flash authority at 60,000 iterations. See
   [hardware record](../results/security-persistence-20260918.md).
-- [ ] Fully power-cycle, recreate RAM state and successfully unlock/read with the
-  OTP/flash adapter; initial hardware run stopped awaiting that disconnect.
+- [x] Saved attempt count and all 1 MiB of payload survived a full power cycle and
+  diagnostic reflash; delayed worker launch recovered/unlocked/read successfully.
+- [ ] Resolve normal automatic startup: USB fails in the normal image but works
+  immediately after flashing with explicit delayed worker launch. Cold startup
+  of that diagnostic also fails before worker launch; inspect boot selection and
+  earlier startup rather than treating delayed launch as a fix. Tagged cold-boot
+  checkpoint now localizes the stall to SDK clock initialization before main.
 - [ ] Wrong attempts persist across power cycles and SD swaps. Interrupted final
   attempt completes destruction before further authentication, including without SD.
-- [ ] Verify raw all-ones programming/readback on actual silicon, then power-cycle
-  and show historical headers cannot recover the old enrollment. Root unchanged.
+- [x] Physical token destruction completed with raw all-ones readback verified by
+  firmware; page 17 alone changed in snapshot fields, locks unchanged, old vault
+  denied. Credential change and preserved-payload read also passed.
+- [x] Destruction persisted through cold power removal: old vault denied after
+  recovery. Advanced to slot 1/page 18 and created/read-verified a fresh 1 MiB
+  vault. Only page 18 changed in snapshot fields; root remains usable.
 - [ ] Provision next token slot; prove old slot never reused and exhaustion denies
   new enrollment. Cover partial initial root/token provisioning and repair policy.
 - [ ] Actual flash interruption/rollover tests, timeout/readback failures, wear and
@@ -107,7 +116,7 @@ they do not certify the complete assembled device or all firmware integrations.
 ## Remove development surfaces and package
 
 - [ ] Build production application without `firmware/security`/benchmark command
-  dispatchers, `FV_DEBUG_OTP_INSPECT`, `FV_DEBUG_ENROLLMENT`, `FV_DEBUG_STARTUP`, public test passwords,
+  dispatchers, `FV_DEBUG_OTP_INSPECT`, `FV_DEBUG_ENROLLMENT`, `FV_DEBUG_STARTUP`, `FV_DEBUG_BOOT_TRACE`, public test passwords,
   test RNGs, raw memory/secret export or factory reset shortcuts.
 - [x] Build variants demonstrate inspector and enrollment-command handlers can be
   compiled out. Normal internal final-attempt destruction is a required behavior,
@@ -117,3 +126,31 @@ they do not certify the complete assembled device or all firmware integrations.
   of the selected Nettle LGPL/GPL licence path; review other bundled licences.
 - [ ] Archive per-board enrollment/manufacturing records without secret contents,
   final firmware hash, test results and reviewed release configuration.
+
+### USB mass-storage development follow-up
+
+- [ ] Replace public-fixture CDC unlock/lock with trusted UI/session policy before release.
+- [ ] Validate real-host enumeration, lock/unlock, eject, suspend/reset and reconnect.
+- [ ] Validate filesystem durability and USB interruption during authenticated writes;
+      current writes sync per batch but do not promise atomic multi-sector updates.
+- [ ] Measure synchronous 4 KiB MSC callback latency/throughput and define worker-fault recovery.
+- [ ] Validate host-visible capacity and metadata isolation; no raw SD access.
+- [ ] Integrate FIDO HID and physical approvals without allowing storage I/O to approve FIDO.
+
+### Device UI and full-card setup
+
+- [ ] Disable `FV_DEBUG_SCREEN` (framebuffer extraction and remote button presses)
+      and `FV_DEBUG_SESSION` (public fixture unlocks); verify rejection in the
+      final binary. Physical controls must remain functional.
+- [ ] Validate full-capacity create, filesystem format, encrypted file round-trip,
+      settings persistence, wrong-sequence accounting and cold reconnect on board.
+- [ ] Validate C-only, A-only, both-powered C preference, route changes and loss of
+      power; confirm no route change preserves an unlocked storage session.
+- [ ] Integrate/test physical TFT output from the shared UI framebuffer; current
+      development viewer works with the disconnected display.
+- [ ] Finalize credential UX, terminal lockout/recovery and authenticated reset UX;
+      current reset consumes one of eight OTP token slots. Document unmounting.
+
+- [ ] Hardware-test lazy bitmap first-write power loss, including a batch crossing
+      bitmap sectors; verify SD sync semantics, logical-zero reads before publish,
+      HMAC failure on corruption, and existing-volume compatibility.

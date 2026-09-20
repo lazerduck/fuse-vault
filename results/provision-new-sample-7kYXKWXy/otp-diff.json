@@ -1,0 +1,88 @@
+{
+  "device_id": "66ED2A91873CF67F",
+  "changed_pages": [
+    {
+      "page": 16,
+      "changes": {
+        "blank": {
+          "before": 64,
+          "after": 47
+        },
+        "programmed": {
+          "before": 0,
+          "after": 17
+        }
+      },
+      "locks_before": {
+        "software_secure": "read-write",
+        "software_nonsecure": "read-write",
+        "write_key": 0,
+        "read_key": 0,
+        "no_key_inaccessible": false,
+        "secure": "read-write",
+        "nonsecure": "read-write",
+        "bootloader": "read-write",
+        "redundant_copies_agree": [
+          true,
+          true
+        ]
+      },
+      "locks_after": {
+        "software_secure": "read-write",
+        "software_nonsecure": "read-write",
+        "write_key": 0,
+        "read_key": 0,
+        "no_key_inaccessible": false,
+        "secure": "read-write",
+        "nonsecure": "read-write",
+        "bootloader": "read-write",
+        "redundant_copies_agree": [
+          true,
+          true
+        ]
+      }
+    },
+    {
+      "page": 17,
+      "changes": {
+        "blank": {
+          "before": 64,
+          "after": 46
+        },
+        "programmed": {
+          "before": 0,
+          "after": 18
+        }
+      },
+      "locks_before": {
+        "software_secure": "read-write",
+        "software_nonsecure": "read-write",
+        "write_key": 0,
+        "read_key": 0,
+        "no_key_inaccessible": false,
+        "secure": "read-write",
+        "nonsecure": "read-write",
+        "bootloader": "read-write",
+        "redundant_copies_agree": [
+          true,
+          true
+        ]
+      },
+      "locks_after": {
+        "software_secure": "read-write",
+        "software_nonsecure": "read-write",
+        "write_key": 0,
+        "read_key": 0,
+        "no_key_inaccessible": false,
+        "secure": "read-write",
+        "nonsecure": "read-write",
+        "bootloader": "read-write",
+        "redundant_copies_agree": [
+          true,
+          true
+        ]
+      }
+    }
+  ],
+  "note": "Occupancy is aggregate. Same-category data changes are not detected; unreadable does not mean blank or erased."
+}

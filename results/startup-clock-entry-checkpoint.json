@@ -1,0 +1,12 @@
+{
+  "command": "boot",
+  "ok": true,
+  "stage": 0,
+  "start_requested": false,
+  "sense_a": 0,
+  "sense_c": 1,
+  "sense_a_duplicate": 0,
+  "sense_c_duplicate": 1,
+  "previous_trace_valid": true,
+  "previous_trace_stage": 8
+}

@@ -33,6 +33,11 @@ typedef struct {
     fv_random_bytes random;
     void *random_context;
     fv_kdf_limits kdf_limits;
+    /* Optional initialization workspace; not used by normal reads/writes. */
+    uint8_t *format_scratch;
+    uint32_t format_sectors;
+    fv_format_progress format_progress;
+    void *format_context;
 } fv_vault_platform;
 typedef enum {FV_VAULT_OK=0,FV_VAULT_INVALID=-1,FV_VAULT_STATE=-2,
     FV_VAULT_IO=-3,FV_VAULT_AUTH=-4,FV_VAULT_DENIED=-5,
@@ -48,6 +53,8 @@ typedef struct {
     bool unlocked;
 } fv_vault;
 void fv_vault_lock(fv_vault *);
+/* Read-only UI hint from the flash-anchored header; no guess or attempt commit. */
+fv_vault_result fv_vault_credential_profile(const fv_vault_platform *,uint16_t *);
 /* Call at boot even without an SD. Completes pending failure/limit handling. */
 fv_vault_result fv_vault_recover(const fv_vault_platform *);
 /* Destructive SD initialization, only with explicitly pre-provisioned EMPTY

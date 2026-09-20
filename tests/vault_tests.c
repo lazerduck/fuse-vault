@@ -1,5 +1,6 @@
 #include "fuse_vault/vault.h"
 #include <stdio.h>
+#include <mbedtls/sha256.h>
 #include <stdlib.h>
 #include <string.h>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"%s:%d: %s\n",__FILE__,__LINE__,#x);exit(1);}}while(0)
@@ -205,8 +206,63 @@ static void batches_and_policy(void) {
     CHECK(unlock(&f,replacement,sizeof(replacement)-1)==FV_VAULT_OK);
     finish(&f);
 }
+/* Build an original-layout envelope independently of the new creation path. */
+static void legacy_volume(void) {
+    fixture f;init(&f);fv_device_state state;CHECK(!load(&f,&state));
+    fv_envelope_config c={.volume={.layout_version=1,.volume_id={7},.logical_blocks=64,.layer_count=4},
+        .credential_generation=1,.credential_profile=1,.iterations=3,.token_slot=3,.policy={10,FV_LIMIT_DESTROY}};
+    memcpy(c.device_id,state.device_id,16);memcpy(c.volume.cipher_ids,algorithms,sizeof(algorithms));
+    uint8_t vmk[32]={8},bound[32];alignas(4) uint8_t header[512],data[512];
+    CHECK(!binding(&f,c.volume.volume_id,3,bound));
+    CHECK(!fv_envelope_seal(&c,CAPACITY,f.platform.kdf_limits,bound,password,sizeof(password)-1,
+        vmk,random_bytes,&f,header));
+    CHECK(write_blocks(&f.device,0,1,header)==FV_BLOCK_OK);
+    CHECK(write_blocks(&f.device,8,1,header)==FV_BLOCK_OK);CHECK(sync_device(&f.device)==FV_BLOCK_OK);
+    state.status=FV_ENROLLMENT_ACTIVE;state.credential_generation=1;state.policy=c.policy;
+    memcpy(state.volume_id,c.volume.volume_id,16);CHECK(!mbedtls_sha256(header,512,state.header_hash,0));persist(&f,&state);
+    CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);CHECK(!f.session.store.bitmap_blocks);
+    memset(data,0x49,512);CHECK(fv_vault_write(&f.session,0,1,data)==FV_BLOCK_OK);
+    fv_vault_lock(&f.session);CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+    CHECK(fv_vault_read(&f.session,0,1,data)==FV_BLOCK_OK);for(unsigned i=0;i<512;i++)CHECK(data[i]==0x49);
+    CHECK(change(&f)==FV_VAULT_OK);CHECK(unlock(&f,replacement,sizeof(replacement)-1)==FV_VAULT_OK);
+    CHECK(f.session.config.volume.layout_version==1 && !f.session.store.bitmap_blocks);
+    CHECK(fv_vault_read(&f.session,0,1,data)==FV_BLOCK_OK);for(unsigned i=0;i<512;i++)CHECK(data[i]==0x49);
+    finish(&f);
+}
+static void credential_methods(void){
+    fixture f;init(&f);create(&f,fv_auth_policy_default());
+    CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+    alignas(4) uint8_t data[512];memset(data,0x73,512);CHECK(fv_vault_write(&f.session,0,1,data)==FV_BLOCK_OK);
+    uint8_t vmk[32];memcpy(vmk,f.session.vmk,32);fv_vault_lock(&f.session);
+    const uint8_t wheel[]={0,99,42,7},words[]={0,63,12,28},pattern[]={1,2,3,4,1,2,3,4};
+    const uint8_t *inputs[]={password,wheel,words,pattern};size_t lengths[]={sizeof(password)-1,4,4,8};
+    const uint16_t profiles[]={1,3,4,2};
+    for(unsigned i=0;i<4;i++){
+        unsigned commits=f.commits;uint16_t profile=0;
+        CHECK(fv_vault_credential_profile(&f.platform,&profile)==FV_VAULT_OK && profile==profiles[i]);
+        CHECK(f.commits==commits); /* Merely selecting the entry UI spends no guess. */
+        if(i){
+            CHECK(unlock(&f,inputs[i],lengths[i])==FV_VAULT_OK);
+            CHECK(!memcmp(vmk,f.session.vmk,32));CHECK(fv_vault_read(&f.session,0,1,data)==FV_BLOCK_OK);
+            for(unsigned j=0;j<512;j++)CHECK(data[j]==0x73);
+            fv_vault_lock(&f.session);
+        }
+        if(i<3){
+            CHECK(fv_vault_change_credential(&f.session,&f.platform,inputs[i],lengths[i],inputs[i+1],lengths[i+1],profiles[i+1],3,fv_auth_policy_default(),false)==FV_VAULT_OK);
+            fv_device_state state;CHECK(!load(&f,&state));CHECK(state.token_slot==3 && !f.destroys && !state.attempts);
+        }
+    }
+    unsigned commits=f.commits;uint16_t hinted=99;
+    for(unsigned slot=0;slot<2;slot++){
+        CHECK(read_blocks(&f.device,slot*8,1,data)==FV_BLOCK_OK);data[152]^=1;
+        CHECK(write_blocks(&f.device,slot*8,1,data)==FV_BLOCK_OK);
+    }
+    CHECK(fv_vault_credential_profile(&f.platform,&hinted)==FV_VAULT_IO && !hinted);
+    CHECK(f.commits==commits); /* Forged method hints do not consume attempts. */
+    finish(&f);
+}
 int main(void) {
-    lifecycle();attempts();failures();batches_and_policy();
+    lifecycle();attempts();failures();batches_and_policy();legacy_volume();credential_methods();
     puts("Vault: file-backed lifecycle, rewrap/replay, attempt/destruction and commit/SD failure injection passed");
     return 0;
 }

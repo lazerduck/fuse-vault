@@ -1,0 +1,11 @@
+{
+  "reboot_result": 0,
+  "after": {
+    "worker_stage": 0,
+    "start_requested": false,
+    "previous_trace_valid": true,
+    "previous_trace_stage": 6,
+    "sense_a": 0,
+    "sense_c": 1
+  }
+}

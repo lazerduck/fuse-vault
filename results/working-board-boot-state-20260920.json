@@ -1,0 +1,89 @@
+{
+  "serial_requested": "66ED2A91873CF67F",
+  "utc": "2026-09-20T16:17:55.956293+00:00",
+  "reads": {
+    "info": {
+      "command": [
+        "/tmp/fv-picotool-usb/picotool",
+        "info",
+        "-a",
+        "--debug",
+        "--ser",
+        "66ED2A91873CF67F"
+      ],
+      "returncode": 0,
+      "stdout": "Program Information\n name:                   fuse_vault_security\n binary start:           0x10000000\n binary end:             0x10023470\n target chip:            RP2350\n image type:             ARM Secure\n\nFixed Pin Information\n none\n\nBuild Information\n sdk version:            2.3.0\n pico_board:             fuse_vault\n boot2_name:             boot2_generic_03h\n build date:             Sep 19 2026\n build attributes:       Release\n\nMetadata Block 1\n address:                0x10000138\n next block address:     0x1002345c\n block type:             image def\n target chip:            RP2350\n image type:             ARM Secure\n extra security:         not enabled\n\nMetadata Block 2\n address:                0x1002345c\n next block address:     0x10000138\n block type:             ignored\n\nDevice Information\n type:                   RP2350\n revision:               A4\n package:                QFN60\n chipid:                 0x66ed2a91873cf67f\n flash devinfo:          0x0c00\n current cpu:            ARM\n available cpus:         ARM, RISC-V\n default cpu:            ARM\n secure boot:            0\n debug enable:           1\n secure debug enable:    1\n boot_random:            56e30981:c493696c:197bd021:9044c158\n boot type:              bootsel\n last booted partition:  none\n diagnostic source:      slot 0\n last boot diagnostics:  0x00000000\n reboot param 0:         0x00000000\n reboot param 1:         0x00000000\n rom gitrev:             0xa8bfe860\n flash size:             2048K\n",
+      "stderr": ""
+    },
+    "partitions": {
+      "command": [
+        "/tmp/fv-picotool-usb/picotool",
+        "partition",
+        "info",
+        "--ser",
+        "66ED2A91873CF67F"
+      ],
+      "returncode": 0,
+      "stdout": "there is no partition table\nun-partitioned_space : S(rw) NSBOOT(rw) NS(rw), uf2 { 'absolute', 'rp2350-arm-s', 'rp2350-riscv', 'data' }\n",
+      "stderr": ""
+    },
+    "boot_otp_raw": {
+      "command": [
+        "/tmp/fv-picotool-usb/picotool",
+        "otp",
+        "get",
+        "-r",
+        "-n",
+        "1:*",
+        "2:*",
+        "--ser",
+        "66ED2A91873CF67F"
+      ],
+      "returncode": 255,
+      "stdout": "ERROR: Invalid selector 1:*; page row number must be even and between 0 and 0x40\n",
+      "stderr": ""
+    },
+    "otp_locks": {
+      "command": [
+        "/tmp/fv-picotool-usb/picotool",
+        "otp",
+        "get",
+        "-r",
+        "-n",
+        "PAGE0_LOCK0",
+        "PAGE0_LOCK1",
+        "PAGE1_LOCK0",
+        "PAGE1_LOCK1",
+        "PAGE2_LOCK0",
+        "PAGE2_LOCK1",
+        "PAGE16_LOCK0",
+        "PAGE16_LOCK1",
+        "PAGE17_LOCK0",
+        "PAGE17_LOCK1",
+        "PAGE18_LOCK0",
+        "PAGE18_LOCK1",
+        "PAGE19_LOCK0",
+        "PAGE19_LOCK1",
+        "PAGE20_LOCK0",
+        "PAGE20_LOCK1",
+        "PAGE21_LOCK0",
+        "PAGE21_LOCK1",
+        "PAGE22_LOCK0",
+        "PAGE22_LOCK1",
+        "PAGE23_LOCK0",
+        "PAGE23_LOCK1",
+        "PAGE24_LOCK0",
+        "PAGE24_LOCK1",
+        "PAGE59_LOCK0",
+        "PAGE59_LOCK1",
+        "PAGE60_LOCK0",
+        "PAGE60_LOCK1",
+        "--ser",
+        "66ED2A91873CF67F"
+      ],
+      "returncode": 0,
+      "stdout": "ROW 0x0f80: OTP_DATA_PAGE0_LOCK0 (RBIT-1)\n\n    VALUE 0x3f3f3f\n\n    field R2 (bits 16-23) = 3f\n    field R1 (bits 8-15) = 3f\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 7\n    field KEY_W (bits 0-2) = 7\n\nROW 0x0f81: OTP_DATA_PAGE0_LOCK1 (RBIT-1)\n\n    VALUE 0x151515\n\n    field R2 (bits 16-23) = 15\n    field R1 (bits 8-15) = 15\n    field LOCK_BL (bits 4-5) = 1\n    field LOCK_NS (bits 2-3) = 1\n    field LOCK_S (bits 0-1) = 1\n\nROW 0x0f82: OTP_DATA_PAGE1_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0f83: OTP_DATA_PAGE1_LOCK1 (RBIT-1)\n\n    VALUE 0x040404\n\n    field R2 (bits 16-23) = 4\n    field R1 (bits 8-15) = 4\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 1\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0f84: OTP_DATA_PAGE2_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0f85: OTP_DATA_PAGE2_LOCK1 (RBIT-1)\n\n    VALUE 0x040404\n\n    field R2 (bits 16-23) = 4\n    field R1 (bits 8-15) = 4\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 1\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fa0: OTP_DATA_PAGE16_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fa1: OTP_DATA_PAGE16_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fa2: OTP_DATA_PAGE17_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fa3: OTP_DATA_PAGE17_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fa4: OTP_DATA_PAGE18_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fa5: OTP_DATA_PAGE18_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fa6: OTP_DATA_PAGE19_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fa7: OTP_DATA_PAGE19_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fa8: OTP_DATA_PAGE20_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fa9: OTP_DATA_PAGE20_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0faa: OTP_DATA_PAGE21_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fab: OTP_DATA_PAGE21_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fac: OTP_DATA_PAGE22_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fad: OTP_DATA_PAGE22_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fae: OTP_DATA_PAGE23_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0faf: OTP_DATA_PAGE23_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0fb0: OTP_DATA_PAGE24_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0fb1: OTP_DATA_PAGE24_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0ff6: OTP_DATA_PAGE59_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0ff7: OTP_DATA_PAGE59_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n\nROW 0x0ff8: OTP_DATA_PAGE60_LOCK0 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field NO_KEY_STATE (bit 6) = 0\n    field KEY_R (bits 3-5) = 0\n    field KEY_W (bits 0-2) = 0\n\nROW 0x0ff9: OTP_DATA_PAGE60_LOCK1 (RBIT-1)\n\n    VALUE 0x000000\n\n    field R2 (bits 16-23) = 0\n    field R1 (bits 8-15) = 0\n    field LOCK_BL (bits 4-5) = 0\n    field LOCK_NS (bits 2-3) = 0\n    field LOCK_S (bits 0-1) = 0\n",
+      "stderr": ""
+    }
+  }
+}

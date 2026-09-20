@@ -1,0 +1,1 @@
+error: {"authority": "OTP-and-flash", "command": "persistent", "elapsed_us": 5166, "iterations": 60000, "ok": false, "operation": 1, "phase": "recover", "result": -5}

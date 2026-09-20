@@ -45,6 +45,15 @@ static void vector(const uint8_t expected[512],const uint8_t bad_kw[512],const u
     const uint8_t navigation[]={1,5,2,4,3};
     CHECK(!fv_envelope_seal(&c,2133,limits,binding,navigation,5,vmk,random_bytes,&rng,bad));
     CHECK(!fv_envelope_open(bad,2133,limits,binding,navigation,5,out));CHECK(!memcmp(out,vmk,32));
+    for(unsigned profile=3;profile<=4;profile++){
+        uint8_t chosen[4]={0,1,2,(uint8_t)(profile==3?99:63)};
+        c.credential_profile=(uint16_t)profile;rng=(random_state){0};
+        CHECK(!fv_envelope_seal(&c,2133,limits,binding,chosen,4,vmk,random_bytes,&rng,bad));
+        CHECK(!fv_envelope_open(bad,2133,limits,binding,chosen,4,out));CHECK(!memcmp(out,vmk,32));
+        CHECK(fv_envelope_open(bad,2133,limits,binding,chosen,3,out));
+        chosen[3]++;rng=(random_state){0};
+        CHECK(fv_envelope_seal(&c,2133,limits,binding,chosen,4,vmk,random_bytes,&rng,bad));CHECK(!rng.calls);
+    }
 }
 static void wrap_vector(uint16_t id,const uint8_t key[32],const uint8_t share[32],const uint8_t expected[40]) {
     uint8_t wrapped[40],out[32];CHECK(!fv_share_wrap(id,key,share,wrapped));CHECK(!memcmp(wrapped,expected,40));

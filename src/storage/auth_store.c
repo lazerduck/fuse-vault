@@ -3,20 +3,30 @@
 #include <string.h>
 static uint64_t now(fv_auth_store *s){return s->now_us?s->now_us():0;}
 void fv_auth_close(fv_auth_store *s){if(s)mbedtls_platform_zeroize(s,sizeof(*s));}
-fv_block_result_t fv_auth_open(fv_auth_store *s,fv_block_device_t *d,uint64_t base,
+static fv_block_result_t open_store(bool bitmap,fv_auth_store *s,fv_block_device_t *d,uint64_t base,
     uint64_t blocks,const uint8_t volume[16],const uint8_t key[32],uint64_t (*timer)(void)) {
     if(!s)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
     fv_auth_close(s);
     if(!d || !d->ops || !d->ops->read || !d->ops->write || !d->ops->sync ||
        !d->ops->block_count || !blocks || !volume || !key)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
     uint64_t meta=blocks/15+(blocks%15!=0),capacity=d->ops->block_count(d);
-    if(base>capacity || meta>capacity-base || blocks>capacity-base-meta)return FV_BLOCK_ERROR_OUT_OF_RANGE;
+    uint64_t map=bitmap?meta/4096+(meta%4096!=0):0;
+    if(base>capacity || map>capacity-base || meta>capacity-base-map || blocks>capacity-base-map-meta)return FV_BLOCK_ERROR_OUT_OF_RANGE;
     if(fv_hmac_init(&s->hmac,key,32))return FV_BLOCK_ERROR_INVALID_ARGUMENT;
-    s->device=d;s->base=base;s->blocks=blocks;s->metadata_blocks=meta;s->data_base=base+meta;
+    s->device=d;s->base=base+map;s->blocks=blocks;s->metadata_blocks=meta;s->data_base=base+map+meta;
+    s->bitmap_base=base;s->bitmap_blocks=map;
     s->now_us=timer;memcpy(s->volume,volume,16);s->ready=true;return FV_BLOCK_OK;
 }
+fv_block_result_t fv_auth_open(fv_auth_store *s,fv_block_device_t *d,uint64_t base,
+    uint64_t blocks,const uint8_t volume[16],const uint8_t key[32],uint64_t (*timer)(void)) {
+    return open_store(false,s,d,base,blocks,volume,key,timer);
+}
+fv_block_result_t fv_auth_open_bitmap(fv_auth_store *s,fv_block_device_t *d,uint64_t base,
+    uint64_t blocks,const uint8_t volume[16],const uint8_t key[32],uint64_t (*timer)(void)) {
+    return open_store(true,s,d,base,blocks,volume,key,timer);
+}
 static fv_block_result_t fault(fv_auth_store *s,fv_block_result_t r) {
-    s->ready=false;s->cache_count=0;return r;
+    s->ready=false;s->cache_count=0;s->bitmap_cached=false;return r;
 }
 static fv_block_result_t meta_io(fv_auth_store *s,uint64_t first,uint32_t count,uint8_t *data,bool write) {
     uint64_t start=now(s);
@@ -26,18 +36,33 @@ static fv_block_result_t meta_io(fv_auth_store *s,uint64_t first,uint32_t count,
     if(write)s->stats.metadata_writes+=count;else s->stats.metadata_reads+=count;
     return r;
 }
-fv_block_result_t fv_auth_format(fv_auth_store *s) {
+fv_block_result_t fv_auth_format_buffered(fv_auth_store *s,uint8_t *scratch,uint32_t sectors,
+    fv_format_progress progress,void *context) {
     if(!s || !s->ready)return FV_BLOCK_ERROR_NOT_READY;
-    s->cache_count=0;memset(s->cache,0,sizeof(s->cache));
-    for(uint64_t first=0;first<s->metadata_blocks;) {
-        uint32_t count=(uint32_t)((s->metadata_blocks-first)>6?6:s->metadata_blocks-first);
-        fv_block_result_t r=meta_io(s,first,count,s->cache,true);
+    if(!scratch || ((uintptr_t)scratch&3) || !sectors || sectors>256)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
+    s->cache_count=0;memset(scratch,0,(size_t)sectors*512);
+    s->bitmap_cached=false;
+    uint64_t total=s->bitmap_blocks?s->bitmap_blocks:s->metadata_blocks;
+    if(progress)progress(context,0,total);
+    for(uint64_t first=0;first<total;) {
+        uint32_t count=(uint32_t)((total-first)>sectors?sectors:total-first);
+        fv_block_result_t r;
+        if(s->bitmap_blocks){
+            uint64_t started=now(s);
+            r=s->device->ops->write(s->device,s->bitmap_base+first,count,scratch);
+            s->stats.metadata_us+=now(s)-started;s->stats.metadata_writes+=count;
+        }else r=meta_io(s,first,count,scratch,true);
         if(r!=FV_BLOCK_OK)return fault(s,r);
         first+=count;
+        if(progress)progress(context,first,total);
     }
     uint64_t start=now(s);fv_block_result_t r=s->device->ops->sync(s->device);
     s->stats.metadata_us+=now(s)-start;
     return r==FV_BLOCK_OK?r:fault(s,r);
+}
+fv_block_result_t fv_auth_format(fv_auth_store *s) {
+    if(!s)return FV_BLOCK_ERROR_NOT_READY;
+    return fv_auth_format_buffered(s,s->cache,FV_TAG_CACHE_BLOCKS,NULL,NULL);
 }
 static fv_block_result_t validate(fv_auth_store *s,uint64_t lba,uint32_t count,const void *p) {
     if(!s || !p || ((uintptr_t)p&3) || !count || count>64)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
@@ -45,13 +70,73 @@ static fv_block_result_t validate(fv_auth_store *s,uint64_t lba,uint32_t count,c
     if(lba>=s->blocks || count>s->blocks-lba)return FV_BLOCK_ERROR_OUT_OF_RANGE;
     return FV_BLOCK_OK;
 }
+static fv_block_result_t bitmap_load(fv_auth_store *s,uint64_t metadata_sector) {
+    uint64_t sector=metadata_sector/4096;
+    if(s->bitmap_cached && s->bitmap_cached_sector==sector)return FV_BLOCK_OK;
+    s->bitmap_cached=false;
+    uint64_t started=now(s);
+    fv_block_result_t r=s->device->ops->read(s->device,s->bitmap_base+sector,1,s->bitmap_cache);
+    s->stats.metadata_us+=now(s)-started;++s->stats.metadata_reads;
+    if(r!=FV_BLOCK_OK)return r;
+    s->bitmap_cached_sector=sector;s->bitmap_cached=true;return FV_BLOCK_OK;
+}
+static bool bitmap_bit(const fv_auth_store *s,uint64_t metadata_sector) {
+    unsigned bit=(unsigned)(metadata_sector%4096);
+    return (s->bitmap_cache[bit/8]&(1u<<(bit%8)))!=0;
+}
+/* Publish new metadata only AFTER its ciphertext and tags are durable. Bitmap
+ * sectors are read-modify-written, preserving unrelated initialized regions. */
+static fv_block_result_t publish(fv_auth_store *s,uint64_t first,uint32_t count) {
+    unsigned offset=(unsigned)(first-s->cache_first);
+    unsigned mask=((1u<<count)-1u)<<offset;
+    if(!s->bitmap_blocks || (s->cache_initialized&mask)==mask)return FV_BLOCK_OK;
+    fv_block_result_t r=s->device->ops->sync(s->device);
+    if(r!=FV_BLOCK_OK)return r;
+    for(unsigned i=0;i<count;){
+        uint64_t sector=first+i;
+        r=bitmap_load(s,sector);if(r!=FV_BLOCK_OK)return r;
+        bool changed=false;
+        do {
+            unsigned bit=(unsigned)((first+i)%4096);
+            if(!(s->cache_initialized&(1u<<(offset+i)))){
+                s->bitmap_cache[bit/8]|=(uint8_t)(1u<<(bit%8));changed=true;
+            }
+            ++i;
+        }while(i<count && (first+i)/4096==sector/4096);
+        if(changed){
+            uint64_t started=now(s);
+            r=s->device->ops->write(s->device,s->bitmap_base+sector/4096,1,s->bitmap_cache);
+            s->stats.metadata_us+=now(s)-started;++s->stats.metadata_writes;
+            if(r!=FV_BLOCK_OK)return r;
+            r=s->device->ops->sync(s->device);if(r!=FV_BLOCK_OK)return r;
+        }
+    }
+    s->cache_initialized|=(uint8_t)mask;return FV_BLOCK_OK;
+}
 static fv_block_result_t load(fv_auth_store *s,uint64_t lba,uint32_t count) {
     uint64_t first=lba/15,last=(lba+count-1)/15;
     if(s->cache_count && first>=s->cache_first && last<s->cache_first+s->cache_count)return FV_BLOCK_OK;
     s->cache_count=0;
     uint32_t n=(uint32_t)(last-first+1);
-    fv_block_result_t r=meta_io(s,first,n,s->cache,false);
-    if(r!=FV_BLOCK_OK)return fault(s,r);
+    s->cache_initialized=0;
+    if(!s->bitmap_blocks){
+        fv_block_result_t r=meta_io(s,first,n,s->cache,false);
+        if(r!=FV_BLOCK_OK)return fault(s,r);
+    }else {
+        /* Read written runs together; never inspect stale uninitialized sectors. */
+        for(unsigned i=0;i<n;i++){
+            fv_block_result_t r=bitmap_load(s,first+i);if(r!=FV_BLOCK_OK)return fault(s,r);
+            if(bitmap_bit(s,first+i))s->cache_initialized|=(uint8_t)(1u<<i);
+        }
+        memset(s->cache,0,n*512u);
+        for(unsigned i=0;i<n;){
+            if(!(s->cache_initialized&(1u<<i))){++i;continue;}
+            unsigned start=i;
+            while(i<n && (s->cache_initialized&(1u<<i)))++i;
+            fv_block_result_t r=meta_io(s,first+start,i-start,s->cache+start*512u,false);
+            if(r!=FV_BLOCK_OK)return fault(s,r);
+        }
+    }
     s->cache_first=first;s->cache_count=n;return FV_BLOCK_OK;
 }
 static uint8_t *entry(fv_auth_store *s,uint64_t lba) {return s->cache+(size_t)(lba/15-s->cache_first)*512;}
@@ -77,6 +162,7 @@ fv_block_result_t fv_auth_write(fv_auth_store *s,uint64_t lba,uint32_t count,con
     if(r!=FV_BLOCK_OK)return fault(s,r);
     uint64_t first=lba/15;uint32_t n=(uint32_t)((lba+count-1)/15-first+1);
     r=meta_io(s,first,n,entry(s,lba),true);
+    if(r==FV_BLOCK_OK)r=publish(s,first,n);
     return r==FV_BLOCK_OK?r:fault(s,r);
 }
 fv_block_result_t fv_auth_read(fv_auth_store *s,uint64_t lba,uint32_t count,uint8_t *data,uint64_t *unset) {

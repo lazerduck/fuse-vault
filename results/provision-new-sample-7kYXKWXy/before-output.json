@@ -1,0 +1,1116 @@
+{
+  "command": "otp",
+  "schema": 1,
+  "ok": true,
+  "device_id": "66ED2A91873CF67F",
+  "pages": [
+    {
+      "page": 0,
+      "lock_raw": [
+        4144959,
+        1381653
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 5,
+      "blank": 47,
+      "programmed": 17,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 1,
+      "lock_raw": [
+        0,
+        263172
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 4,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 2,
+      "lock_raw": [
+        0,
+        263172
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 4,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 3,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 4,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 5,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 6,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 7,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 8,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 9,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 10,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 11,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 12,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 13,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 14,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 15,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 16,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 17,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 18,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 19,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 20,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 21,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 22,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 23,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 24,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 25,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 26,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 27,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 28,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 29,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 30,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 31,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 32,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 33,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 34,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 35,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 36,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 37,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 38,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 39,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 40,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 41,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 42,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 43,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 44,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 45,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 46,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 47,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 48,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 49,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 50,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 51,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 52,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 53,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 54,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 55,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 56,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 57,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 58,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 59,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 60,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 61,
+      "lock_raw": [
+        0,
+        0
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 0,
+      "blank": 64,
+      "programmed": 0,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 62,
+      "lock_raw": [
+        0,
+        263172
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 4,
+      "blank": 60,
+      "programmed": 4,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    },
+    {
+      "page": 63,
+      "lock_raw": [
+        0,
+        1315860
+      ],
+      "lock_status": [
+        0,
+        0
+      ],
+      "software_lock": 4,
+      "blank": 62,
+      "programmed": 2,
+      "all_ones": 0,
+      "unreadable": 0,
+      "read_error": 0
+    }
+  ],
+  "captured_at": "2026-09-20T16:36:18.731464+00:00",
+  "firmware": {
+    "command": "info",
+    "ok": true,
+    "protocol": 1,
+    "device_id": "66ED2A91873CF67F",
+    "sdk": "2.3.0",
+    "chip_revision": 3,
+    "rom_revision": 4,
+    "cpu_hz": 150000000,
+    "sd_hz": 25000000,
+    "otp_inspection": true,
+    "otp_writes": true,
+    "persistent_authority": true,
+    "debug_enrollment": true,
+    "hmac_backend": 1,
+    "session_bytes": 7048,
+    "worker_stack_bytes": 32768,
+    "production_ready": false
+  }
+}

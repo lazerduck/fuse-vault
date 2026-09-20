@@ -11,6 +11,10 @@ typedef struct {uint64_t hmac_us,metadata_us,data_us,metadata_reads,metadata_wri
 typedef struct {
     fv_block_device_t *device;
     uint64_t base,blocks,metadata_blocks,data_base;
+    uint64_t bitmap_base,bitmap_blocks,bitmap_cached_sector;
+    bool bitmap_cached;
+    uint8_t cache_initialized;
+    alignas(4) uint8_t bitmap_cache[512];
     uint64_t (*now_us)(void);
     uint8_t volume[16];fv_hmac hmac;
     bool ready;
@@ -21,9 +25,19 @@ typedef struct {
 /* Open does not format or write. Layout and keys must be trusted by caller. */
 fv_block_result_t fv_auth_open(fv_auth_store *,fv_block_device_t *,uint64_t base,
     uint64_t blocks,const uint8_t volume[16],const uint8_t key[32],uint64_t (*now_us)(void));
+/* Bitmap precedes metadata at base. Unset bits ignore old metadata/data entirely. */
+fv_block_result_t fv_auth_open_bitmap(fv_auth_store *,fv_block_device_t *,uint64_t base,
+    uint64_t blocks,const uint8_t volume[16],const uint8_t key[32],uint64_t (*now_us)(void));
 void fv_auth_close(fv_auth_store *);
 /* Explicit destructive initialization of metadata only. */
 fv_block_result_t fv_auth_format(fv_auth_store *);
+/* Optional caller-owned aligned scratch (1..256 sectors, must not alias store).
+ * Progress counts written bitmap sectors (lazy) or metadata sectors (legacy),
+ * not final sync success.
+ * Callback must not reenter the store. No change to the disk format. */
+typedef void (*fv_format_progress)(void *,uint64_t completed,uint64_t total);
+fv_block_result_t fv_auth_format_buffered(fv_auth_store *,uint8_t *scratch,uint32_t sectors,
+    fv_format_progress,void *context);
 /* Requests are 1..64 whole sectors. Read authenticates the complete requested
  * batch before success; unset_mask indicates zero-filled sectors to NOT decrypt.
  * Buffer must be four-byte aligned. Writes are ciphertext, never plaintext. */

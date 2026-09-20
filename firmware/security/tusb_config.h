@@ -10,7 +10,12 @@
 #define CFG_TUD_CDC_RX_BUFSIZE 4096
 #define CFG_TUD_CDC_TX_BUFSIZE 4096
 #define CFG_TUD_CDC_EP_BUFSIZE 64
+#if FV_USB_MSC
+#define CFG_TUD_MSC 1
+#define CFG_TUD_MSC_EP_BUFSIZE 4096
+#else
 #define CFG_TUD_MSC 0
+#endif
 #define CFG_TUD_HID 0
 #define CFG_TUD_MIDI 0
 #define CFG_TUD_VENDOR 0

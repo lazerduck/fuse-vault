@@ -7,8 +7,11 @@
 #define FV_VOLUME_DESCRIPTOR_BYTES 128u
 #define FV_VOLUME_HEADER_BYTES 512u
 #define FV_VOLUME_METADATA_BASE 2064u
+/* Maximum layout-2 exposed sectors, including bitmap and tag overhead; capped for USB READ(10). */
+uint64_t fv_volume_max_blocks(uint64_t physical_blocks);
 
 typedef struct {
+    uint16_t layout_version; /* 0/1: legacy eager metadata; 2: lazy bitmap. */
     uint8_t volume_id[16];
     uint64_t logical_blocks;
     uint8_t layer_count;

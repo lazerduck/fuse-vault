@@ -75,6 +75,17 @@ static fv_vault_result select_header(const fv_vault_platform *p,const fv_device_
     }
     return FV_VAULT_IO;
 }
+fv_vault_result fv_vault_credential_profile(const fv_vault_platform *p,uint16_t *profile){
+    if(!profile)return FV_VAULT_INVALID;
+    *profile=0;
+    if(!platform_valid(p))return FV_VAULT_INVALID;
+    fv_device_state state;
+    if(p->authority.load(p->authority.context,&state) || !state_valid(&state) || state.status!=FV_ENROLLMENT_ACTIVE)return FV_VAULT_STATE;
+    alignas(4) uint8_t header[512];fv_envelope_config config;unsigned slot;
+    fv_vault_result r=select_header(p,&state,header,&config,&slot);
+    if(!r)*profile=config.credential_profile;
+    return r;
+}
 static int save_header(const fv_vault_platform *p,unsigned slot,const uint8_t h[512]) {
     alignas(4) uint8_t verify[512];
     return p->sd->ops->write(p->sd,slot*8,1,h)!=FV_BLOCK_OK ||
@@ -87,7 +98,7 @@ static int initialize_session(fv_vault *v,const fv_vault_platform *p,
     if(fv_derive_working_keys(vmk,&c->volume,&keys))goto done;
     for(unsigned i=0;i<c->volume.layer_count;i++)algorithms[i]=(fv_algorithm)c->volume.cipher_ids[i];
     if(fv_pipeline_init(&v->pipeline,algorithms,(const uint8_t (*)[64])keys.layers,c->volume.layer_count)!=FV_OK ||
-       fv_auth_open(&v->store,p->sd,FV_VOLUME_METADATA_BASE,c->volume.logical_blocks,
+       (c->volume.layout_version==2?fv_auth_open_bitmap:fv_auth_open)(&v->store,p->sd,FV_VOLUME_METADATA_BASE,c->volume.logical_blocks,
                     c->volume.volume_id,keys.integrity,NULL)!=FV_BLOCK_OK)goto done;
     v->config=*c;memcpy(v->vmk,vmk,32);v->platform=p;v->unlocked=true;r=0;
 done:
@@ -101,7 +112,7 @@ fv_vault_result fv_vault_create(const fv_vault_platform *p,uint64_t blocks,const
     if(r!=FV_VAULT_OK)return r;
     if(s.status!=FV_ENROLLMENT_EMPTY)return FV_VAULT_DENIED;
     if(!media_valid(p) || !p->random || !algorithms)return FV_VAULT_INVALID;
-    fv_envelope_config c={.volume={.logical_blocks=blocks,.layer_count=count},
+    fv_envelope_config c={.volume={.layout_version=2,.logical_blocks=blocks,.layer_count=count},
         .credential_generation=1,.credential_profile=profile,.iterations=iterations,
         .token_slot=s.token_slot,.policy=policy};
     memcpy(c.device_id,s.device_id,16);memcpy(c.volume.cipher_ids,algorithms,sizeof(c.volume.cipher_ids));
@@ -112,7 +123,10 @@ fv_vault_result fv_vault_create(const fv_vault_platform *p,uint64_t blocks,const
        fv_envelope_seal(&c,p->sd->ops->block_count(p->sd),p->kdf_limits,binding,secret,n,vmk,
                         p->random,p->random_context,header) || initialize_session(&temporary,p,&c,vmk))goto done;
     r=FV_VAULT_IO;
-    if(fv_auth_format(&temporary.store)!=FV_BLOCK_OK || save_header(p,0,header) || save_header(p,1,header))goto done;
+    fv_block_result_t formatted=p->format_scratch?
+        fv_auth_format_buffered(&temporary.store,p->format_scratch,p->format_sectors,p->format_progress,p->format_context):
+        fv_auth_format(&temporary.store);
+    if(formatted!=FV_BLOCK_OK || save_header(p,0,header) || save_header(p,1,header))goto done;
     s.status=FV_ENROLLMENT_ACTIVE;s.credential_generation=1;s.policy=policy;
     memcpy(s.volume_id,c.volume.volume_id,16);
     r=FV_VAULT_STATE;

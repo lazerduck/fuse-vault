@@ -1,4 +1,7 @@
 #include "bringup.h"
+#if FV_DEVICE_UI
+#include "device_ui_adapter.h"
+#endif
 #include "fuse_vault/vault.h"
 #include "fuse_vault/development_policy.h"
 #include "fuse_vault/rp2354_authority.h"
@@ -256,15 +259,165 @@ done:
         (unsigned long long)(time_us_64()-start),FV_ENROLLMENT_ITERATIONS);
 }
 #endif
+#if FV_USB_MSC
+static fv_vault usb_session;
+static uint32_t usb_generation;
+static void usb_lock(void) {
+    fv_vault_lock(&usb_session);++usb_generation;
+}
+void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *response) {
+    int result=FV_BLOCK_OK;
+    switch(request->op) {
+    case FV_USB_LOCK:usb_lock();break;
+    case FV_USB_READ:
+    case FV_USB_WRITE:
+        if(request->count>FV_USB_IO_BYTES/512 || !request->count)result=FV_BLOCK_ERROR_INVALID_ARGUMENT;
+        else if(request->op==FV_USB_READ)result=fv_vault_read(&usb_session,request->lba,request->count,request->data);
+        else result=fv_vault_write(&usb_session,request->lba,request->count,request->data);
+        /* Stop serving the medium on authentication or physical I/O failure. */
+        if(result!=FV_BLOCK_OK && result!=FV_BLOCK_ERROR_OUT_OF_RANGE &&
+           result!=FV_BLOCK_ERROR_INVALID_ARGUMENT)usb_lock();
+        break;
+    case FV_USB_SYNC:
+        /* No buffered writes: each fv_vault_write has already synced. */
+        if(!usb_session.unlocked)result=FV_BLOCK_ERROR_NOT_READY;
+        break;
+    case FV_USB_STATUS:break;
+    default:result=FV_BLOCK_ERROR_INVALID_ARGUMENT;break;
+    }
+    *response=(fv_usb_response){.result=result,.generation=usb_generation,
+        .unlocked=usb_session.unlocked,
+        .blocks=usb_session.unlocked?(uint32_t)usb_session.config.volume.logical_blocks:0};
+}
+#if FV_DEVICE_UI
+void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
+    int r=0,opened;fv_device_state state={0};
+    if(job->op!=UI_STATUS && job->op!=UI_ERASE && job->op!=UI_LOCK) {
+        if(!job->length || job->length>64)r=FV_VAULT_INVALID;
+        if(job->profile<2 || job->profile>4)r=FV_VAULT_INVALID;
+        if(job->profile>=3 && job->length!=4)r=FV_VAULT_INVALID;
+        for(unsigned i=0;i<job->length && !r;i++){
+            if(job->profile==2?(job->secret[i]<1 || job->secret[i]>4):job->secret[i]>=(job->profile==3?100:64))r=FV_VAULT_INVALID;
+        }
+    }
+    if((job->op==UI_CREATE || job->op==UI_POLICY) &&
+       (!job->attempts || job->attempts>100 || (job->action!=1 && job->action!=2)))r=FV_VAULT_INVALID;
+    if(job->op==UI_CHANGE && (!job->current_length || job->current_length>64 || (job->profile==2 && job->length<8)))r=FV_VAULT_INVALID;
+    if(job->op==UI_CREATE){
+        if((job->profile==2 && job->length<8) || !job->count || job->count>4)r=FV_VAULT_INVALID;
+        for(unsigned i=0;i<4;i++)if(i<job->count?(job->algorithms[i]!=1 && job->algorithms[i]!=2):job->algorithms[i]!=0)r=FV_VAULT_INVALID;
+    }
+    if(r)goto done;
+    if(job->op==UI_LOCK){usb_lock();goto done;}
+    if(job->op==UI_ERASE){
+        if(!usb_session.unlocked){r=FV_VAULT_DENIED;goto done;}
+        usb_lock();r=fv_enrollment_request_destruction(&persistent_device);goto done;
+    }
+    if(job->op==UI_STATUS)goto done;
+    if(job->op!=UI_CREATE && job->op!=UI_UNLOCK && job->op!=UI_POLICY && job->op!=UI_CHANGE){r=FV_VAULT_INVALID;goto done;}
+    usb_lock();
+    bool ready=sd_initialized?fv_rp2354_sd_reinitialize(&sd):fv_rp2354_sd_init(&sd);sd_initialized=true;
+    if(!ready){r=FV_VAULT_IO;goto done;}
+    if(job->op==UI_UNLOCK){
+        r=fv_vault_unlock(&usb_session,&persistent_platform,job->secret,job->length);
+        if(!r && usb_session.config.volume.logical_blocks>UINT32_MAX){usb_lock();r=FV_VAULT_INVALID;}
+        ++usb_generation;goto done;
+    }
+    if(!start_random()){r=FV_VAULT_IO;goto done;}
+    fv_auth_policy policy={job->attempts,(fv_limit_action)job->action};
+    if(job->op==UI_CHANGE){
+        r=persistent_platform.authority.load(persistent_platform.authority.context,&state);
+        if(!r)r=fv_vault_change_credential(&usb_session,&persistent_platform,job->current,job->current_length,
+            job->secret,job->length,job->profile,FV_ENROLLMENT_ITERATIONS,state.policy,false);
+        goto done;
+    }
+    if(job->op==UI_POLICY){
+        r=fv_vault_change_credential(&usb_session,&persistent_platform,job->secret,job->length,
+            job->secret,job->length,job->profile,FV_ENROLLMENT_ITERATIONS,policy,true);
+        goto done;
+    }
+    /* Reuse the existing 32 KiB diagnostic workspace; no extra RAM allocation. */
+    persistent_platform.format_scratch=buffer;
+    persistent_platform.format_sectors=sizeof(buffer)/512;
+    persistent_platform.format_progress=fv_device_ui_format_progress;
+    uint64_t blocks=fv_volume_max_blocks(sd.interface.ops->block_count(&sd.interface));
+    if(!blocks){r=FV_VAULT_INVALID;goto done;}
+    opened=fv_enrollment_open(&persistent_device);
+    if(opened==1 || opened==2)r=fv_enrollment_provision(&persistent_device,fv_random_generate,&random_source);
+    else if(opened)r=opened;
+    else {
+        r=persistent_platform.authority.load(persistent_platform.authority.context,&state);
+        if(!r && state.status==FV_ENROLLMENT_DESTROYED)r=fv_enrollment_provision(&persistent_device,fv_random_generate,&random_source);
+        else if(!r && state.status!=FV_ENROLLMENT_EMPTY)r=FV_VAULT_STATE;
+    }
+    if(!r)r=fv_vault_create(&persistent_platform,blocks,job->algorithms,job->count,job->profile,
+        FV_ENROLLMENT_ITERATIONS,policy,job->secret,job->length);
+ done:
+    fv_random_clear(&random_source);
+    memset(out,0,sizeof(*out));out->result=r;
+    opened=fv_enrollment_open(&persistent_device);
+    if(!opened){
+        int loaded=persistent_platform.authority.load(persistent_platform.authority.context,&state);
+        if(!loaded){out->status=state.status;out->attempts=state.policy.max_attempts;out->action=state.policy.limit_action;}
+        else if(!out->result)out->result=loaded;
+    }else if(opened!=1 && opened!=2 && !out->result)out->result=opened;
+    if(!out->result && out->status==FV_ENROLLMENT_ACTIVE){
+        if(usb_session.unlocked)out->profile=usb_session.config.credential_profile;
+        else {
+            if(!sd_initialized || !sd.interface.ops->is_present(&sd.interface)){
+                bool ready=sd_initialized?fv_rp2354_sd_reinitialize(&sd):fv_rp2354_sd_init(&sd);sd_initialized=true;
+                if(!ready)out->result=FV_VAULT_IO;
+            }
+            if(!out->result)out->result=fv_vault_credential_profile(&persistent_platform,&out->profile);
+        }
+    }
+    out->unlocked=usb_session.unlocked;
+    out->blocks=usb_session.unlocked?usb_session.config.volume.logical_blocks:0;
+}
+#endif
+static bool usb_session_command(const char *command) {
+    if(!strcmp(command,"INFO") || !strcmp(command,"STATE"))return false;
+    int r=0;
+    if(!strcmp(command,"LOCK"))usb_lock();
+    else if(FV_DEBUG_SESSION && (!strcmp(command,"UNLOCK ORIGINAL") || !strcmp(command,"UNLOCK REPLACEMENT"))) {
+        /* Repeated unlock is idempotent while already open; no extra guess charged. */
+        if(!usb_session.unlocked) {
+            bool ready=sd_initialized?fv_rp2354_sd_reinitialize(&sd):fv_rp2354_sd_init(&sd);
+            sd_initialized=true;
+            if(!ready)r=FV_VAULT_IO;
+            else {
+                bool changed=!strcmp(command,"UNLOCK REPLACEMENT");
+                r=fv_vault_unlock(&usb_session,&persistent_platform,changed?replacement:credential,
+                    changed?sizeof(replacement)-1:sizeof(credential)-1);
+                if(!r && usb_session.config.volume.logical_blocks>UINT32_MAX) {
+                    usb_lock();r=FV_VAULT_INVALID;
+                }
+                if(!r)++usb_generation;
+            }
+        }
+    } else if(strcmp(command,"MEDIA")) {
+        append("{\"command\":\"error\",\"ok\":false,\"error\":\"command unavailable in USB storage build\"}\n");
+        return true;
+    }
+    append("{\"command\":\"media\",\"ok\":%s,\"result\":%d,\"unlocked\":%s,"
+        "\"blocks\":%"PRIu32",\"block_bytes\":512,\"generation\":%"PRIu32"}\n",
+        r?"false":"true",r,usb_session.unlocked?"true":"false",
+        usb_session.unlocked?(uint32_t)usb_session.config.volume.logical_blocks:0,usb_generation);
+    return true;
+}
+#endif
 void security_execute(const char *command) {
     used=0;overflow=false;
+#if FV_USB_MSC
+    if(usb_session_command(command))return;
+#endif
     if(!strcmp(command,"INFO")) {
         char id[2*PICO_UNIQUE_BOARD_ID_SIZE_BYTES+1];pico_get_unique_board_id_string(id,sizeof(id));
         append("{\"command\":\"info\",\"ok\":true,\"protocol\":1,\"device_id\":\"%s\",\"sdk\":\"%s\","
             "\"chip_revision\":%u,\"rom_revision\":%u,\"cpu_hz\":%"PRIu32",\"sd_hz\":%u,\"otp_inspection\":%s,"
-            "\"otp_writes\":true,\"persistent_authority\":true,\"debug_enrollment\":%s,\"hmac_backend\":%u,\"session_bytes\":%u,\"worker_stack_bytes\":32768,\"production_ready\":false}\n",
+            "\"usb_msc\":%s,\"device_ui\":%s,\"debug_screen\":%s,\"debug_session\":%s,\"otp_writes\":true,\"persistent_authority\":true,\"debug_enrollment\":%s,\"hmac_backend\":%u,\"session_bytes\":%u,\"worker_stack_bytes\":32768,\"production_ready\":false}\n",
             id,PICO_SDK_VERSION_STRING,rp2350_chip_version(),rp2350_rom_version(),clock_get_hz(clk_sys),FV_SD_CLOCK_HZ,
-            FV_DEBUG_OTP_INSPECT?"true":"false",FV_DEBUG_ENROLLMENT?"true":"false",fv_hmac_backend(),(unsigned)sizeof(session));
+            FV_DEBUG_OTP_INSPECT?"true":"false",FV_USB_MSC?"true":"false",FV_DEVICE_UI?"true":"false",FV_DEBUG_SCREEN?"true":"false",FV_DEBUG_SESSION?"true":"false",FV_DEBUG_ENROLLMENT?"true":"false",fv_hmac_backend(),(unsigned)sizeof(session));
     } else if(!strcmp(command,"RNG"))rng_test();
     else if(!strcmp(command,"VAULT ERASE_SD")) {
         if(fv_enrollment_open(&persistent_device)!=1)
@@ -318,6 +471,21 @@ void security_worker(void) {
 #endif
     for(;;) {
         fv_command command;queue_remove_blocking(&commands,&command);
+#if FV_DEVICE_UI
+        if(command.ui){
+            fv_ui_job job=*command.ui;fv_ui_wipe(command.ui,sizeof(job));
+            fv_ui_result result;fv_device_ui_execute(&job,&result);fv_ui_wipe(&job,sizeof(job));
+            fv_ui_wipe(&command,sizeof(command));queue_add_blocking(&ui_responses,&result);continue;
+        }
+#endif
+#if FV_USB_MSC
+        if(command.storage.op!=FV_USB_NONE) {
+            fv_usb_response response;
+            fv_usb_storage_execute(&command.storage,&response);
+            queue_add_blocking(&storage_responses,&response);
+            continue;
+        }
+#endif
         security_execute(command.text);
         uint32_t n=(uint32_t)strlen(reply);queue_add_blocking(&responses,&n);
     }

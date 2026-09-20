@@ -9,24 +9,58 @@ set(FV_SD_CLOCK_HZ 25000000 CACHE STRING "SD data clock in Hz")
 set(FV_MBEDTLS_DIR "${PICO_SDK_PATH}/lib/mbedtls" CACHE PATH "Mbed TLS source")
 option(FV_HMAC_PICO "Use SHA accelerator" ON)
 option(FV_CIPHERS_RAM "Run cipher hot paths from SRAM" ON)
+option(FV_DEVICE_UI "Enable device setup and controls" OFF)
+option(FV_DEBUG_SCREEN "Expose framebuffer and injected keys over CDC" OFF)
+option(FV_USB_MSC "Expose vault sectors through USB mass storage" OFF)
+option(FV_DEBUG_SESSION "Allow public-fixture USB lock/unlock commands" OFF)
 option(FV_DEBUG_ENROLLMENT "Expose fixed-allocation OTP provisioning and persistent test commands" OFF)
 option(FV_DEBUG_STARTUP "Defer worker until START and expose core0 BOOT diagnostics" OFF)
+option(FV_DEBUG_BOOT_TRACE "Return to BOOTSEL if startup USB never mounts" OFF)
+if(FV_DEBUG_BOOT_TRACE AND NOT FV_DEBUG_STARTUP)
+  message(FATAL_ERROR "Boot trace requires deferred-worker diagnostic")
+endif()
 option(FV_DEBUG_OTP_INSPECT "Include read-only OTP diagnostics (development only)" OFF)
+if(FV_USB_MSC AND (FV_DEBUG_STARTUP OR FV_DEBUG_ENROLLMENT OR FV_DEBUG_BOOT_TRACE OR (NOT FV_DEBUG_SESSION AND NOT FV_DEVICE_UI)))
+  message(FATAL_ERROR "MSC bring-up requires DEBUG_SESSION and automatic worker; enrollment and boot trace must be OFF")
+endif()
 add_subdirectory(../../src/crypto crypto)
 add_subdirectory(../../src/storage storage)
 add_subdirectory(../../src/security security)
 add_subdirectory(../../third_party/pico_sd/src pico_sd)
-add_executable(fuse_vault_security main.c usb.c commands.c
+if(FV_DEVICE_UI AND NOT FV_USB_MSC)
+  message(FATAL_ERROR "Device UI currently requires USB MSC")
+endif()
+if(FV_DEBUG_SCREEN AND NOT FV_DEVICE_UI)
+  message(FATAL_ERROR "Debug screen requires device UI")
+endif()
+add_executable(fuse_vault_security main.c usb.c commands.c usb_mux.c
   ../../src/platform/rp2354/entropy.c ../../src/platform/rp2354/sd_native.c
   ../../src/platform/rp2354/authority.c)
+if(FV_DEVICE_UI)
+  target_sources(fuse_vault_security PRIVATE device_ui_adapter.c ../../src/ui/device_ui.c ../../src/ui/credential_entry.c)
+endif()
+if(FV_USB_MSC)
+  target_sources(fuse_vault_security PRIVATE usb_storage.c usb_storage_bridge.c)
+endif()
+if(FV_DEBUG_BOOT_TRACE)
+  target_sources(fuse_vault_security PRIVATE boot_trace.c)
+  target_link_options(fuse_vault_security PRIVATE
+    -Wl,--wrap=xosc_init -Wl,--wrap=pll_init -Wl,--wrap=vreg_set_voltage
+    -Wl,--wrap=clock_configure_undivided -Wl,--wrap=tick_start)
+endif()
 if(FV_DEBUG_OTP_INSPECT)
   target_sources(fuse_vault_security PRIVATE ../../src/platform/rp2354/otp_inspect.c)
 endif()
-target_include_directories(fuse_vault_security PRIVATE . ../../src/platform/rp2354/include)
+target_include_directories(fuse_vault_security PRIVATE . ../../src/ui ../../src/platform/rp2354/include)
 target_compile_definitions(fuse_vault_security PRIVATE FV_SD_CLOCK_HZ=${FV_SD_CLOCK_HZ}
+  FV_USB_MSC=$<BOOL:${FV_USB_MSC}>
+  FV_DEVICE_UI=$<BOOL:${FV_DEVICE_UI}>
+  FV_DEBUG_SCREEN=$<BOOL:${FV_DEBUG_SCREEN}>
+  FV_DEBUG_SESSION=$<BOOL:${FV_DEBUG_SESSION}>
   FV_DEBUG_OTP_INSPECT=$<BOOL:${FV_DEBUG_OTP_INSPECT}>
   FV_DEBUG_ENROLLMENT=$<BOOL:${FV_DEBUG_ENROLLMENT}>
   FV_DEBUG_STARTUP=$<BOOL:${FV_DEBUG_STARTUP}>
+  FV_DEBUG_BOOT_TRACE=$<BOOL:${FV_DEBUG_BOOT_TRACE}>
   PICO_CORE1_STACK_SIZE=4096 PICO_STACK_SIZE=4096)
 target_compile_options(fuse_vault_security PRIVATE -Wall -Wextra -Werror -fstack-usage)
 target_compile_options(fv_security PRIVATE -fstack-usage)

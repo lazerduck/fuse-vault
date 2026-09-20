@@ -165,3 +165,42 @@ Normal `security_probe.py` commands work after stage 14. Stages: 0 awaiting STAR
 1 core0 flash-lockout setup, 2 core1 launch, 10 worker entered, 11 worker lockout
 ready, 12 authority adapter ready/open starting, 13 open finished/recovery starting,
 14 worker ready. The existing USB mux selection/interlock remains unchanged.
+
+### Automatic boot trace fallback
+
+`FV_DEBUG_BOOT_TRACE=ON` requires `FV_DEBUG_STARTUP=ON`. This separate diagnostic
+arms a five-second ROM BOOTSEL watchdog before SDK clock initialization and cancels
+it when USB mounts. It records a tagged progress stage in watchdog scratch0. Other scratch fields
+were unreliable across the ROM/load path and are no longer treated as trace data. Stages: 1 early runtime, 2 clocks returned,
+3 main entered, 4 before TinyUSB init, 5 TinyUSB returned, 6 USB mounted;
+7 early peripheral resets returned, 8 early USB power-down returned,
+254 watchdog arming returned an error.
+On a subsequent warm image load, BOOT exposes the previous trace only if its magic
+matches. Do not unplug after a fallback: power loss clears the retained trace.
+The watchdog cannot capture faults before its early hook executes. This is a
+diagnostic mechanism, not a production recovery policy. It never starts the
+worker, unlocks, provisions or changes the journal by itself.
+
+Trace-only link wrappers also mark crystal oscillator entry/return (10/11),
+system PLL (12/13), USB PLL (14/15) and voltage adjustment (16/17). They preserve
+SDK calls and do not change clocks/voltages beyond the original initialization.
+Observed tagged stage 8 on cold boot narrowed the failure to SDK clock setup.
+
+Clock-switch/tick checkpoints: entry `20+2*clock_index`, return `+1`; tick entry
+`60+2*tick_index`, return `+1` (SDK enum values). Trace-only `security_startup.py
+--port "$PORT" reboot` requests a normal ROM restart and is accepted only while
+stage 0 and START has not been requested. It does not run authority callbacks.
+A software restart is useful for reproduction, not proof of physical cold boot.
+
+## USB mass-storage bring-up
+
+The opt-in `FV_USB_MSC` + `FV_DEBUG_SESSION` build exposes an existing encrypted
+vault as a removable disk with CDC debug lock/unlock. See [USB_STORAGE.md](USB_STORAGE.md)
+for the build, host commands, filesystem setup, lock behaviour and limitations.
+
+## Device UI / full-card setup
+
+See [DEVICE_UI.md](DEVICE_UI.md) for the firmware-owned framebuffer, GTK debug
+viewer, physical D-pad, full-capacity initialization, failure policy settings and
+USB-C-preferred mux. This build preserves existing volumes until explicit erase
+and setup; it does not silently enlarge the earlier 1 MiB test vault.

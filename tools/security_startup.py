@@ -12,7 +12,7 @@ from security_probe import Probe
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--port', required=True)
-    parser.add_argument('action', choices=('boot', 'start'))
+    parser.add_argument('action', choices=('boot', 'start', 'reboot'))
     args = parser.parse_args()
     transport = SerialTransport(args.port, product=0x4022)
     try:

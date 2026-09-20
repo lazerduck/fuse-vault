@@ -1,0 +1,20 @@
+{
+  "command": "state",
+  "ok": true,
+  "open_result": 0,
+  "boot_recovery": -5,
+  "journal_result": 0,
+  "status": 1,
+  "sequence": 20,
+  "credential_generation": 0,
+  "attempts": 0,
+  "pending": false,
+  "token_slot": 1,
+  "root_page": 16,
+  "token_page": 18,
+  "flash_offset": 2088960,
+  "iterations": 60000,
+  "root_blank": 0,
+  "tokens_blank": 0,
+  "flash_blank": 0
+}
