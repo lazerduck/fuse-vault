@@ -54,7 +54,10 @@ void led_blink_n_times(uint8_t n, uint8_t c, uint32_t a, uint32_t b) {
     (void)n; (void)c; (void)a; (void)b;
 }
 void led_set_mode(uint32_t mode) { (void)mode; }
-bool fv_pico_reset_allowed(void) { return (uint32_t)(board_millis() - session_started) < 10000u; }
+bool fv_pico_reset_allowed(void) {
+    return platform.reset_allowed?platform.reset_allowed(platform.context):
+        (uint32_t)(board_millis()-session_started)<10000u;
+}
 bool fv_pico_has_uv(void) { return platform.verify_user != NULL; }
 uint8_t fv_pico_uv_retries(void) { return platform.uv_retries ? platform.uv_retries(platform.context) : 0; }
 bool fv_pico_verify_user(const uint8_t *rp_hash) {
@@ -166,7 +169,7 @@ bool fv_fido_engine_open(uint8_t store[FV_FIDO_STORE_BYTES], const uint8_t root[
     if (failed) { fv_fido_engine_close(); return false; }
     opened=true; return true;
 }
-static int engine_get_info(void) {
+static int engine_get_info(bool configured) {
     CborEncoder e,m,a,o,k;
     CborError error=CborNoError;
     cbor_encoder_init(&e,apdu.rdata,USB_BUFFER_SIZE-8,0);
@@ -177,17 +180,14 @@ static int engine_get_info(void) {
     CBOR_CHECK(cbor_encode_uint(&m,2)); CBOR_CHECK(cbor_encoder_create_array(&m,&a,0));
     CBOR_CHECK(cbor_encoder_close_container(&m,&a));
     CBOR_CHECK(cbor_encode_uint(&m,3)); CBOR_CHECK(cbor_encode_byte_string(&m,aaguid,16));
-    CBOR_CHECK(cbor_encode_uint(&m,4)); CBOR_CHECK(cbor_encoder_create_map(&m,&o,fv_pico_has_uv()?6:5));
+    CBOR_CHECK(cbor_encode_uint(&m,4)); CBOR_CHECK(cbor_encoder_create_map(&m,&o,6));
     CBOR_CHECK(cbor_encode_text_stringz(&o,"rk")); CBOR_CHECK(cbor_encode_boolean(&o,true));
     CBOR_CHECK(cbor_encode_text_stringz(&o,"up")); CBOR_CHECK(cbor_encode_boolean(&o,true));
-    if (fv_pico_has_uv()) {
-        CBOR_CHECK(cbor_encode_text_stringz(&o,"uv")); CBOR_CHECK(cbor_encode_boolean(&o,true));
+    {
+        CBOR_CHECK(cbor_encode_text_stringz(&o,"uv")); CBOR_CHECK(cbor_encode_boolean(&o,configured));
         CBOR_CHECK(cbor_encode_text_stringz(&o,"alwaysUv")); CBOR_CHECK(cbor_encode_boolean(&o,true));
     }
     CBOR_CHECK(cbor_encode_text_stringz(&o,"credMgmt")); CBOR_CHECK(cbor_encode_boolean(&o,true));
-    if (!fv_pico_has_uv()) {
-        CBOR_CHECK(cbor_encode_text_stringz(&o,"clientPin")); CBOR_CHECK(cbor_encode_boolean(&o,file_has_data(ef_pin)));
-    }
     CBOR_CHECK(cbor_encode_text_stringz(&o,"pinUvAuthToken")); CBOR_CHECK(cbor_encode_boolean(&o,true));
     CBOR_CHECK(cbor_encoder_close_container(&m,&o));
     CBOR_CHECK(cbor_encode_uint(&m,5)); CBOR_CHECK(cbor_encode_uint(&m,FV_FIDO_ENGINE_MESSAGE_SIZE));
@@ -206,12 +206,25 @@ err:
     return error==CborNoError ? 0 : CTAP2_ERR_PROCESSING;
 }
 int cbor_get_assertion(const uint8_t *,size_t,bool);
+size_t fv_fido_engine_info(bool configured,uint8_t *out,size_t capacity){
+    if(!out || capacity<FV_FIDO_ENGINE_RESPONSE_SIZE)return 0;
+    memset(response_buffer,0,sizeof(response_buffer));apdu.rdata=response_buffer+8;apdu.rlen=0;
+    int r=engine_get_info(configured);out[0]=r?CTAP2_ERR_PROCESSING:0;
+    if(r)return 1;
+    memcpy(out+1,apdu.rdata,apdu.rlen);return (size_t)apdu.rlen+1;
+}
 size_t fv_fido_engine_command_channel(uint32_t channel, const uint8_t *req,size_t n,uint8_t *out,size_t cap) {
     request_frame.cid = channel;
     if (!out || cap < 1) return 0;
     out[0]=CTAP2_ERR_PROCESSING;
+    /* Reject unusable response buffers before any persistent side effect. */
+    if (cap < FV_FIDO_ENGINE_RESPONSE_SIZE) return 1;
     if (n>FV_FIDO_ENGINE_MESSAGE_SIZE) { out[0]=CTAP1_ERR_INVALID_LEN; return 1; }
     if (!opened || failed || !req || !n) return 1;
+    if (platform.cancelled && platform.cancelled(platform.context)) {
+        reset_gna_state(); fv_pico_cred_session_clear();
+        out[0]=CTAP2_ERR_KEEPALIVE_CANCEL; return 1;
+    }
     if (local_management) { out[0]=CTAP2_ERR_NOT_ALLOWED; return 1; }
     memset(response_buffer,0,sizeof(response_buffer));
     apdu.rdata=response_buffer+8; apdu.rlen=0;
@@ -220,7 +233,7 @@ size_t fv_fido_engine_command_channel(uint32_t channel, const uint8_t *req,size_
     staging=true;
     int ret=CTAP1_ERR_INVALID_CMD;
     switch(req[0]) {
-    case CTAP_GET_INFO: ret=n==1?engine_get_info():CTAP1_ERR_INVALID_LEN; break;
+    case CTAP_GET_INFO: ret=n==1?engine_get_info(true):CTAP1_ERR_INVALID_LEN; break;
     case CTAP_MAKE_CREDENTIAL: ret=cbor_make_credential(req+1,n-1); break;
     case CTAP_GET_ASSERTION: ret=cbor_get_assertion(req+1,n-1,false); break;
     case CTAP_GET_NEXT_ASSERTION: ret=cbor_get_next_assertion(req+1,n-1); break;
@@ -331,4 +344,22 @@ bool fv_fido_engine_manage(fv_passkey_action_t action, uint16_t *index,
         return local_read(index, count, entry);
     }
     return false;
+}
+
+bool fv_fido_engine_uv_policy(bool write,uint8_t *mode){
+    if(!opened || failed || !mode || !platform.local_authorized || !platform.local_authorized(platform.context))return false;
+    file_t *f=file_search(EF_FV_UV_POLICY);if(!f)return false;
+    if(!write){
+        if(!file_has_data(f)){*mode=0;return true;}
+        if(file_get_size(f)!=2)return false;
+        const uint8_t *p=file_get_data(f);if(!p || p[0]!=1 || p[1]>1)return false;
+        *mode=p[1];return true;
+    }
+    if(*mode>1)return false;
+    uint8_t record[2]={1,*mode};staging=true;
+    bool ok=file_put_data(f,CONST_BYTE_ARRAY(record,sizeof(record)))==PICOKEYS_OK;
+    staging=false;
+    if(!ok || !low_flash_commit_sync(0)){failed=true;return false;}
+    fv_pico_pin_session_clear();fv_pico_cred_session_clear();reset_gna_state();
+    return !failed;
 }

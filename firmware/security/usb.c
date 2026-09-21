@@ -1,5 +1,9 @@
 #include "bringup.h"
 #include "tusb.h"
+#if FV_USB_FIDO
+#include "fido_adapter.h"
+#include "fuse_vault/fido_hid_descriptor.h"
+#endif
 #include "pico/unique_id.h"
 #include "pico/stdlib.h"
 #if FV_DEBUG_BOOT_TRACE
@@ -15,10 +19,15 @@
 static const tusb_desc_device_t device={
     .bLength=sizeof(tusb_desc_device_t),.bDescriptorType=TUSB_DESC_DEVICE,.bcdUSB=0x0200,
     .bDeviceClass=TUSB_CLASS_MISC,.bDeviceSubClass=MISC_SUBCLASS_COMMON,.bDeviceProtocol=MISC_PROTOCOL_IAD,
-    .bMaxPacketSize0=64,.idVendor=0xcafe,.idProduct=0x4022,.bcdDevice=FV_USB_MSC?0x0200:0x0100,
+    .bMaxPacketSize0=64,.idVendor=0xcafe,.idProduct=0x4022,.bcdDevice=FV_USB_FIDO?0x0300:FV_USB_MSC?0x0200:0x0100,
     .iManufacturer=1,.iProduct=2,.iSerialNumber=3,.bNumConfigurations=1};
 static const uint8_t configuration[]={
-#if FV_USB_MSC
+#if FV_USB_FIDO
+    TUD_CONFIG_DESCRIPTOR(1,4,0,TUD_CONFIG_DESC_LEN+TUD_CDC_DESC_LEN+TUD_MSC_DESC_LEN+TUD_HID_INOUT_DESC_LEN,0,100),
+    TUD_CDC_DESCRIPTOR(0,0,0x81,8,0x02,0x82,64),
+    TUD_MSC_DESCRIPTOR(2,0,0x03,0x83,64),
+    TUD_HID_INOUT_DESCRIPTOR(3,0,HID_ITF_PROTOCOL_NONE,sizeof(fv_fido_hid_report_descriptor),0x04,0x84,64,5)
+#elif FV_USB_MSC
     TUD_CONFIG_DESCRIPTOR(1,3,0,TUD_CONFIG_DESC_LEN+TUD_CDC_DESC_LEN+TUD_MSC_DESC_LEN,0,100),
     TUD_CDC_DESCRIPTOR(0,0,0x81,8,0x02,0x82,64),
     TUD_MSC_DESCRIPTOR(2,0,0x03,0x83,64)
@@ -82,7 +91,11 @@ void security_usb_poll(void) {
             if(fv_device_ui_command(command.text,reply,FV_REPLY_BYTES)){
                 total=strlen(reply);sent=0;sending=true;used=0;return;
             }
-            if(atomic_load(&fv_ui_maintenance)){
+            if(atomic_load(&fv_ui_maintenance)
+#if FV_USB_FIDO
+                || fv_fido_busy()
+#endif
+            ){
                 total=(size_t)snprintf(reply,FV_REPLY_BYTES,"{\"command\":\"error\",\"ok\":false,\"error\":\"device UI busy\"}\n");
                 sent=0;sending=true;used=0;return;
             }

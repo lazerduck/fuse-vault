@@ -23,6 +23,13 @@ option(FV_DEBUG_OTP_INSPECT "Include read-only OTP diagnostics (development only
 if(FV_USB_MSC AND (FV_DEBUG_STARTUP OR FV_DEBUG_ENROLLMENT OR FV_DEBUG_BOOT_TRACE OR (NOT FV_DEBUG_SESSION AND NOT FV_DEVICE_UI)))
   message(FATAL_ERROR "MSC bring-up requires DEBUG_SESSION and automatic worker; enrollment and boot trace must be OFF")
 endif()
+option(FV_USB_FIDO "Expose experimental FIDO2 HID alongside MSC" OFF)
+if(FV_USB_FIDO)
+  if(NOT FV_USB_MSC OR NOT FV_DEVICE_UI OR FV_DEBUG_SESSION)
+    message(FATAL_ERROR "FIDO requires MSC and device UI, with DEBUG_SESSION disabled")
+  endif()
+  set(FV_ENABLE_FIDO_ENGINE ON)
+endif()
 add_subdirectory(../../src/crypto crypto)
 add_subdirectory(../../src/storage storage)
 add_subdirectory(../../src/security security)
@@ -36,12 +43,19 @@ endif()
 add_executable(fuse_vault_security main.c usb.c commands.c usb_mux.c
   ../../src/platform/rp2354/entropy.c ../../src/platform/rp2354/sd_native.c
   ../../src/platform/rp2354/authority.c)
+if(FV_USB_FIDO)
+  add_subdirectory(../../src/fido fido)
+  target_sources(fuse_vault_security PRIVATE fido_adapter.c)
+  target_include_directories(fuse_vault_security PRIVATE ../../third_party/tinycbor)
+  target_link_libraries(fuse_vault_security PRIVATE fv_fido_engine fv_fido_store fv_fido_transport)
+endif()
 if(FV_DEVICE_UI)
   target_sources(fuse_vault_security PRIVATE device_ui_adapter.c ../../src/ui/device_ui.c ../../src/ui/credential_entry.c)
 endif()
 if(FV_USB_MSC)
   target_sources(fuse_vault_security PRIVATE usb_storage.c usb_storage_bridge.c)
   include(msc_command_boundary.cmake)
+  include(usb_task_budget.cmake)
 endif()
 if(FV_DEBUG_BOOT_TRACE)
   target_sources(fuse_vault_security PRIVATE boot_trace.c)
@@ -55,6 +69,7 @@ endif()
 target_include_directories(fuse_vault_security PRIVATE . ../../src/ui ../../src/platform/rp2354/include)
 target_compile_definitions(fuse_vault_security PRIVATE FV_SD_CLOCK_HZ=${FV_SD_CLOCK_HZ}
   FV_USB_MSC=$<BOOL:${FV_USB_MSC}>
+  FV_USB_FIDO=$<BOOL:${FV_USB_FIDO}>
   FV_DEVICE_UI=$<BOOL:${FV_DEVICE_UI}>
   FV_DEBUG_SCREEN=$<BOOL:${FV_DEBUG_SCREEN}>
   FV_DEBUG_SESSION=$<BOOL:${FV_DEBUG_SESSION}>

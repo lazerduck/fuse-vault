@@ -166,6 +166,17 @@ done:
     if(r!=FV_VAULT_OK)fv_vault_lock(v);
     return r;
 }
+fv_vault_result fv_vault_reverify(fv_vault *v,const uint8_t *secret,size_t bytes){
+    if(!v || !v->unlocked)return FV_VAULT_DENIED;
+    fv_vault candidate={0};
+    fv_vault_result r=fv_vault_unlock(&candidate,v->platform,secret,bytes);
+    if(r==FV_VAULT_OK && (memcmp(candidate.vmk,v->vmk,32) ||
+        memcmp(candidate.config.volume.volume_id,v->config.volume.volume_id,16) ||
+        candidate.config.credential_generation!=v->config.credential_generation))r=FV_VAULT_STATE;
+    fv_vault_lock(&candidate);
+    if(r!=FV_VAULT_OK)fv_vault_lock(v);
+    return r;
+}
 fv_vault_result fv_vault_change_credential(fv_vault *v,const fv_vault_platform *p,
     const uint8_t *current,size_t current_n,const uint8_t *replacement,size_t replacement_n,
     uint16_t profile,uint32_t iterations,fv_auth_policy policy,bool approved) {

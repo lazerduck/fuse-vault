@@ -21,6 +21,8 @@ typedef struct {
     bool (*verify_user)(void *, const uint8_t *rp_hash);
     uint8_t (*uv_retries)(void *);
     bool (*cancelled)(void *);
+    /* Firmware binds reset eligibility to USB enumeration, not engine reopen. */
+    bool (*reset_allowed)(void *);
     bool (*local_authorized)(void *); /* Device session only; never host UV. */
     void *context;
 } fv_fido_engine_ops_t;
@@ -32,11 +34,18 @@ bool fv_fido_engine_open(uint8_t store[FV_FIDO_STORE_BYTES],
     const uint8_t root[32], const uint8_t device_id[16],
     const fv_fido_engine_ops_t *ops);
 void fv_fido_engine_close(void);
+/* Local-only persistent UV reuse policy: 0 strict, 1 unlocked session.
+ * Missing setting defaults to strict; unknown encodings fail closed. */
+bool fv_fido_engine_uv_policy(bool write,uint8_t *mode);
+/* Stateless discovery for locked devices; call only on the engine owner. */
+size_t fv_fido_engine_info(bool uv_configured,uint8_t *,size_t);
 /* Only called by the local UI after unlock. BEGIN blocks host commands until
  * END/close. DELETE requires the stable ID returned by READ and commits before
  * success. A failure requires closing/recovering the engine. */
 bool fv_fido_engine_manage(fv_passkey_action_t action, uint16_t *index,
     uint16_t *count, fv_passkey_t *entry);
+/* Response capacity must be at least FV_FIDO_ENGINE_RESPONSE_SIZE, disjoint
+ * from request/store. Returns CTAP status followed by CBOR, not HID framing. */
 size_t fv_fido_engine_command(const uint8_t *request, size_t size,
                              uint8_t *response, size_t capacity);
 size_t fv_fido_engine_command_channel(uint32_t channel, const uint8_t *request,

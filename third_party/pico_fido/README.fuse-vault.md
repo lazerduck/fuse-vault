@@ -1,84 +1,59 @@
-# Pico FIDO integration
+# Pico FIDO: V2 engine baseline
 
-Upstream: https://github.com/polhenarejos/pico-fido
-Revision: `09d95a469b3ca1142bb04b505b49ab77eba6e964`.
-Original file: `src/fido/cbor_get_info.c` (AGPLv3).
+Initial source is selectively adapted from the repository's V1 archive:
 
-`get_info.c` is the legacy reduced GetInfo adaptation retained as a fallback for
-isolated transport tests. The device binds `port.c` and the full engine instead;
-its GetInfo describes the implemented credential and built-in verification
-features. No upstream entry point, OTP initializer, attestation identity or
-hardware flash backend is included. See `LICENSE` and the engine details below.
+- Pico FIDO https://github.com/polhenarejos/pico-fido revision
+  `09d95a469b3ca1142bb04b505b49ab77eba6e964` (AGPLv3).
+- Pico Keys SDK https://github.com/polhenarejos/pico-keys-sdk revision
+  `263b2a9839acb3a16936199ca5dbb814e8bf16e1` (AGPLv3).
+- Adjacent TinyCBOR encoder/parser from revision
+  `c0aad2fb2137a31b9845fbaae3653540c410f215` (MIT); original license retained.
 
-TinyCBOR's encoder/parser subset is vendored separately from the dependency fetched by
-Pico Keys SDK `263b2a9839acb3a16936199ca5dbb814e8bf16e1`: TinyCBOR commit
-`c0aad2fb2137a31b9845fbaae3653540c410f215` (v0.6.1), MIT licence. Its files are
-unmodified. No configure-time network download or external `/tmp` path is needed.
+`engine.cmake` is the explicit compiled-source list. Other copied headers and
+source files are retained as reference only. Upstream boot, OTP programming,
+physical flash, USB drivers, applets, certificates and vendor command dispatch
+are not linked. This is an opt-in AGPL-covered library, not a relicensing of
+previously unlicensed project code. Distributions must satisfy dependency licenses.
 
-The optional combined firmware includes AGPL-covered code. Distribution must
-comply with that licence and all dependency licences. Adding this component does
-not assign a licence to the project's previously unlicensed original files.
+## Inherited adaptations
 
-## Reusable engine port
+The archived port supplied injected RNG/time/presence/UV/commit, bounded integer
+offsets instead of flash pointers, staged commits at command boundaries, session
+cleanup, built-in verification/token handling, local metadata/deletion access,
+ES256-only algorithm selection and self-attestation. Full historical adaptation
+notes remain in `v1/firmware/third_party/pico_fido/README.fuse-vault.md`.
 
-`engine/` contains the selected Pico FIDO CTAP2 handlers from the revision above.
-`sdk/` contains the selected file/object store and crypto helpers from Pico Keys
-SDK `263b2a9839acb3a16936199ca5dbb814e8bf16e1` (AGPLv3). `engine.cmake` lists
-exactly which sources are compiled; upstream boot, hardware USB, OTP and flash
-implementations are excluded. The SDK's Mbed TLS 3.6 backend is shared, with
-FIDO-specific modules enabled conditionally. TinyCBOR parser sources are now
-included alongside the encoder, at the same pinned revision.
+## V2 changes
 
-`port.c` supplies an independently testable synchronous engine with injected RNG,
-time, physical-presence and durable-snapshot callbacks. It supports ES256
-registration/assertion, resident credentials, ClientPIN protocols 1 and 2,
-credential management and FIDO reset. Registration uses credential
-self-attestation; enterprise attestation, vendor commands, U2F, unrelated applets
-are not exposed by this adapter. Built-in UV is supplied by the device adapter.
+- Standalone `fv_fido_engine` target and V2-owned public headers. TinyCBOR encoder
+  is linked directly; no legacy probe, runtime, crypto or storage dependency.
+- Shared V2 Mbed TLS configuration/implementation, enabled with
+  `FV_ENABLE_FIDO_ENGINE`; no second crypto ABI/library.
+- Required built-in UV/retry callbacks: missing callbacks cannot select an
+  external-PIN device profile. External PIN handlers retained upstream are
+  unreachable through the V2 profile.
+- Constant-zero signature counters in registration/assertions, with no
+  counter-only persistence on login. Matches the accepted storage replay model.
+- Reject too-small response buffers and pre-existing cancellation before command
+  execution. Public ownership, response sizing and wiping contracts documented.
 
-The device USB path binds the full engine after successful device unlock.
-`fido_store.c` supplies encrypted SD snapshots anchored in the internal journal;
-the device approval callback services USB, input, display and connector/media
-safety. Built-in verification reuses the bounded, RP-bound device-unlock cache.
-The production-facing profile omits external ClientPIN setup, supports direct UV
-and permission-scoped UV tokens, and has no separate FIDO PIN. The engine-only
-host fixture still exercises the external ClientPIN profile for regression tests.
-The complete device fixture exercises real encrypted storage and runtime unlock.
+## Verification and review boundaries
 
-All host fixtures use simulated presence; their approval callbacks are never
-linked into the device. Hardware interoperability, latency, power-cut validation,
-security review and certification remain release gates.
+See `src/fido/README.md` and `docs/v2-fido-progress.md` for actual V2 evidence.
+V1's encrypted store, USB and hardware claims do not describe this library.
+The independent client uses test-only simulated UV/presence and RAM snapshots.
+Built-in device-secret verification, encrypted FIDO persistence and browser USB
+interoperability remain later stages.
 
-Local modifications to upstream sources:
+Upstream release notes were inspected on 2026-09-20; they describe newer protocol,
+storage, bounds and authorization work. The pinned commit could not be retrieved
+through the web reader, so a complete upstream security-diff review remains an
+explicit prerequisite before hardware/release readiness, not a completed audit.
+Do not label this imported baseline latest, certified, or security-reviewed.
 
-- Replace platform selection, constructors, board time and hardware queues with
-  the Fuse Vault callback boundary; suppress engine diagnostics.
-- Retain COSE helpers while replacing the upstream dispatcher; remove APDU/U2F
-  applet registration and certificate generation. The adapter owns GetInfo.
-- Restrict MakeCredential algorithm selection to ES256.
-- Use 32-bit serialized file offsets on both 64-bit hosts and RP2354; add bounded
-  record scanning. This is an adapter format, not an upstream firmware backup.
-- Propagate file/crypto initialization errors, clear cached device keys at init,
-  add ClientPIN session cleanup, and invalidate authorization on close.
-- Stage upstream flash commits and invoke the durable callback once at the end
-  of initialization or a command. Failed commits fault the session before any
-  success response; the caller must reopen from its last durable snapshot.
-
-This is an integration port, not a security audit or FIDO certification.
-
-Additional device-integration changes add built-in UV/token dispatch and shared
-retry reporting, channel-aware engine requests, cancellation cleanup, bounded
-credential-enumeration state, reset-window timing relative to FIDO enumeration,
-and complete authorization invalidation on reset. No upstream hardware driver
-or OTP initializer is linked. The fixed offset store is encrypted by Fuse Vault
-before SD writes; Pico FIDO does not receive the vault's plaintext block device.
-
-Local management adaptation: `port.c` exposes a device-session-authorized
-resident credential metadata/deletion API. It serializes against host commands,
-uses stable resident IDs and stages deletion until the existing durable commit.
-It never supplies private keys or creates CTAP authorization tokens for the UI.
-
-The makeCredential presence path also checks physical approval when no
-pinUvAuthParam is supplied (the device-unlock UV path), matching getAssertion.
-The graphical simulator regression cancels such a registration and checks that
-no resident credential was created before approving a separate registration.
+Local UV preference extension: EF_FV_UV_POLICY (0x1123) stores a versioned two-byte
+strict/session preference in the encrypted snapshot. The local API requires an
+unlocked trusted UI owner, validates both modes, commits before success, and
+invalidates host tokens on save. No host CTAP setter is exposed. Missing records
+default to strict; invalid records deny engine dispatch. Ordinary FIDO reset
+preserves the preference, while local store initialization removes it.

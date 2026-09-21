@@ -17,7 +17,8 @@
 #else
 #define CFG_TUD_MSC 0
 #endif
-#define CFG_TUD_HID 0
+#define CFG_TUD_HID FV_USB_FIDO
+#define CFG_TUD_HID_EP_BUFSIZE 64
 #define CFG_TUD_MIDI 0
 #define CFG_TUD_VENDOR 0
 #endif

@@ -74,9 +74,11 @@ def main():
         context.fill()
     area.connect('draw', draw)
 
+    allow_mounted = [False]
+
     def send(key):
         # The host can see mounts; the physical device cannot. Protect debug use.
-        if key == 'SELECT' and mounted_partitions(disks_for_device(args.device)):
+        if key == 'SELECT' and not allow_mounted[0] and mounted_partitions(disks_for_device(args.device)):
             notice_until[0] = time.monotonic() + 5
             status.set_text('Unmount the vault filesystem before selecting an action.')
             return
@@ -112,6 +114,7 @@ def main():
 
     def update(frame):
         screen[:] = pixels(frame)
+        allow_mounted[0] = frame.get("allow_mounted", False)
         if time.monotonic() >= notice_until[0]:
             status.set_text('Device busy — keep power connected' if frame['busy'] else 'Connected: ' + args.device)
         area.queue_draw()
@@ -131,9 +134,13 @@ def main():
                 transport = SerialTransport(str(port_for(args.device)), product=0x4022)
                 probe = Probe(transport, timeout=5)
                 clear_keys()  # Never replay input after reconnect.
+                input_id = None
                 while not stopped.is_set():
                     frame = probe.transact('SCREEN', 'screen')
                     pixels(frame)
+                    if input_id != frame.get("input_id", 0):
+                        clear_keys()
+                        input_id = frame.get("input_id", 0)
                     GLib.idle_add(update, frame)
                     if frame['busy']:
                         clear_keys()
@@ -142,7 +149,7 @@ def main():
                             key = keys.get(timeout=0.15)
                         except queue.Empty:
                             continue
-                        probe.transact('KEY ' + key, 'key')  # Never retry uncertain key presses.
+                        probe.transact(f'KEY {input_id} {key}', 'key')  # Never retry uncertain key presses.
                     stopped.wait(0.1)
             except (OSError, RuntimeError, ValueError, KeyError) as error:
                 clear_keys()

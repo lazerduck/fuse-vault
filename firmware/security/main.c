@@ -3,6 +3,9 @@
 #include "pico/multicore.h"
 #include "pico/flash.h"
 #include "tusb.h"
+#if FV_USB_FIDO
+#include "fido_adapter.h"
+#endif
 #if FV_DEVICE_UI
 #include "device_ui_adapter.h"
 queue_t ui_responses;
@@ -14,7 +17,7 @@ queue_t storage_responses;
 #endif
 /* Explicit stack for envelope/DRBG/session scratch. Static sessions/bulk buffers
  * live outside it; stack usage artifacts are emitted for board bring-up review. */
-static uint32_t worker_stack[8192] __attribute__((aligned(8)));
+static uint32_t worker_stack[FV_USB_FIDO?16384:8192] __attribute__((aligned(8)));
 #if FV_DEBUG_STARTUP
 volatile uint32_t startup_stage;
 volatile bool startup_requested;
@@ -43,6 +46,9 @@ int main(void) {
     boot_trace_mark(5);
     for(;;){
         fv_usb_mux_poll();tud_task();
+#if FV_USB_FIDO
+        fv_fido_poll();
+#endif
 #if FV_USB_MSC
         fv_usb_storage_poll();
 #endif

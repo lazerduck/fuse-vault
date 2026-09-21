@@ -15,6 +15,9 @@ typedef struct {
 #if FV_DEVICE_UI
     fv_ui_job *ui; /* Single in-flight mailbox; queue never retains credential bytes. */
 #endif
+#if FV_USB_FIDO
+    bool fido;
+#endif
     char text[FV_COMMAND_BYTES];
 #if FV_USB_MSC
     fv_usb_request storage;

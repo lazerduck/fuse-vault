@@ -1,4 +1,7 @@
 #include "bringup.h"
+#if FV_USB_FIDO
+#include "fido_adapter.h"
+#endif
 #if FV_DEVICE_UI
 #include "device_ui_adapter.h"
 #endif
@@ -262,7 +265,13 @@ done:
 #if FV_USB_MSC
 static fv_vault usb_session;
 static uint32_t usb_generation;
+#if FV_USB_FIDO
+static bool fido_rng_ready;
+#endif
 static void usb_lock(void) {
+#if FV_USB_FIDO
+    fv_fido_close();
+#endif
     fv_vault_lock(&usb_session);++usb_generation;
 }
 void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *response) {
@@ -292,7 +301,7 @@ void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *respo
 #if FV_DEVICE_UI
 void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     int r=0,opened;fv_device_state state={0};
-    if(job->op!=UI_STATUS && job->op!=UI_ERASE && job->op!=UI_LOCK) {
+    if(job->op!=UI_STATUS && job->op!=UI_ERASE && job->op!=UI_LOCK && job->op!=UI_FIDO_INIT && job->op!=UI_FIDO_POLICY) {
         if(!job->length || job->length>64)r=FV_VAULT_INVALID;
         if(job->profile<2 || job->profile>4)r=FV_VAULT_INVALID;
         if(job->profile>=3 && job->length!=4)r=FV_VAULT_INVALID;
@@ -314,6 +323,10 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         usb_lock();r=fv_enrollment_request_destruction(&persistent_device);goto done;
     }
     if(job->op==UI_STATUS)goto done;
+#if FV_USB_FIDO
+    if(job->op==UI_FIDO_INIT){r=fv_fido_initialize();goto done;}
+    if(job->op==UI_FIDO_POLICY){r=fv_fido_policy_set(job->fido_policy);goto done;}
+#endif
     if(job->op!=UI_CREATE && job->op!=UI_UNLOCK && job->op!=UI_POLICY && job->op!=UI_CHANGE){r=FV_VAULT_INVALID;goto done;}
     usb_lock();
     bool ready=sd_initialized?fv_rp2354_sd_reinitialize(&sd):fv_rp2354_sd_init(&sd);sd_initialized=true;
@@ -321,7 +334,11 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     if(job->op==UI_UNLOCK){
         r=fv_vault_unlock(&usb_session,&persistent_platform,job->secret,job->length);
         if(!r && usb_session.config.volume.logical_blocks>UINT32_MAX){usb_lock();r=FV_VAULT_INVALID;}
-        ++usb_generation;goto done;
+        ++usb_generation;
+#if FV_USB_FIDO
+        if(!r)fv_fido_unlocked();
+#endif
+        goto done;
     }
     if(!start_random()){r=FV_VAULT_IO;goto done;}
     fv_auth_policy policy={job->attempts,(fv_limit_action)job->action};
@@ -353,7 +370,6 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     if(!r)r=fv_vault_create(&persistent_platform,blocks,job->algorithms,job->count,job->profile,
         FV_ENROLLMENT_ITERATIONS,policy,job->secret,job->length);
  done:
-    fv_random_clear(&random_source);
     memset(out,0,sizeof(*out));out->result=r;
     opened=fv_enrollment_open(&persistent_device);
     if(!opened){
@@ -371,6 +387,11 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
             if(!out->result)out->result=fv_vault_credential_profile(&persistent_platform,&out->profile);
         }
     }
+#if FV_USB_FIDO
+    if(usb_session.unlocked)out->fido_policy=fv_fido_policy_get();
+    fido_rng_ready=false;
+#endif
+    fv_random_clear(&random_source);
     out->unlocked=usb_session.unlocked;
     out->blocks=usb_session.unlocked?usb_session.config.volume.logical_blocks:0;
 }
@@ -415,9 +436,9 @@ void security_execute(const char *command) {
         char id[2*PICO_UNIQUE_BOARD_ID_SIZE_BYTES+1];pico_get_unique_board_id_string(id,sizeof(id));
         append("{\"command\":\"info\",\"ok\":true,\"protocol\":1,\"device_id\":\"%s\",\"sdk\":\"%s\","
             "\"chip_revision\":%u,\"rom_revision\":%u,\"cpu_hz\":%"PRIu32",\"sd_hz\":%u,\"otp_inspection\":%s,"
-            "\"usb_msc\":%s,\"device_ui\":%s,\"debug_screen\":%s,\"debug_session\":%s,\"otp_writes\":true,\"persistent_authority\":true,\"debug_enrollment\":%s,\"hmac_backend\":%u,\"session_bytes\":%u,\"worker_stack_bytes\":32768,\"production_ready\":false}\n",
+            "\"usb_msc\":%s,\"device_ui\":%s,\"debug_screen\":%s,\"debug_session\":%s,\"otp_writes\":true,\"persistent_authority\":true,\"debug_enrollment\":%s,\"hmac_backend\":%u,\"session_bytes\":%u,\"usb_fido\":%s,\"worker_stack_bytes\":%u,\"production_ready\":false}\n",
             id,PICO_SDK_VERSION_STRING,rp2350_chip_version(),rp2350_rom_version(),clock_get_hz(clk_sys),FV_SD_CLOCK_HZ,
-            FV_DEBUG_OTP_INSPECT?"true":"false",FV_USB_MSC?"true":"false",FV_DEVICE_UI?"true":"false",FV_DEBUG_SCREEN?"true":"false",FV_DEBUG_SESSION?"true":"false",FV_DEBUG_ENROLLMENT?"true":"false",fv_hmac_backend(),(unsigned)sizeof(session));
+            FV_DEBUG_OTP_INSPECT?"true":"false",FV_USB_MSC?"true":"false",FV_DEVICE_UI?"true":"false",FV_DEBUG_SCREEN?"true":"false",FV_DEBUG_SESSION?"true":"false",FV_DEBUG_ENROLLMENT?"true":"false",fv_hmac_backend(),(unsigned)sizeof(session),FV_USB_FIDO?"true":"false",FV_USB_FIDO?65536u:32768u);
     } else if(!strcmp(command,"RNG"))rng_test();
     else if(!strcmp(command,"VAULT ERASE_SD")) {
         if(fv_enrollment_open(&persistent_device)!=1)
@@ -471,6 +492,9 @@ void security_worker(void) {
 #endif
     for(;;) {
         fv_command command;queue_remove_blocking(&commands,&command);
+#if FV_USB_FIDO
+        if(command.fido){fido_rng_ready=start_random();fv_fido_execute();fv_random_clear(&random_source);fido_rng_ready=false;continue;}
+#endif
 #if FV_DEVICE_UI
         if(command.ui){
             fv_ui_job job=*command.ui;fv_ui_wipe(command.ui,sizeof(job));
@@ -490,3 +514,28 @@ void security_worker(void) {
         uint32_t n=(uint32_t)strlen(reply);queue_add_blocking(&responses,&n);
     }
 }
+
+#if FV_USB_FIDO
+fv_vault *fv_fido_vault(void){return &usb_session;}
+bool fv_fido_random(void *ctx,uint8_t *out,size_t n){(void)ctx;if(!fido_rng_ready)fido_rng_ready=start_random();return fido_rng_ready && fv_random_generate(&random_source,out,n)==0;}
+uint16_t fv_fido_profile(void){
+    uint16_t profile=0;
+    if(sd_initialized && !sd.interface.ops->is_present(&sd.interface)){usb_lock();return 0;}
+    if(usb_session.unlocked)return usb_session.config.credential_profile;
+    bool ready=sd_initialized?sd.interface.ops->is_present(&sd.interface):fv_rp2354_sd_init(&sd);
+    sd_initialized=true;
+    if(ready)(void)fv_vault_credential_profile(&persistent_platform,&profile);
+    return profile;
+}
+int fv_fido_verify_secret(const uint8_t *secret,size_t n){
+    int r=usb_session.unlocked?fv_vault_reverify(&usb_session,secret,n):fv_vault_unlock(&usb_session,&persistent_platform,secret,n);
+    if(r || usb_session.config.volume.logical_blocks>UINT32_MAX){usb_lock();return r?r:FV_VAULT_INVALID;}
+    ++usb_generation;return 0;
+}
+void fv_fido_pump(void){
+    fv_command c;if(!queue_try_remove(&commands,&c))return;
+    if(c.storage.op!=FV_USB_NONE){fv_usb_response r;fv_usb_storage_execute(&c.storage,&r);queue_add_blocking(&storage_responses,&r);}
+    else if(c.ui){fv_ui_result r={.result=FV_VAULT_DENIED};fv_ui_wipe(c.ui,sizeof(*c.ui));queue_add_blocking(&ui_responses,&r);}
+    else {snprintf(reply,FV_REPLY_BYTES,"{\"ok\":false,\"error\":\"FIDO busy\"}\n");uint32_t n=strlen(reply);queue_add_blocking(&responses,&n);}
+}
+#endif

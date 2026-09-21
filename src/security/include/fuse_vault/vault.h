@@ -64,6 +64,9 @@ fv_vault_result fv_vault_create(const fv_vault_platform *,uint64_t logical_block
     const uint16_t algorithms[4],uint8_t count,uint16_t profile,uint32_t iterations,
     fv_auth_policy,const uint8_t *secret,size_t secret_bytes);
 fv_vault_result fv_vault_unlock(fv_vault *,const fv_vault_platform *,const uint8_t *,size_t);
+/* Fresh verification under persistent attempt policy, preserving the existing
+ * open disk session on success. Any failure locks it. Single worker only. */
+fv_vault_result fv_vault_reverify(fv_vault *,const uint8_t *,size_t);
 /* Fresh current-credential verification, under the attempt budget. Same VMK and
  * storage descriptor. New salt/shares/generation. Locks on every exit. Caller is
  * trusted on-device UI; policy changes additionally require physical approval. */

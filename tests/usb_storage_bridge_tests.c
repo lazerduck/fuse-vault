@@ -9,6 +9,14 @@ void fv_device_ui_refresh(void){}
 void fv_device_ui_media_changed(bool unlocked){(void)unlocked;}
 void fv_device_ui_disconnect(void){++disconnects;}
 #endif
+#if FV_USB_FIDO
+#include "fido_adapter.h"
+static bool fido_busy,fido_disk;
+static unsigned fido_cancels;
+bool fv_fido_busy(void){return fido_busy;}
+bool fv_fido_disk_available(void){return fido_disk;}
+void fv_fido_disconnect(void){++fido_cancels;}
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line %d: %s\n",__LINE__,#x);exit(1);}}while(0)
@@ -65,5 +73,19 @@ int main(void) {
     open=true;CHECK(fv_usb_async_submit((fv_usb_request){.op=FV_USB_READ}));
     tud_event_hook_cb(0,DCD_EVENT_BUS_RESET,true);fv_usb_storage_poll();
     CHECK(!open && !fv_usb_async_take(&r)); /* No stale completion after invalidation. */
+#if FV_USB_FIDO
+    open=true;r=fv_usb_rpc((fv_usb_request){.op=FV_USB_STATUS});CHECK(r.unlocked);
+    fido_busy=true;unsigned before_reads=reads,before_locks=locks;
+    CHECK(!fv_usb_async_submit((fv_usb_request){.op=FV_USB_READ}));
+    r=fv_usb_rpc((fv_usb_request){.op=FV_USB_STATUS});CHECK(r.unlocked && reads==before_reads);
+    r=fv_usb_rpc((fv_usb_request){.op=FV_USB_SYNC});CHECK(r.unlocked && r.result==0);
+    fido_disk=true;CHECK(fv_usb_async_submit((fv_usb_request){.op=FV_USB_READ}));
+    CHECK(fv_usb_worker_idle());CHECK(fv_usb_async_take(&r) && r.unlocked && reads==before_reads+1);
+    fido_disk=false;CHECK(!fv_usb_async_submit((fv_usb_request){.op=FV_USB_WRITE}));
+    unsigned cancels=fido_cancels;tud_event_hook_cb(0,DCD_EVENT_BUS_RESET,true);
+    CHECK(fido_cancels==cancels+1);fv_usb_storage_poll();CHECK(locks==before_locks);
+    r=fv_usb_rpc((fv_usb_request){.op=FV_USB_STATUS});CHECK(!r.unlocked && r.result==FV_BLOCK_ERROR_NOT_READY);
+    fido_busy=false;fv_usb_storage_poll();CHECK(locks==before_locks+1);
+#endif
     puts("USB reset/suspend invalidation checks passed");return 0;
 }
