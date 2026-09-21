@@ -37,7 +37,7 @@ previous conversation summary. V1 is a reference archive, not the V2 runtime.
 | F2 | Encrypted FIDO store | COMPLETE — portable store | Independent FIDO derivations, 64 KiB object image in two snapshot banks, explicit initialization, complete-state recovery under injected interruptions, USB data unchanged |
 | F3 | Composite USB and device authorization | IMPLEMENTED — hardware acceptance pending | Standard HID alongside MSC, bounded queues and responsive keepalives/cancel under disk load, trusted unlock/reverification, fresh approval, full session invalidation |
 | F4 | Local management and browser harness | IMPLEMENTED — browser/board acceptance pending | Resident list/delete, loopback WebAuthn server verifies registration and login, account selection and negative cases covered |
-| F5 | Hardware compatibility and fault acceptance | NOT STARTED | Linux Chromium/Firefox first, additional OS/browser matrix, power-cut/reconnect/mux tests, simultaneous file integrity and passkey tests, measured capacity/latency/stack/RAM |
+| F5 | Hardware compatibility and fault acceptance | IN PROGRESS — user reports GitHub/Twitter success | Linux Chromium/Firefox first, additional OS/browser matrix, power-cut/reconnect/mux tests, simultaneous file integrity and passkey tests, measured capacity/latency/stack/RAM |
 
 Each stage progresses through implementation, automated validation, and any
 hardware acceptance separately. Passing a simulated engine test does not prove
@@ -86,10 +86,22 @@ substitute a browser virtual authenticator for tests of the actual engine/device
 
 ## Current handoff
 
-- Real-site trial (user report, 2026-09-21): Twitter worked; GitHub displayed
-  "Authentication failed". Registration versus login, browser identity and device
-  prompt behavior are not yet established. Treat as an open compatibility issue,
-  not evidence that GitHub rejects custom authenticators.
+- Priority update (user, 2026-09-21): physical endurance testing moves to the
+  forthcoming V2 board with working screen and printed enclosure, through daily
+  use. Hardware gates remain open; software development proceeds with the
+  [software completion/polish plan](v2-software-polish.md). Controlled fault tests
+  remain distinct from daily-use evidence.
+- Real-site trial (user report, 2026-09-21): GitHub and Twitter worked. GitHub's
+  initial failure was its existing-passkey authentication gate before adding a new
+  passkey; authenticating with the existing credential allowed registration to
+  succeed. This is resolved, with no firmware compatibility defect established.
+  Exact browser/version and separate real-site login/reconnect coverage remain
+  unspecified. F5 compatibility work has begun; fault acceptance is outstanding.
+- Core requested functionality is implemented. Next work is bounded F5 acceptance:
+  browser coverage, cancellation/rejection/session invalidation, sustained USB
+  traffic with file-integrity checks, controlled interrupted commits/recovery and
+  capacity/latency/stack/heap measurements. Physical trusted display/input and
+  release security review/hardening remain separate production gates.
 - User confirmed configurable verification works across several board scenarios.
 - **Current implementation stage: F4 implemented; initial user browser/board tests passed.**
   Runbook `docs/v2-fido-browser-testing.md`; evidence `results/fido-f4-build-20260921.md`.
@@ -137,7 +149,7 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   rejection/cancellation and concurrent-load acceptance remain;
   concurrent disk integrity and keepalive timing, physical held-button checks,
   suspend/mux/reset/SD faults, measured stack/heap. Complete the runbook acceptance
-  before marking F3 complete; F4 remains the next implementation stage.
+  before marking F3 complete; F4 implementation is now delivered.
 - Active-load stability fix: pinned TinyUSB `tud_task_ext` drained its event queue
   until empty while deferred MSC operations requeued themselves. This starved the
   outer-loop UI/CDC/FIDO polls, including the mailbox acknowledgement needed by
@@ -145,15 +157,16 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   the SDK is not edited. `tools/test_usb_task_budget.py` reproduces starvation in
   the original task body and passes with the fixed body, including ASan/UBSan.
   Actual MSC driver overlap/durable completion tests pass for 4/16/32 KiB buffers.
-  Both firmware variants build. Corrected UF2 rebuilt; user reflash/load retest
-  remains pending. The reported eventual USB restart has not been independently
+  Both firmware variants build. Subsequent user feedback reports successful
+  scenarios; sustained load with measured file integrity remains unconfirmed.
+  The reported eventual USB restart has not been independently
   diagnosed; the screenshot's HID I/O error was likely the user's unplug.
 - Configurable verification implemented: Settings → FIDO Verification offers timed /
   same-site or whole unlocked session. Stored as a local-only versioned record in
   the encrypted engine snapshot; existing stores default to timed. Saving clears
   UV reuse and host tokens; next use re-verifies once. Wrong credentials and host
   cancellation retain their existing shared-session lock behavior. No automatic
-  USB lock timer added. User must reflash the policy-capable UF2 and select mode.
+  USB lock timer added. User subsequently confirmed several policy scenarios work.
   Full 33/33 normal CTests and 9/9 focused sanitizer tests pass; policy persistence,
   cross-site/long-age reuse, switching back, invalid/locked setters and failed save
   are covered by the firmware adapter peer. Both ARM firmware variants build.

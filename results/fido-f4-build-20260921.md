@@ -46,8 +46,10 @@ zero. These are user-run physical tests, separate from the agent checks above.
 Browser identity and coverage of both Chromium/Firefox, plus explicit rejection of
 the deleted credential after reconnect, have not yet been confirmed.
 
-Subsequent real-site user report (2026-09-21): Twitter worked; GitHub showed
-"Authentication failed". Exact ceremonies, browser and device prompt behavior
-remain unspecified. GitHub failure is an open compatibility investigation; the
-screenshot does not establish its cause. Remaining acceptance runbook:
+Subsequent real-site user report (2026-09-21): Twitter and GitHub worked. User
+clarified that GitHub's initial "Authentication failed" was an existing-passkey
+authentication gate before registering the new passkey. Using the existing
+passkey allowed Fuse Vault registration to succeed; no firmware defect was
+established. Browser/version and separate real-site login/reconnect coverage
+remain unspecified. Remaining acceptance runbook:
 `docs/v2-fido-browser-testing.md`.
