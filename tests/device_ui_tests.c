@@ -59,14 +59,14 @@ static void method_tests(void){
 static void fido_tests(void){
     fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true});
     u.fido_enabled=true;
-    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_SELECT);
+    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);
     CHECK(u.screen==UI_FIDO_POLICY_SCREEN && !u.job.fido_policy);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.pending && u.job.op==UI_FIDO_POLICY && u.job.fido_policy==1);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.fido_policy=1});
-    u.fido_enabled=true;key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);
+    u.fido_enabled=true;key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);
     CHECK(u.screen==UI_FIDO_INIT_CONFIRM && !u.cursor && !u.pending);
     key(&u,UI_SELECT);CHECK(u.screen==UI_HOME && !u.pending);
-    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
+    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
     CHECK(u.pending && u.job.op==UI_FIDO_INIT);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true});
     fv_ui_fido_begin(&u,false,0,"REGISTER example.test");CHECK(u.fido_modal && !u.fido_done);
@@ -78,8 +78,24 @@ static void fido_tests(void){
     fv_ui_fido_begin(&u,false,0,"SIGN IN example.test");CHECK(!u.fido_done);key(&u,UI_SELECT);CHECK(u.fido_approved);
     fv_ui_fido_end(&u);fv_ui_fido_begin(&u,true,3,"VERIFY");key(&u,UI_BACK);CHECK(u.fido_done && !u.fido_approved);
 }
+static void passkey_tests(void){
+    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});u.fido_enabled=true;
+    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_SELECT);
+    CHECK(u.pending && u.job.op==UI_PASSKEY_LIST);
+    fv_ui_result r={.status=2,.unlocked=true,.passkey_count=2,.passkey_id={7}};
+    strcpy(r.passkey_site,"localhost");strcpy(r.passkey_account,"Alice");
+    fv_ui_complete(&u,r);CHECK(u.screen==UI_PASSKEYS && u.job.passkey_id[0]==7);
+    unsigned generation=u.fido_generation;
+    key(&u,UI_SELECT);CHECK(u.screen==UI_PASSKEY_DELETE_CONFIRM && !u.cursor && u.fido_generation!=generation);
+    key(&u,UI_SELECT);CHECK(u.screen==UI_PASSKEYS && !u.pending);
+    key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
+    CHECK(u.pending && u.job.op==UI_PASSKEY_DELETE && u.job.passkey_id[0]==7);
+    r.passkey_count=0;fv_ui_complete(&u,r);CHECK(u.screen==UI_PASSKEYS);
+    key(&u,UI_SELECT);CHECK(u.screen==UI_PASSKEYS && !u.pending);
+    key(&u,UI_BACK);CHECK(u.screen==UI_HOME);
+}
 int main(int argc,char **argv){
-    flip_tests();method_tests();fido_tests();
+    flip_tests();method_tests();fido_tests();passkey_tests();
     CHECK(fv_usb_route(false,false)==0);CHECK(fv_usb_route(true,false)==2);
     CHECK(fv_usb_route(false,true)==1);CHECK(fv_usb_route(true,true)==1);
     for(uint64_t capacity=0;capacity<100000;capacity++){

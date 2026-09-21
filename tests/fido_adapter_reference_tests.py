@@ -28,7 +28,7 @@ try:
     result = c.get_assertion('example.test', h, options={'uv': True})
     key.public_key.verify(bytes(result.auth_data)+h, result.signature)
     assert list(map(int, d.exchange('counts').split())) == [2, 1, 0]
-    register('another.test')
+    another_key = register('another.test').auth_data.credential_data
     assert list(map(int, d.exchange('counts').split())) == [3, 2, 0]
     d.control('reopen')
     c = Ctap2(d)
@@ -88,9 +88,29 @@ try:
     before = list(map(int, d.exchange('counts').split()))
     c.get_assertion('another.test', h, options={'uv': True})
     assert list(map(int, d.exchange('counts').split()))[1] == before[1] + 1
+    entries = [d.exchange(f'local-list {i}').split() for i in range(2)]
+    assert all(int(e[0]) == 2 for e in entries)
+    assert entries[0][2] != entries[1][2]
+    assert d.exchange('local-delete ' + '00'*42) == 'denied'
+    assert int(d.exchange('local-list 0').split()[0]) == 2
+    d.control('local-delete ' + entries[1][2])
+    assert int(d.exchange('local-list 0').split()[0]) == 1
+    assert d.exchange('local-delete ' + entries[1][2]) == 'denied'
+    d.control('reopen')
+    assert d.exchange('local-list 0') == 'denied'
+    # Whichever RP survived, its credential still signs after local deletion.
+    surviving = None
+    for rp, credential in (('example.test', key), ('another.test', another_key)):
+        try:
+            c.get_assertion(rp,h,allow_list=[{'type':'public-key','id':credential.credential_id}],options={'uv':True})
+            surviving = rp
+        except CtapError as exc:
+            assert exc.code == CtapError.ERR.NO_CREDENTIALS
+    assert surviving
+    assert int(d.exchange('local-list 0').split()[0]) == 1
     d.control('cancel-late')
     with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
-        c.get_assertion('example.test', h, options={'uv': True})
+        c.get_assertion(surviving, h, options={'uv': True})
     d.control('locked')
     print('Firmware HID/store/UI adapter: registration, signed assertion, reopen, RP/age reverify, denial, attempts, cancel, UV tokens passed')
 finally:

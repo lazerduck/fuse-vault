@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Fuse Vault · Passkey test</title><link rel="stylesheet" href="/style.css"><script defer src="/app.js"></script></head>
+<body><main><p class="eyebrow">FUSE VAULT / LOCAL TEST</p><h1>Try your passkey.</h1><p>Register an account, then sign in using your device. Confirm the site and approve on its screen.</p>
+<label for="name">Test account</label><input id="name" maxlength="64" autocomplete="username" placeholder="e.g. Alice" value="Alice">
+<div class="actions"><button id="register">Register passkey</button><button id="login">Sign in to account</button><button id="discover">Choose an account on sign-in</button><button id="cancel" disabled>Cancel request</button></div>
+<p id="status" role="status" aria-live="polite">Ready. Connect and unlock Fuse Vault.</p><pre id="details"></pre>
+<h2>Registered here</h2><ul id="accounts"></ul>
+<p class="note">Choose “security key” or “USB security key” if the browser offers other devices. Discoverable sign-in lets the browser select from accounts on your authenticator.</p>
+<p class="note">This server stores public credential records only. Remove a device passkey through Settings → Passkeys on Fuse Vault. Removing one there leaves its public test record here, allowing you to check that login fails.</p>
+<p class="note">Current firmware locks the shared vault session on host cancellation. Finish disk writes and unmount before testing Cancel. Closing a browser prompt may also cancel.</p>
+</main></body></html>

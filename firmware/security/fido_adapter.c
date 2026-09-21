@@ -134,6 +134,20 @@ int fv_fido_policy_set(uint8_t mode){
     if(!fv_fido_engine_uv_policy(true,&mode)){fv_fido_close();return -1;}
     uv_policy=mode;fv_fido_verification_clear(&verification);return 0;
 }
+int fv_fido_manage(bool remove,uint16_t *index,uint16_t *count,fv_passkey_t *entry){
+    if(!fv_fido_vault()->unlocked || !ensure_engine())return -1;
+    uint8_t wanted[42];memcpy(wanted,entry->id,42);
+    bool ok=fv_fido_engine_manage(FV_PASSKEY_BEGIN,index,count,entry);
+    if(ok && remove){
+        memcpy(entry->id,wanted,42);
+        ok=fv_fido_engine_manage(FV_PASSKEY_DELETE,index,count,entry);
+        if(ok)ok=fv_fido_engine_manage(FV_PASSKEY_READ,index,count,entry);
+    }
+    fv_passkey_t end={0};uint16_t i=0,n=0;
+    if(!fv_fido_engine_manage(FV_PASSKEY_END,&i,&n,&end))ok=false;
+    if(!ok){fv_fido_close();memset(entry,0,sizeof(*entry));*count=0;return -1;}
+    return 0;
+}
 int fv_fido_initialize(void){
     fv_fido_close();int r=fv_fido_store_initialize(&store,fv_fido_vault(),true,image);
     fv_fido_store_close(&store);fv_ui_wipe(image,sizeof(image));return r;

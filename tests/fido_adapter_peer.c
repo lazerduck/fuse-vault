@@ -62,6 +62,17 @@ int main(void){
         if(!strcmp(line,"descriptor\n")){const uint8_t *d=tud_hid_descriptor_report_cb(0);for(size_t i=0;i<sizeof(fv_fido_hid_report_descriptor);i++)printf("%02x",d[i]);puts("");}
         else if(!strcmp(line,"reopen\n")){connect_device();puts("ok");}
         else if(!strncmp(line,"policy ",7)){unsigned mode;assert(sscanf(line+7,"%u",&mode)==1);assert(fv_fido_policy_set((uint8_t)mode)==0);puts("ok");}
+        else if(!strncmp(line,"local-list ",11)){
+            unsigned position;assert(sscanf(line+11,"%u",&position)==1);uint16_t index=position,count=0;fv_passkey_t entry={0};
+            if(fv_fido_manage(false,&index,&count,&entry))puts("denied");
+            else {printf("%u %u ",count,index);for(unsigned i=0;i<42;i++)printf("%02x",entry.id[i]);puts("");}
+        }
+        else if(!strncmp(line,"local-delete ",13)){
+            fv_passkey_t entry={0};uint16_t index=0,count=0;
+            assert(strcspn(line+13,"\n")==84);
+            for(unsigned i=0;i<42;i++){unsigned b;assert(sscanf(line+13+i*2,"%2x",&b)==1);entry.id[i]=b;}
+            puts(fv_fido_manage(true,&index,&count,&entry)?"denied":"ok");
+        }
         else if(!strcmp(line,"policy-get\n")){printf("%u\n",fv_fido_policy_get());}
         else if(!strcmp(line,"policy-fail\n")){fixture.fail_write=fixture.writes+1;assert(fv_fido_policy_set(1)!=0);fv_fido_fixture_io_reset(&fixture);assert(fv_fido_policy_get()==0);puts("ok");}
         else if(!strcmp(line,"policy-invalid\n")){assert(fv_fido_policy_set(2)!=0);puts("ok");}

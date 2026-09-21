@@ -8,7 +8,7 @@
 #define FV_UI_SECRET_MAX 64
 /* Stable profile-2 mapping: up=1, down=2, left=3, right=4. Select submits. */
 typedef enum {UI_UP=1,UI_DOWN,UI_LEFT,UI_RIGHT,UI_SELECT,UI_BACK} fv_ui_key;
-typedef enum {UI_STATUS=1,UI_CREATE,UI_UNLOCK,UI_LOCK,UI_POLICY,UI_ERASE,UI_CHANGE,UI_FIDO_INIT,UI_FIDO_POLICY} fv_ui_operation;
+typedef enum {UI_STATUS=1,UI_CREATE,UI_UNLOCK,UI_LOCK,UI_POLICY,UI_ERASE,UI_CHANGE,UI_FIDO_INIT,UI_FIDO_POLICY,UI_PASSKEY_LIST,UI_PASSKEY_DELETE} fv_ui_operation;
 typedef struct {
     fv_ui_operation op;
     uint8_t secret[64],length,count;
@@ -16,6 +16,8 @@ typedef struct {
     uint16_t algorithms[4],profile;
     uint32_t attempts,action;
     uint8_t fido_policy;
+    uint16_t passkey_index;
+    uint8_t passkey_id[42];
 } fv_ui_job;
 typedef struct {
     int result,status;
@@ -24,8 +26,11 @@ typedef struct {
     uint64_t blocks;
     uint32_t attempts,action;
     uint8_t fido_policy;
+    uint16_t passkey_index,passkey_count;
+    uint8_t passkey_id[42];
+    char passkey_site[256],passkey_account[256];
 } fv_ui_result;
-typedef enum {UI_WAIT,UI_HOME,UI_SECRET,UI_CONFIRM,UI_STACK,UI_OPTIONS,UI_REVIEW,UI_ERASE_CONFIRM,UI_ERROR,UI_METHOD,UI_SETTINGS,UI_FIDO_APPROVE,UI_FIDO_INIT_CONFIRM,UI_FIDO_POLICY_SCREEN} fv_ui_screen;
+typedef enum {UI_WAIT,UI_HOME,UI_SECRET,UI_CONFIRM,UI_STACK,UI_OPTIONS,UI_REVIEW,UI_ERASE_CONFIRM,UI_ERROR,UI_METHOD,UI_SETTINGS,UI_FIDO_APPROVE,UI_FIDO_INIT_CONFIRM,UI_FIDO_POLICY_SCREEN,UI_PASSKEYS,UI_PASSKEY_DELETE_CONFIRM} fv_ui_screen;
 typedef struct {
     fv_ui_screen screen;
     fv_ui_result device;

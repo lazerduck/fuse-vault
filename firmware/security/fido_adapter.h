@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "device_ui.h"
+#include "fuse_vault/passkeys.h"
 #include "fuse_vault/vault.h"
 void fv_fido_poll(void);
 void fv_fido_disconnect(void);
@@ -18,6 +19,7 @@ void fv_fido_unlocked(void);
 int fv_fido_initialize(void);
 uint8_t fv_fido_policy_get(void);
 int fv_fido_policy_set(uint8_t);
+int fv_fido_manage(bool remove,uint16_t *,uint16_t *,fv_passkey_t *);
 /* Single worker adapters; pump only storage while a modal prompt waits. */
 fv_vault *fv_fido_vault(void);
 bool fv_fido_random(void *,uint8_t *,size_t);

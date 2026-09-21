@@ -8,7 +8,7 @@ target_compile_options(fv_fido_store PRIVATE -Wall -Wextra -Werror -fstack-usage
 include(../../third_party/pico_fido/engine.cmake)
 if(FV_BUILD_TESTS)
   add_executable(fido_usb_scheduling_tests ../../tests/usb_storage_bridge_tests.c ../../firmware/security/usb_storage_bridge.c)
-  target_include_directories(fido_usb_scheduling_tests PRIVATE ../../tests/msc_stubs ../../firmware/security ../../src/ui)
+  target_include_directories(fido_usb_scheduling_tests PRIVATE include ../../tests/msc_stubs ../../firmware/security ../../src/ui)
   target_compile_definitions(fido_usb_scheduling_tests PRIVATE FV_USB_FIDO=1 FV_USB_MSC=1 FV_DEVICE_UI=1)
   target_link_libraries(fido_usb_scheduling_tests PRIVATE fv_security)
   add_test(NAME fido_usb_scheduling COMMAND fido_usb_scheduling_tests)
@@ -41,6 +41,11 @@ if(FV_BUILD_TESTS)
   if(FV_FIDO_CLIENT_MISSING)
     message(FATAL_ERROR "FIDO tests require python-fido2 and cryptography in ${Python3_EXECUTABLE}")
   endif()
+  add_test(NAME fido_web_http COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/fido_web_http_tests.py)
+  add_test(NAME fido_web COMMAND ${Python3_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/fido_web_tests.py $<TARGET_FILE:fido_encrypted_engine_tests>)
+  set_tests_properties(fido_web PROPERTIES TIMEOUT 120)
   add_test(NAME fido_engine_reference COMMAND ${Python3_EXECUTABLE}
     ${CMAKE_CURRENT_SOURCE_DIR}/../../tests/fido_engine_reference_tests.py
     $<TARGET_FILE:fido_engine_tests>)

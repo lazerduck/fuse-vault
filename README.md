@@ -4,6 +4,7 @@ A fresh start from the existing circuit board design.
 
 FIDO implementation stages, accepted design decisions, validation evidence and
 the next action are tracked in the [V2 FIDO delivery ledger](docs/v2-fido-progress.md).
+The [browser/passkey-management runbook](docs/v2-fido-browser-testing.md) covers F4 testing.
 
 ## V2 source
 

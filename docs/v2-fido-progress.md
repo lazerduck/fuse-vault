@@ -36,7 +36,7 @@ previous conversation summary. V1 is a reference archive, not the V2 runtime.
 | F1 | Portable pico-fido engine | COMPLETE — portable baseline | V2-owned pinned sources, injected callbacks, built-in UV/no external PIN, ES256 resident/nonresident registration and assertion independently verified; persistence callback failures deny success; normal/sanitizer tests and Cortex-M33 compile/link evidence |
 | F2 | Encrypted FIDO store | COMPLETE — portable store | Independent FIDO derivations, 64 KiB object image in two snapshot banks, explicit initialization, complete-state recovery under injected interruptions, USB data unchanged |
 | F3 | Composite USB and device authorization | IMPLEMENTED — hardware acceptance pending | Standard HID alongside MSC, bounded queues and responsive keepalives/cancel under disk load, trusted unlock/reverification, fresh approval, full session invalidation |
-| F4 | Local management and browser harness | NOT STARTED | Resident list/delete, loopback WebAuthn server verifies registration and login, account selection and negative cases covered |
+| F4 | Local management and browser harness | IMPLEMENTED — browser/board acceptance pending | Resident list/delete, loopback WebAuthn server verifies registration and login, account selection and negative cases covered |
 | F5 | Hardware compatibility and fault acceptance | NOT STARTED | Linux Chromium/Firefox first, additional OS/browser matrix, power-cut/reconnect/mux tests, simultaneous file integrity and passkey tests, measured capacity/latency/stack/RAM |
 
 Each stage progresses through implementation, automated validation, and any
@@ -86,7 +86,31 @@ substitute a browser virtual authenticator for tests of the actual engine/device
 
 ## Current handoff
 
-- **Current stage: F3, board discovery/registration/login/reconnect passed; load stability acceptance pending.**
+- Real-site trial (user report, 2026-09-21): Twitter worked; GitHub displayed
+  "Authentication failed". Registration versus login, browser identity and device
+  prompt behavior are not yet established. Treat as an open compatibility issue,
+  not evidence that GitHub rejects custom authenticators.
+- User confirmed configurable verification works across several board scenarios.
+- **Current implementation stage: F4 implemented; initial user browser/board tests passed.**
+  Runbook `docs/v2-fido-browser-testing.md`; evidence `results/fido-f4-build-20260921.md`.
+  Latest UF2 adds Settings → Passkeys, local stable-ID deletion and browsing. Harness:
+  `python3 tools/fido_web/server.py`, then http://localhost:8000. Preserve existing
+  credentials/settings; do not initialize FIDO again. Agent's temporary UI test
+  server was stopped; user starts their own persistent database run.
+- F4.1 **done**: local list/delete/scroll/empty-state UI, cancellation by default,
+  fresh confirmation generation, worker authorization and durable stable-ID deletion.
+- F4.2 **done**: loopback server with persistent public credentials and register/login/
+  discoverable-account browser flows. Exact origin/RP, session-bound one-use
+  challenges and cryptographic assertions verified using the actual C engine.
+- F4.3 **done**: 35/35 normal CTests, 11/11 focused sanitizer tests, both firmware
+  builds, browser layout and empty-account error check. No virtual authenticator.
+- F4.4 **partially verified on hardware (user report, 2026-09-21)**: registered
+  Alice and Bob, deleted Bob, and reported expected behavior. Screenshot confirms
+  Alice discoverable login with verified UV/UP and counter zero. Browser identity,
+  both Chromium/Firefox coverage, and explicit deleted-credential rejection after
+  reconnect remain unconfirmed.
+  F5 remains broader acceptance/hardening; F4 software tests do not complete it.
+- **F3 status: F3, board discovery/registration/login/reconnect passed; load stability acceptance pending.**
   Build/runbook: `docs/v2-fido-testing.md`; evidence:
   `results/fido-integration-build-20260921.md`. Development UF2 is
   `build-pico-fido/fuse_vault_security.uf2`. User flashed the corrected image and
@@ -172,7 +196,8 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   through the web reader. This imported baseline is not a security audit.
 - The worktree is shared with USB pipeline work; another writer committed some
   in-progress F1 files during this task. No commits or reversions were made here.
-- No flashing, OTP changes, physical SD writes, browser trials or hardware tests performed.
+- The agent has not flashed hardware, changed OTP or performed physical SD writes.
+  User hardware results and agent browser UI checks are recorded above.
 
 ## Estimates
 

@@ -301,7 +301,10 @@ void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *respo
 #if FV_DEVICE_UI
 void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     int r=0,opened;fv_device_state state={0};
-    if(job->op!=UI_STATUS && job->op!=UI_ERASE && job->op!=UI_LOCK && job->op!=UI_FIDO_INIT && job->op!=UI_FIDO_POLICY) {
+#if FV_USB_FIDO
+    fv_passkey_t passkey={0};uint16_t passkey_index=job->passkey_index,passkey_count=0;
+#endif
+    if(job->op!=UI_STATUS && job->op!=UI_ERASE && job->op!=UI_LOCK && job->op!=UI_FIDO_INIT && job->op!=UI_FIDO_POLICY && job->op!=UI_PASSKEY_LIST && job->op!=UI_PASSKEY_DELETE) {
         if(!job->length || job->length>64)r=FV_VAULT_INVALID;
         if(job->profile<2 || job->profile>4)r=FV_VAULT_INVALID;
         if(job->profile>=3 && job->length!=4)r=FV_VAULT_INVALID;
@@ -325,6 +328,10 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     if(job->op==UI_STATUS)goto done;
 #if FV_USB_FIDO
     if(job->op==UI_FIDO_INIT){r=fv_fido_initialize();goto done;}
+    if(job->op==UI_PASSKEY_LIST || job->op==UI_PASSKEY_DELETE){
+        memcpy(passkey.id,job->passkey_id,42);
+        r=fv_fido_manage(job->op==UI_PASSKEY_DELETE,&passkey_index,&passkey_count,&passkey);goto done;
+    }
     if(job->op==UI_FIDO_POLICY){r=fv_fido_policy_set(job->fido_policy);goto done;}
 #endif
     if(job->op!=UI_CREATE && job->op!=UI_UNLOCK && job->op!=UI_POLICY && job->op!=UI_CHANGE){r=FV_VAULT_INVALID;goto done;}
@@ -388,6 +395,8 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         }
     }
 #if FV_USB_FIDO
+    out->passkey_index=passkey_index;out->passkey_count=passkey_count;
+    memcpy(out->passkey_id,passkey.id,42);memcpy(out->passkey_site,passkey.site,256);memcpy(out->passkey_account,passkey.account,256);
     if(usb_session.unlocked)out->fido_policy=fv_fido_policy_get();
     fido_rng_ready=false;
 #endif

@@ -66,7 +66,7 @@ endif()
 if(FV_DEBUG_OTP_INSPECT)
   target_sources(fuse_vault_security PRIVATE ../../src/platform/rp2354/otp_inspect.c)
 endif()
-target_include_directories(fuse_vault_security PRIVATE . ../../src/ui ../../src/platform/rp2354/include)
+target_include_directories(fuse_vault_security PRIVATE . ../../src/ui ../../src/fido/include ../../src/platform/rp2354/include)
 target_compile_definitions(fuse_vault_security PRIVATE FV_SD_CLOCK_HZ=${FV_SD_CLOCK_HZ}
   FV_USB_MSC=$<BOOL:${FV_USB_MSC}>
   FV_USB_FIDO=$<BOOL:${FV_USB_FIDO}>
