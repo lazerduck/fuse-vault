@@ -7,7 +7,7 @@ static bool valid(const fv_volume_descriptor *d,uint64_t capacity) {
     unsigned nonzero=0;for(unsigned i=0;i<16;i++)nonzero|=d->volume_id[i];
     if(!nonzero)return false;
     for(unsigned i=0;i<FV_MAX_LAYERS;i++) {
-        if(i<d->layer_count) {if(d->cipher_ids[i]!=FV_AES_256_XTS && d->cipher_ids[i]!=FV_CAMELLIA_256_XTS)return false;}
+        if(i<d->layer_count) {if(!fv_cipher_key_bytes((fv_algorithm)d->cipher_ids[i]))return false;}
         else if(d->cipher_ids[i])return false;
     }
     uint64_t n=d->logical_blocks,m=n/15+(n%15!=0);

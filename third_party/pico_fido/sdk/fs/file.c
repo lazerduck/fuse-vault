@@ -339,7 +339,7 @@ static void scan_region(bool persistent) {
     }
     size_t scanned = 0;
     for (uintptr_t base = flash_read_uintptr(endp); base >= startp; base = flash_read_uintptr(base)) {
-        if (++scanned > 65536u / 12u || base > endp || endp - base < 12u) {
+        if (++scanned > (endp-startp) / 12u || base > endp || endp - base < 12u) {
             fv_pico_engine_fail(); return;
         }
         if (base == 0x0) { //all is empty

@@ -18,7 +18,7 @@ static uint32_t configure(fv_bench_engine *e,const fv_bench_request *q,fv_bench_
     /* Empty stack means raw SD baseline. Other stacks contain 1..4 IDs. */
     while(packed) {
         uint32_t algorithm=packed&255u;
-        if(algorithm!=FV_AES_256_XTS && algorithm!=FV_CAMELLIA_256_XTS) return FV_BENCH_INVALID;
+        if(!fv_cipher_key_bytes((fv_algorithm)algorithm)) return FV_BENCH_INVALID;
         algorithms[count]=(fv_algorithm)algorithm;
         for(unsigned i=0;i<FV_XTS_KEY_BYTES;i++) keys[count][i]=(uint8_t)(i+71u*count);
         count++; packed>>=8;

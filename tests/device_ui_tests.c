@@ -65,8 +65,8 @@ static void fido_tests(void){
     fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.fido_policy=1});
     u.fido_enabled=true;key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);
     CHECK(u.screen==UI_FIDO_INIT_CONFIRM && !u.cursor && !u.pending);
-    key(&u,UI_SELECT);CHECK(u.screen==UI_HOME && !u.pending);
-    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
+    key(&u,UI_SELECT);CHECK(u.screen==UI_SETTINGS && u.cursor==3 && !u.pending);
+    key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
     CHECK(u.pending && u.job.op==UI_FIDO_INIT);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true});
     fv_ui_fido_begin(&u,false,0,"REGISTER example.test");CHECK(u.fido_modal && !u.fido_done);
@@ -92,10 +92,70 @@ static void passkey_tests(void){
     CHECK(u.pending && u.job.op==UI_PASSKEY_DELETE && u.job.passkey_id[0]==7);
     r.passkey_count=0;fv_ui_complete(&u,r);CHECK(u.screen==UI_PASSKEYS);
     key(&u,UI_SELECT);CHECK(u.screen==UI_PASSKEYS && !u.pending);
+    key(&u,UI_BACK);CHECK(u.screen==UI_SETTINGS && u.cursor==5);
     key(&u,UI_BACK);CHECK(u.screen==UI_HOME);
 }
+static void navigation_tests(void){
+    fv_ui u;fv_ui_init(&u);u.fido_enabled=true;u.job.op=UI_PASSKEY_LIST;
+    fv_ui_result r={.status=2,.unlocked=true,.passkey_count=2,.passkey_id={9}};
+    strcpy(r.passkey_site,"github.com");strcpy(r.passkey_account,"Alice");
+    fv_ui_complete(&u,r);
+    uint8_t site_pixels[400];memcpy(site_pixels,u.framebuffer+200,sizeof(site_pixels));
+    for(unsigned i=0;i<10;i++)key(&u,UI_RIGHT);
+    CHECK(!u.passkey_page); /* Short labels never scroll to an empty page. */
+    memset(r.passkey_account,'a',255);r.passkey_account[255]=0;
+    fv_ui_complete(&u,r);
+    for(unsigned i=0;i<10;i++)key(&u,UI_RIGHT);
+    CHECK(u.passkey_page==5);
+    CHECK(!memcmp(site_pixels,u.framebuffer+200,sizeof(site_pixels))); /* Site remains visible. */
+    unsigned generation=u.fido_generation;
+    key(&u,UI_SELECT);CHECK(u.screen==UI_PASSKEY_DELETE_CONFIRM && !u.cursor && u.passkey_page==5);
+    CHECK(u.fido_generation!=generation);
+    key(&u,UI_LEFT);CHECK(u.passkey_page==4 && !u.cursor);
+    key(&u,UI_DOWN);CHECK(u.cursor==1);
+    generation=u.fido_generation;
+    key(&u,UI_BACK);CHECK(u.screen==UI_PASSKEYS && !u.pending && !u.cursor && u.passkey_page==4);
+    CHECK(u.fido_generation!=generation && u.job.passkey_id[0]==9);
+    key(&u,UI_SELECT);CHECK(!u.cursor);key(&u,UI_SELECT);
+    CHECK(u.screen==UI_PASSKEYS && u.passkey_page==4);
+    key(&u,UI_DOWN);CHECK(u.pending && u.job.passkey_index==1);
+    r.passkey_index=1;r.passkey_id[0]=10;fv_ui_complete(&u,r);
+    CHECK(!u.passkey_page && u.job.passkey_id[0]==10);
+    key(&u,UI_BACK);CHECK(u.screen==UI_SETTINGS && u.cursor==5);
+    key(&u,UI_UP);key(&u,UI_SELECT);CHECK(u.screen==UI_FIDO_POLICY_SCREEN);
+    key(&u,UI_DOWN);key(&u,UI_BACK);CHECK(u.screen==UI_SETTINGS && u.cursor==4 && !u.pending);
+    key(&u,UI_SELECT);CHECK(u.job.fido_policy==u.device.fido_policy);
+    key(&u,UI_BACK);key(&u,UI_UP);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_BACK);
+    CHECK(u.screen==UI_SETTINGS && u.cursor==3 && !u.pending);
+    key(&u,UI_SELECT);CHECK(!u.cursor); /* Re-entering destruction defaults to Cancel. */
+    key(&u,UI_BACK);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_BACK);
+    CHECK(u.screen==UI_SETTINGS && u.cursor==1 && !u.pending);
+}
+static void standard_controls_tests(void){
+    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});
+    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_BACK);
+    CHECK(u.screen==UI_HOME && !u.pending);
+    key(&u,UI_BACK);CHECK(u.pending && u.job.op==UI_LOCK);
+    key(&u,UI_BACK);CHECK(u.job.op==UI_LOCK);
+    fv_ui_complete(&u,(fv_ui_result){.status=2});key(&u,UI_BACK);
+    CHECK(u.screen==UI_HOME && !u.pending);
+    u.screen=UI_OPTIONS;u.cursor=0;u.job.attempts=10;u.job.action=1;
+    key(&u,UI_DOWN);CHECK(u.cursor==1 && u.job.attempts==10 && u.job.action==1);
+    key(&u,UI_RIGHT);CHECK(u.job.action==2 && u.job.attempts==10);
+    key(&u,UI_DOWN);key(&u,UI_RIGHT);CHECK(u.cursor==2 && u.screen==UI_OPTIONS);
+    key(&u,UI_SELECT);CHECK(u.screen==UI_REVIEW && !u.cursor && !u.pending);
+    u.screen=UI_STACK;u.cursor=0;u.job.count=2;u.job.algorithms[0]=1;u.job.algorithms[1]=1;
+    key(&u,UI_LEFT);CHECK(u.job.count==2 && u.job.algorithms[0]==2 && u.job.algorithms[1]==1);
+    key(&u,UI_DOWN);key(&u,UI_DOWN);key(&u,UI_DOWN); /* Explicit remove row. */
+    key(&u,UI_RIGHT);CHECK(u.job.count==2);
+    key(&u,UI_SELECT);CHECK(u.job.count==1 && !u.job.algorithms[1]);
+    key(&u,UI_SELECT);CHECK(u.job.count==1); /* Always retain one layer. */
+    fv_ui_fido_begin(&u,false,0,"SIGN IN github.com");
+    key(&u,UI_UP);key(&u,UI_RIGHT);CHECK(!u.fido_done && !u.fido_approved);
+    key(&u,UI_BACK);CHECK(u.fido_done && !u.fido_approved && !u.pending);
+}
 int main(int argc,char **argv){
-    flip_tests();method_tests();fido_tests();passkey_tests();
+    flip_tests();method_tests();fido_tests();passkey_tests();navigation_tests();standard_controls_tests();
     CHECK(fv_usb_route(false,false)==0);CHECK(fv_usb_route(true,false)==2);
     CHECK(fv_usb_route(false,true)==1);CHECK(fv_usb_route(true,true)==1);
     for(uint64_t capacity=0;capacity<100000;capacity++){
@@ -113,15 +173,18 @@ int main(int argc,char **argv){
     CHECK(u.screen==UI_SECRET && !u.job.length);for(unsigned i=0;i<64;i++)CHECK(!u.job.secret[i]);
     sequence(&u);sequence(&u);CHECK(u.screen==UI_STACK);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==2);
+    key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==3);
+    key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==1);
+    key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==2);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==2);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==3);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==4);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==4);
-    key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.screen==UI_OPTIONS);
-    for(unsigned i=0;i<150;i++){key(&u,UI_UP);}CHECK(u.job.attempts==100);
-    for(unsigned i=0;i<150;i++){key(&u,UI_DOWN);}CHECK(u.job.attempts==1);
-    for(unsigned i=0;i<9;i++)key(&u,UI_UP);
-    key(&u,UI_RIGHT);CHECK(u.job.action==2);key(&u,UI_SELECT);
+    key(&u,UI_DOWN);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.screen==UI_OPTIONS);
+    for(unsigned i=0;i<150;i++){key(&u,UI_RIGHT);}CHECK(u.job.attempts==100);
+    for(unsigned i=0;i<150;i++){key(&u,UI_LEFT);}CHECK(u.job.attempts==1);
+    for(unsigned i=0;i<9;i++)key(&u,UI_RIGHT);
+    key(&u,UI_DOWN);key(&u,UI_RIGHT);CHECK(u.job.action==2);key(&u,UI_DOWN);key(&u,UI_SELECT);
     CHECK(u.screen==UI_REVIEW && !u.pending);
     if(argc>1)snapshot(&u,argv[1]);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.pending && u.job.op==UI_CREATE && u.job.length==8);
@@ -132,10 +195,10 @@ int main(int argc,char **argv){
     key(&u,UI_SELECT);sequence(&u);CHECK(u.job.op==UI_UNLOCK);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.attempts=10,.action=1,.blocks=62912625});
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.screen==UI_SETTINGS && !u.pending);key(&u,UI_BACK);CHECK(u.screen==UI_HOME && !u.pending);key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_SELECT);CHECK(u.settings && u.screen==UI_SECRET);
-    sequence(&u);CHECK(u.screen==UI_OPTIONS);key(&u,UI_RIGHT);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_POLICY);
+    sequence(&u);CHECK(u.screen==UI_OPTIONS);key(&u,UI_DOWN);key(&u,UI_RIGHT);key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_POLICY);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
-    CHECK(u.screen==UI_ERASE_CONFIRM && !u.pending);key(&u,UI_SELECT);CHECK(u.screen==UI_HOME && !u.pending);
-    key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_ERASE);
+    CHECK(u.screen==UI_ERASE_CONFIRM && !u.pending);key(&u,UI_SELECT);CHECK(u.screen==UI_SETTINGS && u.cursor==1 && !u.pending);
+    key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_ERASE);
     fv_ui_complete(&u,(fv_ui_result){.status=3});key(&u,UI_SELECT);CHECK(u.screen==UI_HOME && !u.pending);
     fv_ui_complete(&u,(fv_ui_result){.status=2});key(&u,UI_SELECT);key(&u,UI_UP);fv_ui_cancel(&u);
     CHECK(u.job.length==0 && u.job.op==UI_STATUS);for(unsigned i=0;i<64;i++)CHECK(!u.job.secret[i]);

@@ -25,6 +25,17 @@ def port_for(serial):
     return Path('/dev/serial/by-id') / f'usb-Fuse_Vault_Fuse_Vault_SECURITY_DEBUG_{serial}-if00'
 
 
+def ram_text(frame):
+    ram = frame.get('ram')
+    if ram is None:
+        return 'RAM telemetry unavailable — update the device firmware'
+    return (f"RAM {ram['total_bytes'] / 1024:.0f} KiB · "
+            f"Fixed incl. stacks {ram['fixed_bytes'] / 1024:.1f} KiB\n"
+            f"Heap reserved {ram['heap_reserved_bytes'] / 1024:.1f} KiB "
+            f"(peak {ram['heap_peak_reserved_bytes'] / 1024:.1f}) · "
+            f"Uncommitted {ram['uncommitted_bytes'] / 1024:.1f} KiB")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--device', required=True)
@@ -57,6 +68,14 @@ def main():
     status = Gtk.Label(label='Connecting to ' + args.device)
     status.set_line_wrap(True)
     box.pack_start(status, False, False, 0)
+    memory = Gtk.Label(label='RAM: waiting for device')
+    memory.set_line_wrap(True)
+    memory.set_tooltip_text('Fixed includes reserved stacks and the full FIDO image. '
+                           'Heap reserved includes reusable freed allocations; it is not live usage. '
+                           'Peak reservation is tracked since boot, including between screen updates. '
+                           'Uncommitted excludes reusable space inside the heap and does not '
+                           'guarantee any single allocation will succeed. Stack usage is not measured.')
+    box.pack_start(memory, False, False, 0)
     screen = bytearray(1600)
     notice_until = [0.0]
 
@@ -114,6 +133,7 @@ def main():
 
     def update(frame):
         screen[:] = pixels(frame)
+        memory.set_text(ram_text(frame))
         allow_mounted[0] = frame.get("allow_mounted", False)
         if time.monotonic() >= notice_until[0]:
             status.set_text('Device busy — keep power connected' if frame['busy'] else 'Connected: ' + args.device)
@@ -153,6 +173,7 @@ def main():
                     stopped.wait(0.1)
             except (OSError, RuntimeError, ValueError, KeyError) as error:
                 clear_keys()
+                GLib.idle_add(memory.set_text, 'RAM: disconnected — waiting for device')
                 GLib.idle_add(status.set_text, 'Disconnected: ' + str(error))
             finally:
                 if transport is not None:

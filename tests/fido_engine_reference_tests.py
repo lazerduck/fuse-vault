@@ -240,7 +240,7 @@ def capacity(executable):
                 assert exc.code == CtapError.ERR.KEY_STORE_FULL, exc
                 break
         else:
-            raise AssertionError('capacity fixture did not fill 64 KiB store')
+            raise AssertionError('capacity fixture did not fill the credential store')
         assert first is not None and count > 1
         dev.control('reopen')
         ctap = Ctap2(dev)

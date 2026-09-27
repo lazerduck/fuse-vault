@@ -317,7 +317,7 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     if(job->op==UI_CHANGE && (!job->current_length || job->current_length>64 || (job->profile==2 && job->length<8)))r=FV_VAULT_INVALID;
     if(job->op==UI_CREATE){
         if((job->profile==2 && job->length<8) || !job->count || job->count>4)r=FV_VAULT_INVALID;
-        for(unsigned i=0;i<4;i++)if(i<job->count?(job->algorithms[i]!=1 && job->algorithms[i]!=2):job->algorithms[i]!=0)r=FV_VAULT_INVALID;
+        for(unsigned i=0;i<4;i++)if(i<job->count?!fv_cipher_key_bytes((fv_algorithm)job->algorithms[i]):job->algorithms[i]!=0)r=FV_VAULT_INVALID;
     }
     if(r)goto done;
     if(job->op==UI_LOCK){usb_lock();goto done;}

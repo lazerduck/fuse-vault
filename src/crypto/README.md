@@ -1,7 +1,7 @@
 # Standalone crypto building blocks
 
 This is the first V2 component: a C11 library for independently encrypted
-512-byte sectors, with AES-256-XTS and Camellia-256-XTS and ordered pipelines.
+512-byte sectors, with AES-256-XTS, Camellia-256-XTS, SM4-128-XTS and ordered pipelines.
 It does not depend on USB, SD, a filesystem, Pico SDK runtime, or V1 code.
 
 ## Layout and C interface
@@ -15,13 +15,16 @@ It does not depend on USB, SD, a filesystem, Pico SDK runtime, or V1 code.
 Each initialized `fv_cipher` contains prepared key schedules and a pointer to
 its implementation's operations. There is no heap allocation. Contexts can be
 stack or static objects, and must be zero-initialized before first use. The
-current public context storage uses Mbed TLS types to provide correct sizing
+current public context storage uses Mbed TLS and GmSSL types to provide correct sizing
 and alignment; replacing the backend may change this source-level ABI.
 
-Keys are supplied already derived: 64 bytes per layer, comprising a 32-byte
-data key and a 32-byte tweak key. Equal halves and duplicate complete pipeline
-keys are rejected. These checks do not prove cryptographic independence: the
-future key derivation component must supply independently derived keys.
+Keys are supplied already derived: AES/Camellia use 64 bytes (32-byte data
+and tweak keys); SM4 uses 32 bytes (16-byte data and tweak keys). Direct cipher
+initialization requires the exact length returned by `fv_cipher_key_bytes`.
+Pipeline slots retain 64-byte capacity, with only the algorithm-specific prefix
+consumed. Equal halves and equal effective pipeline key prefixes are rejected.
+These checks do not prove cryptographic independence: the security component
+supplies independently derived keys.
 
 Input and output are binary buffers of exactly 512 bytes. Same-buffer operation
 is supported; partially overlapping buffers are rejected. Buffers and key input
@@ -57,8 +60,10 @@ with its own tweak key, and uses the XTS little-endian GF(2^128) progression.
 A sector contains exactly 32 full 16-byte blocks, so ciphertext stealing is not
 needed. There is no variable-length or text encryption interface.
 
-AES and Camellia primitives come from Mbed TLS; our shared XTS mode adapter is
-project code. Camellia-XTS is experimental here, not a claim of NIST approval.
+AES and Camellia primitives come from Mbed TLS; SM4 comes from the pinned
+[GmSSL subset](../../third_party/gmssl_sm4/README.md). Our shared XTS adapter is
+project code. Camellia-XTS and SM4-XTS are experimental here, not claims of NIST
+approval. SM4 has a 128-bit key; XTS uses two such keys, not a 256-bit SM4 cipher.
 Changing the LBA convention later would change ciphertext interpretation; this
 library has not yet established a complete disk format.
 
@@ -96,10 +101,11 @@ set `FV_MBEDTLS_DIR`, add this directory, and link `fv_crypto`.
 ### Validation
 
 Tests run Mbed TLS known-answer self-tests, compare full AES-XTS sectors against
-OpenSSL, and compare Camellia-XTS against an independent test composition using
-OpenSSL Camellia and separate polynomial multiplication. They cover high/maximum
+OpenSSL, and compare Camellia-XTS/SM4-XTS against independent test compositions
+using OpenSSL block ciphers and separate polynomial multiplication. SM4 also
+passes published single-block and million-iteration known-answer tests. They cover high/maximum
 LBAs, sector independence, in-place/disjoint buffers, invalid inputs, key clearing,
-and all AES/Camellia orderings through four layers. Round trips alone are not the
+and all 120 AES/Camellia/SM4 orderings through four layers. Round trips alone are not the
 correctness criterion. Tests remain active in Release builds.
 
 For desktop address and undefined-behaviour sanitizers, configure another build

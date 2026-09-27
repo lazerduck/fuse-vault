@@ -62,7 +62,7 @@ int fv_derive_working_keys(const uint8_t vmk[32],const fv_volume_descriptor *d,f
         size_t n=sizeof(layer);memcpy(info,layer,n);memcpy(info+n,digest,32);n+=32;
         for(unsigned j=0;j<4;j++)info[n++]=(uint8_t)(i>>(8*j));
         info[n++]=(uint8_t)d->cipher_ids[i];info[n++]=(uint8_t)(d->cipher_ids[i]>>8);
-        if(fv_hkdf_expand(prk,info,n,out->layers[i],64))goto done;
+        if(fv_hkdf_expand(prk,info,n,out->layers[i],fv_cipher_key_bytes((fv_algorithm)d->cipher_ids[i])))goto done;
     }
     memcpy(info,integrity,sizeof(integrity));memcpy(info+sizeof(integrity),digest,32);
     if(fv_hkdf_expand(prk,info,sizeof(integrity)+32,out->integrity,32))goto done;

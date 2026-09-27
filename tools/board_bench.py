@@ -20,7 +20,7 @@ WRITE_TOKEN = 0x45524153
 REQUEST = struct.Struct('<8I')
 RESPONSE = struct.Struct('<6I4Q2I4Q2I')
 MAX_BYTES = 32768
-ALGORITHMS = {'aes': 1, 'camellia': 2}
+ALGORITHMS = {'aes': 1, 'camellia': 2, 'sm4': 3}
 
 
 def stack_code(text):
@@ -28,7 +28,7 @@ def stack_code(text):
         return 0
     parts = text.split(',')
     if not 1 <= len(parts) <= 4 or any(p not in ALGORITHMS for p in parts):
-        raise argparse.ArgumentTypeError('Use raw or 1–4 comma-separated aes/camellia layers')
+        raise argparse.ArgumentTypeError('Use raw or 1–4 comma-separated aes/camellia/sm4 layers')
     return sum(ALGORITHMS[p] << (8*i) for i, p in enumerate(parts))
 
 

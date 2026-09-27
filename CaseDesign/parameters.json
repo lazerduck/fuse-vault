@@ -1,0 +1,29 @@
+{
+  "pcb_thickness": 1.6,
+  "pcb_thickness_evidence": "Manufacturing erp_parameter_file.json stencil_ply=1.6; nominal, not measured",
+  "clearance_xy": 0.5,
+  "clearance_z": 0.5,
+  "special_components": {
+    "J1": {"size": [18.8,12.4,4.5], "offset_xy": [9.5,0], "bottom_from_surface": 0, "evidence": "AM90 identified by BOM. XY envelope reconciled with Gerber document outline and render. Height and seating Z assumed; verify drawing/part."},
+    "J2": {"size": [13.61,8.4,2.4], "offset_xy": [-6.095,0], "bottom_from_surface": -2, "evidence": "U261-121N-4BS2S identified by BOM. XY from document outline and render; 13.61 length provisional. Mid-mount seating and 2.4 height assumed; verify drawing/part."},
+    "CARD1": {"size": [14.8,14.7,2.0], "offset_xy": [0,2.329], "bottom_from_surface": 0, "evidence": "TF PUSH C393941 BOM. Body XY estimated from registered bottom render; CPL midpoint is not geometric body centre. All envelope dimensions provisional."},
+    "U3": {"size": [4.4,9.6,2.0], "offset_xy": [-1.388,0], "bottom_from_surface": 0, "evidence": "C5373445 BOM; envelope from GBO x19.65297..24.05309 y-16.35699..-6.75693. Height 2.0 inferred from H2.0 part identifier; not drawing-verified."},
+    "SW1": {"size": [5.2,5.2,2.0], "offset_xy": [0,0], "bottom_from_surface": 0, "evidence": "5.2 footprint/silkscreen envelope; 2.0 height inferred from exact BOM part name. Actuator shape simplified."},
+    "SW2": {"size": [5.2,5.2,2.0], "offset_xy": [0,0], "bottom_from_surface": 0, "evidence": "5.2 footprint/silkscreen envelope; 2.0 height inferred from exact BOM part name. Actuator shape simplified."},
+    "SW3": {"size": [10.0,10.5,9.0], "offset_xy": [0,0], "bottom_from_surface": 0, "body_height": 3.0, "stem_diameter": 3.4, "evidence": "XY from silkscreen x55.325..65.325 y-19.982..-9.472. 9.0 total height inferred from 10*10*9-6P WX part name. Base height, shaft diameter and movement are assumptions; no cap supplied."},
+    "SW4": {"size": [4.5,4.5,3.8], "offset_xy": [0,0], "bottom_from_surface": 0, "evidence": "XY from GTO; 3.8 height inferred from LXW-TS-45X45X38-SMD identifier; actuator simplified."},
+    "L1": {"size": [5.0,5.0,4.0], "offset_xy": [0,0], "bottom_from_surface": 0, "evidence": "5x5 footprint; 4.0 height inferred from ZENR5040 part series, provisional."},
+    "L2": {"size": [5.0,5.0,2.0], "offset_xy": [0,0], "bottom_from_surface": 0, "evidence": "5x5 footprint; 2.0 height inferred from NR5020 part series, provisional."}
+  },
+  "display": {"enabled": true, "xmin":17.10146, "xmax":45.00146, "ymin":-18.49208, "ymax":-4.99208, "gap_above_pcb":0.5, "thickness":2.5, "evidence":"XY is exact silkscreen guide only. TFT is absent from BOM, CPL and rendered assembly. Model is a placeholder; active viewing area, glass, adhesive, FPC and height unverified."},
+  "access": {"usb_mating_length":20, "usb_mating_extra_xy":2.0, "usb_mating_extra_z":2.0, "sd_withdrawal_length":20, "sd_slot_width":12, "sd_slot_height":3, "joystick_motion_diameter":10, "joystick_motion_extra_height":2, "button_access_diameter":4, "button_access_length":6, "solder_projection":2.5, "fpc_bend_depth":3.5},
+  "package_heights_assumed": {"0402":0.6,"0603":0.9,"0805":1.0,"SOD":1.2,"SOT":1.2,"TSOT":1.2,"MSOP":1.2,"QFN":1.0,"CRYSTAL":0.9,"other":1.5}
+  ,"terminal_envelopes_assumed": {
+    "SW1":{"size_xy":[6.4,5.2],"offset_xy":[0,0],"height":0.8},
+    "SW2":{"size_xy":[6.4,5.2],"offset_xy":[0,0],"height":0.8},
+    "SW3":{"size_xy":[13.3,10.5],"offset_xy":[0,0],"height":1.0},
+    "SW4":{"size_xy":[4.5,6.8],"offset_xy":[0,0],"height":0.8},
+    "CARD1":{"size_xy":[16.8,16.8],"offset_xy":[0,1.679],"height":0.8}
+  },
+  "locating_peg_projection_assumed":1.2
+}

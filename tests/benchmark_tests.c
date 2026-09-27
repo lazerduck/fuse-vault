@@ -32,7 +32,7 @@ int main(void) {
     fv_bench_response response;
     fv_bench_request request={.op=FV_BENCH_WRITE,.blocks=1,.payload_bytes=512};
     fv_bench_execute(&engine,&request,data,&response);CHECK(response.status==FV_BENCH_NOT_READY && writes==0);
-    uint32_t stacks[]={0,1,2,0x0201,0x0102,0x02010201};
+    uint32_t stacks[]={0,1,2,0x0201,0x0102,0x02010201,3,0x0301,0x03020301};
     unsigned sizes[]={1,8,16,32,64};
     for(unsigned a=0;a<sizeof(stacks)/sizeof(stacks[0]);a++) {
         request=(fv_bench_request){.op=FV_BENCH_CONFIG,.sequence=42,.lba=FV_BENCH_WRITE_TOKEN,.blocks=128,.algorithms=stacks[a]};

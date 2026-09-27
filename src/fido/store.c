@@ -1,6 +1,7 @@
 #include "fuse_vault/fido_store.h"
 #include <mbedtls/platform_util.h>
 #include <string.h>
+#include "image_upgrade.h"
 
 #define BATCH 8u
 #define META_SECTORS ((FV_FIDO_IMAGE_SECTORS+14u)/15u)
@@ -11,9 +12,10 @@ typedef struct {
     fv_pipeline pipeline;
     fv_auth_store sectors;
     uint8_t manifest_key[32];
+    unsigned image_sectors;
     alignas(4) uint8_t scratch[BATCH*512];
 } bank_context;
-typedef struct { uint64_t generation; unsigned bank; uint8_t digest[32]; } snapshot;
+typedef struct { uint64_t generation; unsigned bank, image_bytes; uint8_t digest[32]; } snapshot;
 static uint64_t base(unsigned bank){return FV_FIDO_REGION_BASE+(uint64_t)bank*FV_FIDO_BANK_SECTORS;}
 static void put(uint8_t *p,uint64_t v,unsigned n){for(unsigned i=0;i<n;i++)p[i]=(uint8_t)(v>>(8*i));}
 static uint64_t get(const uint8_t *p,unsigned n){uint64_t v=0;for(unsigned i=0;i<n;i++)v|=(uint64_t)p[i]<<(8*i);return v;}
@@ -66,19 +68,20 @@ static void bank_close(bank_context *c){
     fv_pipeline_clear(&c->pipeline);fv_auth_close(&c->sectors);
     mbedtls_platform_zeroize(c,sizeof(*c));
 }
-static int bank_open(bank_context *c,const fv_vault *v,unsigned bank){
+static int bank_open(bank_context *c,const fv_vault *v,unsigned bank,unsigned image_bytes){
     uint8_t keys[FV_MAX_LAYERS][64]={0},integrity[32]={0};
     fv_algorithm algorithms[FV_MAX_LAYERS]={0};int r=-1;
     memset(c,0,sizeof(*c));
-    if(bank>1)goto done;
+    if(bank>1 || (image_bytes!=65536u && image_bytes!=FV_FIDO_STORE_BYTES))goto done;
+    c->image_sectors=image_bytes/512u;
     for(unsigned i=0;i<v->config.volume.layer_count;i++){
-        if(i>=FV_MAX_LAYERS || derive(v,"FV2/fido-xts/v1",bank,i,keys[i],64))goto done;
+        if(i>=FV_MAX_LAYERS || derive(v,"FV2/fido-xts/v1",bank,i,keys[i],fv_cipher_key_bytes((fv_algorithm)v->config.volume.cipher_ids[i])))goto done;
         algorithms[i]=(fv_algorithm)v->config.volume.cipher_ids[i];
     }
     if(derive(v,"FV2/fido-sector-hmac/v1",bank,0,integrity,32) ||
        derive(v,"FV2/fido-manifest/v1",bank,0,c->manifest_key,32) ||
        fv_pipeline_init(&c->pipeline,algorithms,(const uint8_t (*)[64])keys,v->config.volume.layer_count)!=FV_OK ||
-       fv_auth_open(&c->sectors,v->platform->sd,base(bank)+1,FV_FIDO_IMAGE_SECTORS,
+       fv_auth_open(&c->sectors,v->platform->sd,base(bank)+1,c->image_sectors,
            v->config.volume.volume_id,integrity,NULL)!=FV_BLOCK_OK)goto done;
     r=0;
 done:
@@ -94,8 +97,8 @@ static int manifest_tag(const uint8_t key[32],const uint8_t m[512],uint8_t tag[3
 }
 static int encode_manifest(const fv_vault *v,const snapshot *snap,const uint8_t key[32],uint8_t m[512]){
     uint8_t descriptor[128];
-    memset(m,0,512);memcpy(m,"FV2FIDO",8);put(m+8,1,4);put(m+12,snap->bank,4);
-    put(m+16,snap->generation,8);put(m+24,FV_FIDO_STORE_BYTES,4);
+    memset(m,0,512);memcpy(m,"FV2FIDO",8);put(m+8,snap->image_bytes==65536u?1u:2u,4);put(m+12,snap->bank,4);
+    put(m+16,snap->generation,8);put(m+24,snap->image_bytes,4);
     memcpy(m+32,v->config.volume.volume_id,16);memcpy(m+48,snap->digest,32);
     if(!fv_volume_descriptor_encode(&v->config.volume,UINT64_MAX,descriptor) ||
        mbedtls_sha256(descriptor,sizeof(descriptor),m+80,0))return -1;
@@ -110,7 +113,8 @@ static fv_fido_store_result scan(const fv_vault *v,snapshot *latest){
     memset(latest,0,sizeof(*latest));
     for(unsigned bank=0;bank<2;bank++){
         if(v->platform->sd->ops->read(v->platform->sd,base(bank),1,m)!=FV_BLOCK_OK){r=FV_FIDO_STORE_IO;goto done;}
-        snapshot candidate={.generation=get(m+16,8),.bank=bank};memcpy(candidate.digest,m+48,32);
+        if(get(m+24,4)!=65536u && get(m+24,4)!=FV_FIDO_STORE_BYTES)continue;
+        snapshot candidate={.generation=get(m+16,8),.bank=bank,.image_bytes=(unsigned)get(m+24,4)};memcpy(candidate.digest,m+48,32);
         if(derive(v,"FV2/fido-manifest/v1",bank,0,key,32) ||
            encode_manifest(v,&candidate,key,canonical)){r=FV_FIDO_STORE_INVALID;goto done;}
         if(!candidate.generation || memcmp(m,canonical,480) || !fv_tag_equal(m+480,canonical+480))continue;
@@ -128,7 +132,7 @@ static fv_fido_store_result read_image(bank_context *c,uint8_t *output,uint8_t d
     mbedtls_sha256_context sha;mbedtls_sha256_init(&sha);
     fv_fido_store_result r=FV_FIDO_STORE_IO;
     if(mbedtls_sha256_starts(&sha,0))goto done;
-    for(unsigned lba=0;lba<FV_FIDO_IMAGE_SECTORS;lba+=BATCH){
+    for(unsigned lba=0;lba<c->image_sectors;lba+=BATCH){
         uint64_t unset=0;
         fv_block_result_t br=fv_auth_read(&c->sectors,lba,BATCH,c->scratch,&unset);
         if(br!=FV_BLOCK_OK || unset){
@@ -158,9 +162,10 @@ fv_fido_store_result fv_fido_store_open(fv_fido_store *s,const fv_vault *v,uint8
     if(!vault_valid(v))return FV_FIDO_STORE_LOCKED;
     snapshot snap;bank_context c={0};uint8_t digest[32];
     fv_fido_store_result r=scan(v,&snap);if(r)goto done;
-    if(bank_open(&c,v,snap.bank)){r=FV_FIDO_STORE_INVALID;goto done;}
+    if(bank_open(&c,v,snap.bank,snap.image_bytes)){r=FV_FIDO_STORE_INVALID;goto done;}
     r=read_image(&c,image,digest);
     if(!r && !fv_tag_equal(digest,snap.digest))r=FV_FIDO_STORE_CORRUPT;
+    if(!r && snap.image_bytes==65536u && !fv_fido_image_upgrade(image))r=FV_FIDO_STORE_CORRUPT;
     if(!r)bind(s,v,&snap);
 done:
     bank_close(&c);if(r)mbedtls_platform_zeroize(image,FV_FIDO_STORE_BYTES);return r;
@@ -169,11 +174,11 @@ static fv_fido_store_result write_snapshot(const fv_vault *v,snapshot *snap,cons
     bank_context c={0};alignas(4) uint8_t manifest[512]={0},verify[512];uint8_t read_digest[32];
     fv_block_device_t *sd=v->platform->sd;fv_fido_store_result r=FV_FIDO_STORE_IO;
     mbedtls_sha256_context sha;mbedtls_sha256_init(&sha);
-    if(bank_open(&c,v,snap->bank)){r=FV_FIDO_STORE_INVALID;goto done;}
+    if(bank_open(&c,v,snap->bank,snap->image_bytes)){r=FV_FIDO_STORE_INVALID;goto done;}
     /* Invalidate the inactive bank before changing its data or shared tag sectors. */
     if(sd->ops->write(sd,base(snap->bank),1,manifest)!=FV_BLOCK_OK || sd->ops->sync(sd)!=FV_BLOCK_OK ||
        fv_auth_format(&c.sectors)!=FV_BLOCK_OK || mbedtls_sha256_starts(&sha,0))goto done;
-    for(unsigned lba=0;lba<FV_FIDO_IMAGE_SECTORS;lba+=BATCH){
+    for(unsigned lba=0;lba<c.image_sectors;lba+=BATCH){
         memcpy(c.scratch,image+lba*512,sizeof(c.scratch));
         for(unsigned i=0;i<BATCH;i++)
             if(fv_pipeline_encrypt(&c.pipeline,lba+i,c.scratch+i*512,c.scratch+i*512)!=FV_OK)goto done;
@@ -197,7 +202,7 @@ fv_fido_store_result fv_fido_store_initialize(fv_fido_store *s,const fv_vault *v
     fv_fido_store_close(s);memset(image,0,FV_FIDO_STORE_BYTES);
     if(!confirmed)return FV_FIDO_STORE_INVALID;
     if(!vault_valid(v))return FV_FIDO_STORE_LOCKED;
-    alignas(4) uint8_t empty[512]={0};snapshot snap={.generation=1,.bank=0};
+    alignas(4) uint8_t empty[512]={0};snapshot snap={.generation=1,.bank=0,.image_bytes=FV_FIDO_STORE_BYTES};
     fv_block_device_t *sd=v->platform->sd;fv_fido_store_result r=FV_FIDO_STORE_IO;
     for(unsigned bank=0;bank<2;bank++)
         if(sd->ops->write(sd,base(bank),1,empty)!=FV_BLOCK_OK)goto done;
@@ -216,7 +221,7 @@ fv_fido_store_result fv_fido_store_commit(fv_fido_store *s,const uint8_t image[F
     snapshot current;r=scan(s->vault,&current);if(r)goto fail;
     if(current.generation!=s->generation || current.bank!=s->bank || !fv_tag_equal(current.digest,s->digest) ||
        current.generation==UINT64_MAX){r=FV_FIDO_STORE_STALE;goto fail;}
-    snapshot next={.generation=current.generation+1,.bank=current.bank^1u};
+    snapshot next={.generation=current.generation+1,.bank=current.bank^1u,.image_bytes=FV_FIDO_STORE_BYTES};
     r=write_snapshot(s->vault,&next,image);if(r)goto fail;
     bind(s,s->vault,&next);return FV_FIDO_STORE_OK;
 fail:

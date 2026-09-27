@@ -42,6 +42,8 @@ static uint8_t glyph_row(char character, unsigned row) {
         case '<': { static const uint8_t g[7] = {1,2,4,8,4,2,1}; return g[row]; }
         case '[': { static const uint8_t g[7] = {14,8,8,8,8,8,14}; return g[row]; }
         case ']': { static const uint8_t g[7] = {14,2,2,2,2,2,14}; return g[row]; }
+        case '(': { static const uint8_t g[7] = {2,4,8,8,8,4,2}; return g[row]; }
+        case ')': { static const uint8_t g[7] = {8,4,2,2,2,4,8}; return g[row]; }
         case '@': { static const uint8_t g[7] = {14,17,23,21,23,16,14}; return g[row]; }
         case '?': { static const uint8_t g[7] = {14,17,1,2,4,0,4}; return g[row]; }
         case '_': return row == 6u ? 31u : 0u;
@@ -57,6 +59,7 @@ static uint8_t glyph_row(char character, unsigned row) {
 
 void fv_ui_wipe(void *p,size_t n){volatile uint8_t *b=p;while(n--)*b++=0;}
 static void line(fv_ui *u,unsigned row,const char *s){
+    if(row>=8)return;
     for(unsigned x=2;*s && x+5<=160;x+=6,s++)for(unsigned y=0;y<7;y++)
         for(unsigned b=0;b<5;b++)if(glyph_row(*s,y)&(16u>>b)){
             unsigned bit=(row*10+y)*160+x+b;
@@ -75,10 +78,26 @@ static void text_at(fv_ui *u,unsigned x,unsigned y,const char *s,unsigned scale,
             pixel(u,x+c*scale+dx,y+r*scale+dy,ink);
 }
 static void rule(fv_ui *u,unsigned y){for(unsigned x=3;x<157;x++)pixel(u,x,y,true);}
+static void header(fv_ui *u,const char *title,const char *detail){
+    text_at(u,4,2,title,1,true);rule(u,12);
+    if(detail)text_at(u,156-(unsigned)strlen(detail)*6,2,detail,1,true);
+}
+static void footer(fv_ui *u,const char *back,const char *action){
+    rule(u,67);text_at(u,4,71,back,1,true);
+    if(action)text_at(u,156-(unsigned)strlen(action)*6,71,action,1,true);
+}
+static void choice(fv_ui *u,unsigned y,const char *label,bool selected){
+    if(selected)for(unsigned r=y;r<y+9;r++)for(unsigned x=3;x<157;x++)pixel(u,x,r,true);
+    text_at(u,7,y+1,label,1,!selected);
+}
+static void confirm_choices(fv_ui *u,const char *action){
+    choice(u,47,"CANCEL",!u->cursor);choice(u,57,action,u->cursor!=0);
+    footer(u,"\005 BACK","\006 SELECT");
+}
 static void credential_controls(fv_ui *u){
     const fv_credential_entry *e=&u->entry;char label[27];
     rule(u,10);rule(u,67);
-    text_at(u,4,71,"\005 BACK",1,true);
+    text_at(u,4,71,u->fido_modal?"\005 CANCEL":"\005 BACK",1,true);
     if(e->profile==3 || e->count==4)text_at(u,118,71,"\006 DONE",1,true);
     if(e->profile==3){
         for(unsigned i=0;i<4;i++){
@@ -113,6 +132,14 @@ static void credential_controls(fv_ui *u){
 }
 static void submit(fv_ui *u,fv_ui_operation op){u->format_done=u->format_total=u->format_milliseconds=0;u->job.op=op;u->pending=true;u->screen=UI_WAIT;}
 static void clear_input(fv_ui *u){u->settings=false;u->changing=false;fv_ui_wipe(u->job.secret,64);u->job.length=0;fv_ui_wipe(u->job.current,64);u->job.current_length=0;fv_ui_wipe(u->confirmation,64);u->confirmation_length=0;fv_ui_wipe(&u->entry,sizeof(u->entry));}
+static unsigned passkey_pages(const fv_ui *u){
+    size_t site=strlen(u->device.passkey_site),account=strlen(u->device.passkey_account);
+    size_t length=site>account?site:account;
+    return length?(unsigned)((length+49)/50):1;
+}
+static void settings_return(fv_ui *u,unsigned item){
+    clear_input(u);u->screen=UI_SETTINGS;u->cursor=item;
+}
 void fv_ui_init(fv_ui *u){memset(u,0,sizeof(*u));submit(u,UI_STATUS);fv_ui_render(u);}
 void fv_ui_cancel(fv_ui *u){clear_input(u);u->settings=false;u->changing=false;u->cursor=0;if(u->screen!=UI_WAIT || u->pending)submit(u,UI_STATUS);fv_ui_render(u);}
 void fv_ui_complete(fv_ui *u,fv_ui_result r){
@@ -120,6 +147,7 @@ void fv_ui_complete(fv_ui *u,fv_ui_result r){
     u->screen=r.result?UI_ERROR:UI_HOME;
     if(!r.result && (u->job.op==UI_PASSKEY_LIST || u->job.op==UI_PASSKEY_DELETE)){
         u->screen=UI_PASSKEYS;++u->fido_generation;
+        u->passkey_page=0;
         u->job.passkey_index=r.passkey_index;memcpy(u->job.passkey_id,r.passkey_id,42);
     }
     u->error=r.result;fv_ui_render(u);
@@ -169,7 +197,7 @@ void fv_ui_keypress(fv_ui *u,fv_ui_key k){
                 memcpy(u->job.current,u->job.secret,u->job.length);u->job.current_length=u->job.length;
                 fv_ui_wipe(u->job.secret,64);u->job.length=0;fv_ui_wipe(&u->entry,sizeof(u->entry));
                 u->screen=UI_METHOD;u->cursor=0;
-            }else if(u->settings){fv_ui_wipe(&u->entry,sizeof(u->entry));u->screen=UI_OPTIONS;}
+            }else if(u->settings){fv_ui_wipe(&u->entry,sizeof(u->entry));u->screen=UI_OPTIONS;u->cursor=0;}
             else if(u->device.status==2 && !u->changing){submit(u,UI_UNLOCK);}
             else if(u->screen==UI_SECRET){
                 if(u->job.profile!=2 || *n>=8){u->screen=UI_CONFIRM;fv_entry_begin(&u->entry,u->job.profile);}
@@ -183,7 +211,16 @@ void fv_ui_keypress(fv_ui *u,fv_ui_key k){
         }
         goto done;
     }
-    if(k==UI_BACK){clear_input(u);u->settings=false;u->changing=false;u->screen=UI_HOME;u->cursor=0;goto done;}
+    if(k==UI_BACK){
+        if(u->screen==UI_HOME && u->device.unlocked)submit(u,UI_LOCK);
+        else if(u->screen==UI_PASSKEY_DELETE_CONFIRM){u->screen=UI_PASSKEYS;u->cursor=0;++u->fido_generation;}
+        else if(u->screen==UI_PASSKEYS)settings_return(u,5);
+        else if(u->screen==UI_FIDO_POLICY_SCREEN)settings_return(u,4);
+        else if(u->screen==UI_FIDO_INIT_CONFIRM)settings_return(u,3);
+        else if(u->screen==UI_ERASE_CONFIRM)settings_return(u,1);
+        else {clear_input(u);u->screen=UI_HOME;u->cursor=0;}
+        goto done;
+    }
     switch(u->screen){
     case UI_HOME:
         if(u->device.unlocked){
@@ -222,12 +259,14 @@ void fv_ui_keypress(fv_ui *u,fv_ui_key k){
                 u->job.passkey_index=(uint16_t)((u->device.passkey_index+(k==UI_UP?n-1:1))%n);
                 submit(u,UI_PASSKEY_LIST);
             }
-            if(k==UI_LEFT && u->cursor)u->cursor--;
-            if(k==UI_RIGHT && u->cursor<5)u->cursor++;
+            if(k==UI_LEFT && u->passkey_page)u->passkey_page--;
+            if(k==UI_RIGHT && u->passkey_page+1<passkey_pages(u))u->passkey_page++;
             if(k==UI_SELECT){u->cursor=0;u->screen=UI_PASSKEY_DELETE_CONFIRM;++u->fido_generation;}
         }
         break;
     case UI_PASSKEY_DELETE_CONFIRM:
+        if(k==UI_LEFT && u->passkey_page)u->passkey_page--;
+        if(k==UI_RIGHT && u->passkey_page+1<passkey_pages(u))u->passkey_page++;
         if(k==UI_UP || k==UI_DOWN)u->cursor^=1;
         if(k==UI_SELECT){
             if(u->cursor)submit(u,UI_PASSKEY_DELETE);
@@ -244,28 +283,41 @@ void fv_ui_keypress(fv_ui *u,fv_ui_key k){
         if(k==UI_SELECT){u->job.profile=(uint16_t)(u->cursor+2);fv_entry_begin(&u->entry,u->job.profile);u->screen=UI_SECRET;}
         break;
     case UI_STACK:{
-        unsigned last=u->job.count+1;
+        unsigned last=u->job.count+2;
         if(k==UI_UP)u->cursor=u->cursor?u->cursor-1:last;
         if(k==UI_DOWN)u->cursor=(u->cursor+1)%(last+1);
-        if(k==UI_LEFT && u->job.count>1){u->job.algorithms[--u->job.count]=0;u->cursor=0;}
-        if(k==UI_SELECT || k==UI_RIGHT){
-            if(u->cursor<u->job.count)u->job.algorithms[u->cursor]=u->job.algorithms[u->cursor]==1?2:1;
-            else if(u->cursor==u->job.count){if(u->job.count<4)u->job.algorithms[u->job.count++]=1;}
-            else u->screen=UI_OPTIONS;
+        if((k==UI_LEFT || k==UI_RIGHT || k==UI_SELECT) && u->cursor<u->job.count)
+            u->job.algorithms[u->cursor]=u->job.algorithms[u->cursor]%3+1;
+        else if(k==UI_SELECT){
+            if(u->cursor==u->job.count){if(u->job.count<4)u->job.algorithms[u->job.count++]=1;}
+            else if(u->cursor==u->job.count+1u){if(u->job.count>1){u->job.algorithms[--u->job.count]=0;u->cursor=u->job.count+1;}}
+            else {u->screen=UI_OPTIONS;u->cursor=0;}
         }
         break;}
     case UI_OPTIONS:
-        if(k==UI_UP && u->job.attempts<100)u->job.attempts++;
-        if(k==UI_DOWN && u->job.attempts>1)u->job.attempts--;
-        if(k==UI_LEFT || k==UI_RIGHT)u->job.action=u->job.action==1?2:1;
-        if(k==UI_SELECT){u->cursor=0;u->screen=UI_REVIEW;}
+        if(k==UI_UP)u->cursor=(u->cursor+2)%3;
+        if(k==UI_DOWN)u->cursor=(u->cursor+1)%3;
+        if(k==UI_LEFT || k==UI_RIGHT){
+            if(u->cursor==0){
+                if(k==UI_RIGHT && u->job.attempts<100)u->job.attempts++;
+                if(k==UI_LEFT && u->job.attempts>1)u->job.attempts--;
+            }else if(u->cursor==1)u->job.action=u->job.action==1?2:1;
+        }
+        if(k==UI_SELECT){
+            if(u->cursor<2)u->cursor++;
+            else {u->cursor=0;u->screen=UI_REVIEW;}
+        }
         break;
     case UI_REVIEW:
     case UI_FIDO_INIT_CONFIRM:
     case UI_ERASE_CONFIRM:
         if(k==UI_UP || k==UI_DOWN)u->cursor^=1;
         if(k==UI_SELECT){
-            if(!u->cursor){clear_input(u);u->screen=UI_HOME;}
+            if(!u->cursor){
+                if(u->screen==UI_FIDO_INIT_CONFIRM)settings_return(u,3);
+                else if(u->screen==UI_ERASE_CONFIRM)settings_return(u,1);
+                else {clear_input(u);u->screen=UI_HOME;}
+            }
             else submit(u,u->screen==UI_FIDO_INIT_CONFIRM?UI_FIDO_INIT:u->screen==UI_ERASE_CONFIRM?UI_ERASE:u->changing?UI_CHANGE:u->settings?UI_POLICY:UI_CREATE);
         }
         break;
@@ -290,7 +342,22 @@ void fv_ui_render(fv_ui *u){
                 if(y==32 || y==39 || x==2 || x==157 || x<3+filled){unsigned bit=y*160+x;u->framebuffer[bit/8]|=0x80u>>(bit%8);}
             unsigned rate=u->format_milliseconds?(unsigned)((uint64_t)done*5000/u->format_milliseconds):0;
             snprintf(b,sizeof(b),"%u.%u KIB/S  %lus",rate/10,rate%10,(unsigned long)(u->format_milliseconds/1000));line(u,5,b);
-        }else {line(u,2,"WORKING - PLEASE WAIT");line(u,4,u->job.op==UI_CREATE?"PREPARING VAULT KEYS":"SECURE OPERATION");}
+        }else {
+            const char *activity="READING DEVICE STATUS";
+            switch(u->job.op){
+            case UI_CREATE:activity="CREATING VAULT";break;
+            case UI_UNLOCK:activity="UNLOCKING VAULT";break;
+            case UI_LOCK:activity="LOCKING VAULT";break;
+            case UI_POLICY:case UI_FIDO_POLICY:activity="SAVING SETTINGS";break;
+            case UI_ERASE:activity="DESTROYING VAULT";break;
+            case UI_CHANGE:activity="CHANGING CREDENTIAL";break;
+            case UI_FIDO_INIT:activity="INITIALIZING FIDO";break;
+            case UI_PASSKEY_LIST:activity="LOADING PASSKEYS";break;
+            case UI_PASSKEY_DELETE:activity="DELETING PASSKEY";break;
+            default:break;
+            }
+            line(u,2,activity);line(u,4,"PLEASE WAIT");
+        }
         line(u,7,"KEEP POWER CONNECTED");break;
     case UI_HOME:
         text_at(u,4,2,"FUSE VAULT",1,true);
@@ -317,11 +384,12 @@ void fv_ui_render(fv_ui *u){
             text_at(u,(160-(unsigned)strlen(action)*6)/2,48,action,1,true);
         }
         rule(u,67);
-        text_at(u,4,71,"\003\001 FLIP",1,true);
+        text_at(u,4,71,u->device.unlocked?"\005 LOCK":"\003\001 FLIP",1,true);
         if(u->device.unlocked)text_at(u,76,71,"EJECT FIRST",1,true);
         break;
     case UI_SETTINGS:{
-        text_at(u,4,2,"SETTINGS",1,true);rule(u,12);
+        text_at(u,4,2,"SETTINGS",1,true);
+        snprintf(b,sizeof(b),"%u/%u",u->cursor+1,u->fido_enabled?6:3);text_at(u,130,2,b,1,true);rule(u,12);
         const char *items[]={"FAILURE POLICY","ERASE AND SET UP","UNLOCK METHOD","INITIALIZE FIDO","FIDO VERIFICATION","PASSKEYS"};
         unsigned first=u->cursor>=4?u->cursor-3:0;
         for(unsigned i=first;i<(u->fido_enabled?6u:3u) && i<first+4;i++){
@@ -332,11 +400,11 @@ void fv_ui_render(fv_ui *u){
         rule(u,67);text_at(u,4,71,"\005 BACK",1,true);text_at(u,76,71,"EJECT FIRST",1,true);
         break;}
     case UI_METHOD:
-        line(u,0,"CHOOSE UNLOCK METHOD");
-        line(u,2,u->cursor==0?"> DIRECTION PATTERN":"  DIRECTION PATTERN");
-        line(u,3,u->cursor==1?"> FOUR CODE WHEELS":"  FOUR CODE WHEELS");
-        line(u,4,u->cursor==2?"> FOUR WORDS":"  FOUR WORDS");
-        line(u,6,"UP/DOWN: CHOOSE");line(u,7,"SELECT: CONTINUE");break;
+        header(u,"UNLOCK METHOD",NULL);
+        choice(u,18,"DIRECTION PATTERN",u->cursor==0);
+        choice(u,31,"FOUR CODE WHEELS",u->cursor==1);
+        choice(u,44,"FOUR WORDS",u->cursor==2);
+        footer(u,"\005 BACK","\006 SELECT");break;
     case UI_SECRET:case UI_CONFIRM:
         line(u,0,u->fido_modal?"FIDO: VERIFY UNLOCK":u->screen==UI_CONFIRM?"CONFIRM CREDENTIAL":(u->settings || (u->changing && !u->job.current_length))?"CURRENT CREDENTIAL":(u->device.status==2 && !u->changing)?"UNLOCK VAULT":"NEW CREDENTIAL");
         if(u->job.profile==3 || u->job.profile==4){
@@ -353,54 +421,82 @@ void fv_ui_render(fv_ui *u){
                 while(row*22+j<n && j<22){b[j]=p[row*22+j]<=4?arrows[p[row*22+j]]:'?';j++;}
                 b[j]=0;line(u,row+3,b);
             }
-            line(u,6,"SELECT: DONE  BACK: DELETE");line(u,7,"NEW: 8-64 DIRECTIONS");
+            line(u,6,u->fido_modal?"SELECT: DONE BACK: CANCEL":"SELECT: DONE BACK: DELETE");
+            line(u,7,u->fido_modal?"DIRECTIONS: ENTER PATTERN":n?"BACK AT EMPTY: CANCEL":"BACK: CANCEL");
         }
         break;
-    case UI_STACK:
-        line(u,0,"ENCRYPTION ORDER");
-        for(unsigned i=0;i<u->job.count;i++){snprintf(b,sizeof(b),"%c %u %s",u->cursor==i?'>':' ',i+1,u->job.algorithms[i]==1?"AES-256":"CAMELLIA-256");line(u,i+1,b);}
-        line(u,u->job.count+1,u->cursor==u->job.count?"> ADD LAYER (MAX 4)":"  ADD LAYER (MAX 4)");line(u,u->job.count+2,u->cursor==u->job.count+1u?"> CONTINUE":"  CONTINUE");line(u,7,"LEFT REMOVES LAST LAYER");break;
+    case UI_STACK:{
+        header(u,"ENCRYPTION ORDER",NULL);
+        unsigned first=u->cursor>=4?u->cursor-3:0;
+        for(unsigned i=first;i<u->job.count+3u && i<first+4;i++){
+            if(i<u->job.count)snprintf(b,sizeof(b),"%u %s",i+1,u->job.algorithms[i]==1?"AES-256":u->job.algorithms[i]==2?"CAMELLIA-256":"SM4-128");
+            else snprintf(b,sizeof(b),"%s",i==u->job.count?"ADD LAYER (MAX 4)":i==u->job.count+1u?"REMOVE LAST LAYER":"CONTINUE");
+            choice(u,16+(i-first)*12,b,u->cursor==i);
+        }
+        footer(u,"\005 BACK","\006 SELECT");break;}
     case UI_OPTIONS:
-        line(u,0,"FAILURE POLICY");snprintf(b,sizeof(b),"ATTEMPTS: %u",(unsigned)u->job.attempts);line(u,2,b);
-        line(u,3,u->job.action==1?"THEN DESTROY VAULT KEY":"THEN PERMANENT LOCKOUT");line(u,5,"UP/DOWN: ATTEMPTS 1-100");line(u,6,"LEFT/RIGHT: ACTION");line(u,7,"SELECT TO REVIEW");break;
+        header(u,"FAILURE POLICY",NULL);
+        snprintf(b,sizeof(b),"ATTEMPTS: %u",(unsigned)u->job.attempts);choice(u,16,b,u->cursor==0);
+        choice(u,28,u->job.action==1?"THEN: DESTROY KEY":"THEN: LOCKOUT",u->cursor==1);
+        choice(u,40,"REVIEW",u->cursor==2);
+        if(u->cursor<2)text_at(u,4,55,"\003\001 CHANGE",1,true);
+        footer(u,"\005 BACK","\006 SELECT");break;
     case UI_REVIEW:
-        line(u,0,u->changing?"CHANGE UNLOCK METHOD?":u->settings?"APPLY FAILURE POLICY?":"CREATE FULL SD VAULT?");
-        line(u,1,u->changing?"PRESERVES FILES AND VMK":u->settings?"REQUIRES CURRENT CREDENTIAL":"ERASES EXISTING SD DATA");
-        snprintf(b,sizeof(b),"%u FAILURES: %s",(unsigned)u->job.attempts,u->job.action==1?"DESTROY":"LOCKOUT");line(u,3,b);
-        if(!u->settings && !u->changing){snprintf(b,sizeof(b),"%u LAYERS / KDF 60000",u->job.count);line(u,4,b);}
-        line(u,6,!u->cursor?"> CANCEL":"  CANCEL");line(u,7,u->cursor?"> CONFIRM":"  CONFIRM");break;
+        header(u,u->changing?"CHANGE UNLOCK?":u->settings?"SAVE FAILURE POLICY?":"CREATE VAULT?",NULL);
+        text_at(u,4,16,u->changing?"KEEPS FILES AND PASSKEYS":u->settings?"CHECKS CURRENT CREDENTIAL":"ERASES EXISTING SD DATA",1,true);
+        snprintf(b,sizeof(b),"%u FAILURES: %s",(unsigned)u->job.attempts,u->job.action==1?"DESTROY":"LOCKOUT");text_at(u,4,26,b,1,true);
+        if(!u->settings && !u->changing){snprintf(b,sizeof(b),"%u ENCRYPTION LAYERS",u->job.count);text_at(u,4,36,b,1,true);}
+        confirm_choices(u,"CONFIRM");break;
     case UI_ERASE_CONFIRM:
-        line(u,0,"DESTROY CURRENT VAULT?");line(u,2,"ALL FILES BECOME LOST");line(u,3,"USES NEXT OTP TOKEN");line(u,4,"UNMOUNT DRIVE FIRST");line(u,6,!u->cursor?"> CANCEL":"  CANCEL");line(u,7,u->cursor?"> DESTROY":"  DESTROY");break;
+        header(u,"DESTROY VAULT?",NULL);
+        text_at(u,4,16,"LOSES FILES AND PASSKEYS",1,true);
+        text_at(u,4,26,"UNMOUNT DRIVE FIRST",1,true);
+        text_at(u,4,36,"USES A SETUP SLOT",1,true);
+        confirm_choices(u,"DESTROY");break;
     case UI_FIDO_APPROVE:
-        line(u,0,"PASSKEY REQUEST");
+        header(u,"PASSKEY REQUEST",NULL);
         for(unsigned i=0;i<5;i++){char part[26]={0};size_t offset=i*25;
-            if(strlen(u->fido_label)>offset){strncpy(part,u->fido_label+offset,25);line(u,i+1,part);}}
-        line(u,6,"SELECT: APPROVE");line(u,7,"BACK: REJECT");break;
+            if(strlen(u->fido_label)>offset){strncpy(part,u->fido_label+offset,25);text_at(u,4,16+i*10,part,1,true);}}
+        footer(u,"\005 REJECT","\006 APPROVE");break;
     case UI_PASSKEYS:
     case UI_PASSKEY_DELETE_CONFIRM:{
         bool deleting=u->screen==UI_PASSKEY_DELETE_CONFIRM;
-        snprintf(b,sizeof(b),"%s %u/%u",deleting?"DELETE PASSKEY?":"PASSKEY",u->device.passkey_count?u->device.passkey_index+1:0,u->device.passkey_count);line(u,0,b);
-        if(!u->device.passkey_count){line(u,3,"NO STORED PASSKEYS");line(u,7,"BACK: RETURN");break;}
+        snprintf(b,sizeof(b),"%u/%u",u->device.passkey_count?u->device.passkey_index+1:0,u->device.passkey_count);
+        header(u,deleting?"DELETE PASSKEY?":"PASSKEYS",b);
+        if(!u->device.passkey_count){text_at(u,22,33,"NO STORED PASSKEYS",1,true);footer(u,"\005 BACK",NULL);break;}
         const char *values[]={u->device.passkey_site,u->device.passkey_account};
         for(unsigned v=0;v<2;v++)for(unsigned row=0;row<2;row++){
-            unsigned off=(deleting?0:u->cursor*50)+row*25;char part[26]={0};
-            if(strlen(values[v])>off)strncpy(part,values[v]+off,25);
-            line(u,1+v*2+row,part);
+            size_t length=strlen(values[v]);
+            unsigned last=length?(unsigned)((length-1)/50):0;
+            unsigned page=u->passkey_page<last?u->passkey_page:last;
+            unsigned off=page*50+row*25;char part[26]={0};
+            if(length>off)strncpy(part,values[v]+off,25);
+            text_at(u,4,15+(v*2+row)*(deleting?8:10),part,1,true);
         }
-        if(deleting){line(u,5,"THIS DEVICE COPY ONLY");line(u,6,!u->cursor?"> CANCEL":"  CANCEL");line(u,7,u->cursor?"> DELETE":"  DELETE");}
-        else {line(u,5,"LEFT/RIGHT: SCROLL TEXT");line(u,6,"UP/DOWN: CHOOSE");line(u,7,"SELECT: DELETE BACK: EXIT");}
+        if(deleting)confirm_choices(u,"DELETE");
+        else {
+            unsigned pages=passkey_pages(u);
+            if(pages>1){snprintf(b,sizeof(b),"\003\001 TEXT %u/%u",u->passkey_page+1,pages);text_at(u,4,57,b,1,true);}
+            footer(u,"\005 BACK","\006 DELETE");
+        }
         break;}
     case UI_FIDO_POLICY_SCREEN:
-        line(u,0,"FIDO VERIFICATION");
-        line(u,2,u->job.fido_policy?"WHILE VAULT IS UNLOCKED":"TIMED / SAME SITE");
-        line(u,3,u->job.fido_policy?"NO TIME OR SITE LIMIT":"FIRST 30S / MAX 10 MIN");
-        line(u,4,"APPROVAL STILL REQUIRED");line(u,5,"USB STAYS UNLOCKED");
-        line(u,6,"UP/DOWN: CHANGE");line(u,7,"SELECT: SAVE  BACK: CANCEL");break;
+        header(u,"FIDO VERIFICATION",NULL);
+        choice(u,16,"TIMED / SAME SITE",!u->job.fido_policy);
+        choice(u,28,"WHILE UNLOCKED",u->job.fido_policy!=0);
+        text_at(u,4,43,u->job.fido_policy?"NO TIME OR SITE LIMIT":"FIRST 30S / MAX 10 MIN",1,true);
+        text_at(u,4,55,"ALWAYS ASK FOR APPROVAL",1,true);
+        footer(u,"\005 BACK","\006 SAVE");break;
     case UI_FIDO_INIT_CONFIRM:
-        line(u,0,"INITIALIZE FIDO?");line(u,2,"ERASES ALL PASSKEYS");line(u,3,"KEEPS USB FILES");
-        line(u,6,!u->cursor?"> CANCEL":"  CANCEL");line(u,7,u->cursor?"> INITIALIZE":"  INITIALIZE");break;
+        header(u,"INITIALIZE FIDO?",NULL);
+        text_at(u,4,16,"ERASES ALL PASSKEYS",1,true);
+        text_at(u,4,26,"KEEPS USB FILES",1,true);
+        text_at(u,4,36,"RESETS FIDO SETTINGS",1,true);
+        confirm_choices(u,"INITIALIZE");break;
     case UI_ERROR:
-        line(u,0,"OPERATION FAILED");snprintf(b,sizeof(b),"RESULT %d",u->error);line(u,2,b);line(u,4,u->error==-6?"USE LEGACY DEBUG UNLOCK":"CHECK CREDENTIAL OR SD");line(u,6,"SELECT TO RETURN");break;
+        header(u,"OPERATION FAILED",NULL);snprintf(b,sizeof(b),"RESULT %d",u->error);text_at(u,4,22,b,1,true);
+        text_at(u,4,42,u->error==-6?"USE LEGACY DEBUG UNLOCK":"CHECK CREDENTIAL OR SD",1,true);
+        footer(u,"\005 BACK","\006 RETURN");break;
     }
     if(u->flipped){
         /* A 180-degree rotation reverses both byte order and bit order. */
@@ -412,4 +508,3 @@ void fv_ui_render(fv_ui *u){
         }
     }
 }
-

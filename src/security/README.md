@@ -9,7 +9,7 @@ implemented for development/testing, not frozen for production use.
 - Canonical 128-byte immutable descriptor and 512-byte authenticated header.
   One to four active cipher/share slots, followed by zeroed unused slots.
   Cipher order and repeated families are supported; every slot gets distinct keys.
-- Random 32-byte VMK; n-of-n XOR shares wrapped with AES-256-KW or Camellia-256-KW
+- Random 32-byte VMK; n-of-n XOR shares wrapped with AES-256-KW, Camellia-256-KW or SM4-128-KW
   matching the storage layers. Separate HMAC authenticates the complete envelope
   before any unwrap. No partially recovered VMK is published on failure.
 - Root + enrollment-token binding, PBKDF2-HMAC-SHA-256 hardening, and separated
@@ -24,7 +24,7 @@ implemented for development/testing, not frozen for production use.
   Mirroring follows commit; its failure never rolls the anchor back.
 
 The small [Nettle adaptation](../../third_party/nettle_keywrap/README.md) supplies
-maintained C generic key-wrap loops with Mbed TLS AES/Camellia callbacks. Its
+maintained C generic key-wrap loops with Mbed TLS AES/Camellia and GmSSL SM4 callbacks. Its
 upstream source and LGPL/GPL licences are retained. This reuse and testing do not
 constitute an independent security audit of our composition or integration.
 
@@ -117,3 +117,7 @@ the persistent authority behind the same vault callbacks, with physical adapters
 in `src/platform/rp2354/authority.c`. Debug commands provision, exercise and destroy
 an enrollment without exporting secrets. Hardware OTP programming and power-cycle
 verification remain pending; the earlier successful board tests used RAM authority.
+
+SM4 algorithm ID 3 uses a 128-bit wrapping key and two 128-bit XTS keys.
+It participates in the same n-of-n VMK share scheme as AES/Camellia; see
+[SM4 format and key conventions](../../docs/sm4-integration.md).

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <openssl/rand.h>
+#include "../src/fido/image_upgrade.h"
 static uint8_t store[FV_FIDO_STORE_BYTES];
 #ifdef FV_FIDO_ENCRYPTED_TEST
 #include "fido_test_platform.h"
@@ -62,6 +63,13 @@ int main(int argc, char **argv) {
     memcpy(id,fixture.vault.config.device_id,16);
 #else
     memset(store,0xff,sizeof(store));
+    bool legacy=argc>2 && !strcmp(argv[1],"--legacy");
+    if(legacy){
+        FILE *f=fopen(argv[2],"rb");assert(f);
+        assert(fread(store,1,65536,f)==65536);assert(fgetc(f)==EOF);assert(!fclose(f));
+        assert(fv_fido_image_upgrade(store));
+        memcpy(persisted,store,sizeof(store));
+    }
 #endif
     fv_fido_engine_ops_t ops={.random=random_bytes,.commit=commit,.presence=presence,.millis=millis,
         .verify_user=verify_user,.uv_retries=uv_retries,.cancelled=is_cancelled};
@@ -70,7 +78,11 @@ int main(int argc, char **argv) {
     missing_uv.verify_user = NULL;
     assert(!fv_fido_engine_open(store,root,id,&missing_uv));
     assert(fv_fido_engine_open(store,root,id,&ops));
+#ifdef FV_FIDO_ENCRYPTED_TEST
     assert(commits>0);
+#else
+    assert(legacy || commits>0);
+#endif
     const uint8_t info[]={4};
     unsigned initial_commits=commits;
     assert(fv_fido_engine_command(info,sizeof(info),out,1)==1 && out[0]!=0);

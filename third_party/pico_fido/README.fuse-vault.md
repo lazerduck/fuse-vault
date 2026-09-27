@@ -25,6 +25,10 @@ notes remain in `v1/firmware/third_party/pico_fido/README.fuse-vault.md`.
 
 ## V2 changes
 
+- 2026-09-21: file-list scan bound now follows the configured region size rather
+  than assuming 64 KiB, for the 128 KiB engine image. V2 snapshot code handles
+  authenticated legacy-image expansion and file-link relocation.
+
 - Standalone `fv_fido_engine` target and V2-owned public headers. TinyCBOR encoder
   is linked directly; no legacy probe, runtime, crypto or storage dependency.
 - Shared V2 Mbed TLS configuration/implementation, enabled with

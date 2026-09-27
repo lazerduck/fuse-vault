@@ -86,6 +86,15 @@ substitute a browser virtual authenticator for tests of the actual engine/device
 
 ## Current handoff
 
+- **128 KiB FIDO store expansion (2026-09-21):** increased the in-RAM image from
+  64 KiB to 128 KiB within the existing 1 MiB disk reservation. Authenticated v1
+  snapshots expand in RAM without resetting credentials; the next commit writes
+  v2 to the alternate bank. Old firmware must not be used after v2 saves. Desktop
+  capacity is 103–112 records across the tested account profiles (104–107 for
+  distinct sites with email/display names), versus 44–48 previously. Firmware
+  fixed RAM is about 427.6 KiB; runtime board checks remain pending. See
+  [expansion evidence](../results/fido-128k-20260921.md).
+
 - Priority update (user, 2026-09-21): physical endurance testing moves to the
   forthcoming V2 board with working screen and printed enclosure, through daily
   use. Hardware gates remain open; software development proceeds with the

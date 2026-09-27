@@ -2,6 +2,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+/* Compile the store here to construct genuine v1 snapshots with its private
+ * writer. The normal library object is not pulled from the static archive. */
+#include "../src/fido/store.c"
 static uint8_t image[FV_FIDO_STORE_BYTES],recovered[FV_FIDO_STORE_BYTES];
 static uint8_t backup[FV_TEST_CAPACITY*512u],after[FV_TEST_CAPACITY*512u];
 static void media_copy(fv_fido_fixture *f,uint8_t *out){
@@ -86,7 +89,8 @@ static void recovery(void){
         }
     }
     printf("Snapshot interruption cases: %u (%u writes, %u syncs, %u reads)\n",cases,writes,syncs,reads);
-    const unsigned corrupt_at[]={4,5,writes}; /* first payload, tags, publication */
+    unsigned first_payload=2u+(META_SECTORS+FV_TAG_CACHE_BLOCKS-1u)/FV_TAG_CACHE_BLOCKS;
+    const unsigned corrupt_at[]={first_payload,first_payload+1u,writes};
     for(unsigned i=0;i<3;i++){
         media_restore(&f,backup);
         assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_OK);
@@ -114,7 +118,7 @@ static void recovery(void){
     media_copy(&f,after);
     /* Replay valid old ciphertext AND sector tags beneath a new valid manifest.
      * Sector authentication passes; the whole-snapshot digest must reject it. */
-    memcpy(after+1041u*512,backup+1041u*512,137u*512);
+    memcpy(after+1041u*512,backup+1041u*512,(FV_FIDO_IMAGE_SECTORS+(FV_FIDO_IMAGE_SECTORS+14u)/15u)*512);
     media_restore(&f,after);
     assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_CORRUPT);
     media_restore(&f,backup);
@@ -123,7 +127,7 @@ static void recovery(void){
     assert(fv_fido_store_commit(&s,image)==FV_FIDO_STORE_OK);
     assert(fv_fido_store_commit(&stale,image)==FV_FIDO_STORE_STALE && !stale.ready);
     /* Latest committed corruption must fail closed, not resurrect the older bank. */
-    unsigned payload=(16u+s.bank*1024u+10u)*512u;
+    unsigned payload=(16u+s.bank*1024u+1u+(FV_FIDO_IMAGE_SECTORS+14u)/15u)*512u;
     media_copy(&f,after);after[payload+7]^=1;media_restore(&f,after);
     assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_CORRUPT);
     assert(filled(recovered,sizeof(recovered),0));
@@ -182,9 +186,54 @@ static void reverify(void){
     assert(fv_vault_reverify(&f.vault,secret,sizeof(secret)-1)==FV_VAULT_DENIED);
     assert(f.authority.attempts==1);fv_fido_fixture_close(&f);
 }
+static void legacy_upgrade(void){
+    const uint16_t alg[4]={1,2};fv_fido_fixture f;fv_fido_fixture_init(&f,alg,2);
+    fv_fido_store s={0};
+    FILE *fixture=fopen(FV_LEGACY_IMAGE,"rb");assert(fixture);
+    assert(fread(image,1,65536,fixture)==65536);assert(!fclose(fixture));
+    snapshot legacy={.generation=1,.bank=0,.image_bytes=65536};
+    assert(write_snapshot(&f.vault,&legacy,image)==FV_FIDO_STORE_OK);
+    media_copy(&f,backup);
+    fv_fido_fixture_io_reset(&f);
+    assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_OK);
+    assert(!f.writes); /* Migration is in RAM; opening never writes media. */
+    assert(fv_fido_image_upgrade(image));assert(!memcmp(image,recovered,sizeof(image)));
+    assert(fv_fido_store_commit(&s,image)==FV_FIDO_STORE_OK);
+    unsigned writes=f.writes,syncs=f.syncs;
+    media_copy(&f,after);
+    assert(!memcmp(backup+16u*512,after+16u*512,1024u*512));
+    assert(get(after+1040u*512+8,4)==2 && get(after+1040u*512+24,4)==131072);
+    assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_OK);
+    assert(!memcmp(image,recovered,sizeof(image)));
+    unsigned cases=0;
+    for(unsigned kind=0;kind<2;kind++)
+        for(unsigned cut=1;cut<=(kind?syncs:writes);cut++)
+            for(unsigned drop=0;drop<2;drop++){
+                media_restore(&f,backup);
+                assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_OK);
+                fv_fido_fixture_io_reset(&f);
+                if(kind)f.fail_sync=cut;else{f.fail_write=cut;f.tear_bytes=17;}
+                assert(fv_fido_store_commit(&s,image)!=FV_FIDO_STORE_OK);
+                fv_fido_fixture_power_cut(&f,drop!=0);
+                assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_OK);
+                assert(!memcmp(image,recovered,sizeof(image)));bounds_unchanged(&f);cases++;
+            }
+    /* A genuine authenticated v1 snapshot with invalid list pointers is corrupt,
+     * never silently reinitialized. */
+    media_restore(&f,backup);
+    fixture=fopen(FV_LEGACY_IMAGE,"rb");assert(fixture);
+    assert(fread(image,1,65536,fixture)==65536);assert(!fclose(fixture));
+    memset(image+65536u-12u,0xff,4);
+    assert(write_snapshot(&f.vault,&legacy,image)==FV_FIDO_STORE_OK);
+    assert(fv_fido_store_open(&s,&f.vault,recovered)==FV_FIDO_STORE_CORRUPT);
+    assert(filled(recovered,sizeof(recovered),0));
+    fv_fido_store_close(&s);fv_fido_fixture_close(&f);
+    printf("Legacy migration interruption cases: %u\n",cases);
+}
 int main(void){
+    legacy_upgrade();
     reverify();
-    const uint16_t algs[][4]={{1,0,0,0},{2,0,0,0},{1,2,1,2}};
-    for(unsigned i=0;i<3;i++)lifecycle(algs[i],i==2?4:1);
+    const uint16_t algs[][4]={{1,0,0,0},{2,0,0,0},{1,2,1,2},{3,0,0,0},{1,3,2,3}};
+    for(unsigned i=0;i<5;i++)lifecycle(algs[i],algs[i][1]?4:1);
     recovery();initialization_failures();puts("FIDO encrypted store lifecycle/failure tests passed");
 }

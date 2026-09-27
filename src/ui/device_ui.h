@@ -41,6 +41,7 @@ typedef struct {
     char fido_label[128];
     uint32_t fido_generation;
     unsigned cursor;
+    unsigned passkey_page;
     uint8_t confirmation[64],confirmation_length;
     int error;
     uint32_t read_kib_tenths,write_kib_tenths;

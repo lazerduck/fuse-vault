@@ -5,6 +5,42 @@
 
 # V2 device setup and USB screen
 
+## Debug RAM readout
+
+With `FV_DEBUG_SCREEN=ON`, `SCREEN` includes a `ram` object and the desktop
+viewer displays total RAM, fixed allocation (including reserved stacks), current
+heap reservation, peak heap reservation since boot, and uncommitted RAM, in KiB.
+Old firmware remains viewable with a telemetry-unavailable message.
+
+The debug build observes successful newlib `_sbrk` calls, including brief heap
+growth between screen polls, using two lock-free counters (8 bytes of persistent
+RAM). It does not traverse allocator internals from the USB core. Fixed usage is
+derived from the linker heap boundaries and includes the complete FIDO image.
+Heap reservation includes free blocks retained by the allocator: it is **not**
+live allocated bytes. Uncommitted RAM excludes those reusable blocks and does
+not guarantee the size of a successful allocation. Stack high-water usage and
+live/peak allocation totals are not measured. No RAM addresses or contents are
+exposed. Builds with debug screen disabled omit the instrumentation.
+
+With `FV_DEVICE_UI=ON`, physical TFT output defaults on (`FV_TFT_DISPLAY=ON`),
+independently of `FV_DEBUG_SCREEN`. Set `FV_TFT_DISPLAY=OFF` for headless boards.
+The driver uses the same monochrome framebuffer as the USB viewer, including
+software rotation. It expands pixels to white/black RGB565 with a 320-byte stack
+row buffer and a 1,600-byte static cache, sending at most one changed row per
+main-loop pass over SPI0 at 8 MHz (about 331 microseconds on the wire).
+There is a 10 ms pause between scans. Backlight stays off until the first full
+scan completes. Reset/wake delays add about 520 ms before USB initialization.
+
+Panel source: `CaseDesign/datasheets/N096-1608TBBIG09-C08.pdf` (from repo root):
+Wisevision 0.96-inch 80x160 ST7735S, four-wire SPI. Board GPIO18 controls the
+active-low backlight; GPIO19/20/21/22/23 are reset/DC/CS/SCK/MOSI.
+The module datasheet does not provide a controller initialization recipe or RAM
+offsets. The driver retains V1's candidate landscape MADCTL=0x60, X=1, Y=26,
+inversion-on profile; hardware validation is still pending. On arrival check
+all four screen edges, black/white polarity, navigation and Settings flip.
+There is no display readback, so successful builds/transfers cannot prove the
+panel is connected or displaying correctly.
+
 ## What this build provides
 
 - Debounced USB selection: C whenever C has power; A only when A alone has power.
@@ -15,7 +51,7 @@
 - The firmware owns a 160×80 monochrome framebuffer and the UI state machine.
   Physical active-low buttons on GPIO10–15 and development USB key injection feed
   the same handler. The laptop renders the actual framebuffer; it has no separate
-  setup implementation. The disconnected TFT has no SPI driver in this build.
+  setup implementation. The physical TFT receives the same UI pixels.
 - Setup selects a confirmed direction pattern, four 00–99 code wheels, or four
   words through a directional picker, plus 1–4 ordered AES-256-XTS or
   Camellia-256-XTS layers, and a failure policy. Repeated ciphers are allowed;

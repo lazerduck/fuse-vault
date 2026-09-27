@@ -1,4 +1,4 @@
-# V2 FIDO snapshot storage (development format 1)
+# V2 FIDO snapshot storage (development formats 1 and 2)
 
 The F2 store connects the portable FIDO engine to the existing V2 encrypted block
 pipeline. It does not attach HID or implement physical UI. See the
@@ -23,7 +23,7 @@ with a live engine. Hot media mutation is unsupported.
 
 - `fv_fido_store_open`: read-only recovery; never initializes. Missing or invalid
   commit records return CORRUPT, not an empty image. Every failed read clears the
-  entire 64 KiB output and leaves the store closed.
+  entire 128 KiB output and leaves the store closed.
 - `fv_fido_store_initialize`: explicitly destructive trusted-setup operation,
   requiring an unlocked vault and `confirmed=true`. Invalidates both banks and
   commits an all-FF initial engine image. This boolean is an internal caller
@@ -50,13 +50,33 @@ There is no automatic migration on flash or vault unlock.
 | Bank-relative sectors | Contents |
 | --- | --- |
 | 0 | 512-byte authenticated commit manifest |
-| 1–9 | Existing V2 sector-HMAC metadata for 128 logical sectors |
-| 10–137 | 64 KiB encrypted engine image |
-| 138–1023 | Reserved, untouched |
+| 1–18 | Existing V2 sector-HMAC metadata for 256 logical sectors |
+| 19–274 | 128 KiB encrypted engine image |
+| 275–1023 | Reserved, untouched |
 
 Bank 0 starts at physical sector 16; bank 1 starts at 1040. Both use the existing
 eager `fv_auth_store` layout (no lazy bitmap is necessary for a full snapshot).
-XTS sector inputs are logical 0–127, with independent keys for each bank.
+XTS sector inputs are logical 0–255, with independent keys for each bank.
+
+## Expansion from the 64 KiB format
+
+New snapshots use version 2 and a 128 KiB image. Version 1 snapshots retain their
+original 9 metadata sectors and 128 payload sectors. The reader authenticates
+both formats and selects the newest generation across both banks. It verifies
+the original ciphertext digest before expanding a legacy image in RAM.
+
+The legacy engine uses two linked file regions with 32-bit logical addresses.
+Expansion validates decreasing links, reciprocal previous links and record bounds,
+then moves the complete old image upward by 64 KiB and adjusts file-list links.
+Credential/object payloads remain unchanged, and new free space is filled with FF.
+A wholly FF explicitly initialized image is supported; malformed lists fail closed.
+
+Opening remains read-only. The next engine commit writes version 2 to the other
+bank, leaving the previous valid snapshot intact until a later commit reuses it.
+No FIDO reset, re-enrollment, USB geometry change or enlarged disk reservation is
+required. **Do not downgrade to 64 KiB firmware after new snapshots are saved:**
+it cannot read version 2 and may select a stale surviving version 1 snapshot.
+Forward migration is supported; downgrade migration is not.
 
 ## Derivation and authentication
 
@@ -79,10 +99,10 @@ The manifest is canonical, little-endian, with all reserved bytes zero:
 | Offset | Bytes | Value |
 | --- | ---: | --- |
 | 0 | 8 | `FV2FIDO` plus NUL |
-| 8 | 4 | format version 1 |
+| 8 | 4 | format version 2 (legacy 1 accepted on read) |
 | 12 | 4 | bank index |
 | 16 | 8 | nonzero snapshot generation |
-| 24 | 4 | image size 65536 |
+| 24 | 4 | image size 131072 (legacy 65536) |
 | 28 | 4 | reserved |
 | 32 | 16 | volume ID |
 | 48 | 32 | SHA-256 of all encrypted payload sectors in order |
@@ -109,7 +129,7 @@ Opening authenticates manifests and selects the highest committed generation.
 Malformed/torn manifests are not commits; I/O errors are not missing data. Equal
 valid generations are rejected. If the newest authentic manifest exists but its
 payload is corrupt, fail closed rather than silently use the older bank. Written
-markers changed to unset also fail; a FIDO snapshot must contain all 128 sectors.
+markers changed to unset also fail; a FIDO snapshot must contain all sectors in the selected image.
 
 Injected interrupted writes recover the old or new complete snapshot, never a
 mixture. Initialization failure can leave no valid snapshot and requires explicit

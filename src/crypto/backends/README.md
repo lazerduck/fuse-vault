@@ -64,7 +64,7 @@ A protocol-5 software-only comparison build is in `build-pico-software/`.
 ## Pico SRAM placement
 
 `FV_CIPHERS_RAM` enables source-specific forced declaration headers for upstream
-AES and Camellia. The vendor source is not modified. The declarations assign
+AES, Camellia and SM4. The vendor source is not modified. The declarations assign
 hot functions and Camellia S-boxes to distinct `.time_critical.*` sections,
 which the Pico SDK links into SRAM and copies at startup. AES tables already
 live in BSS. This option is ON for firmware, OFF for desktop; `FV_AES_RAM`
@@ -77,3 +77,7 @@ matrix runs; see the [results](../../../results/v5-ciphers-ram-benchmark.md). Th
 placement change, not a new cipher or storage format. The declaration headers
 depend on Mbed TLS internal names: recheck placement and table sizes when
 upgrading the dependency.
+
+SM4 uses the same SRAM placement option for its block routine and 1 KiB
+lookup table. Its schedules remain in the existing cipher-context union.
+The earlier measurements above predate SM4 and do not measure its throughput.

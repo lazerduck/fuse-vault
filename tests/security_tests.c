@@ -56,6 +56,17 @@ int main(void){
  CHECK(memcmp(keys.layers[0],keys.layers[1],64));CHECK(memcmp(keys.layers[0],keys.integrity,32));CHECK(zero(keys.layers[2],128));
  d.cipher_ids[1]=1;CHECK(!fv_derive_working_keys(vmk,&d,&changed));CHECK(memcmp(changed.layers[0],changed.layers[1],64));
  d.volume_id[0]=2;CHECK(!fv_derive_working_keys(vmk,&d,&changed));CHECK(memcmp(keys.integrity,changed.integrity,32));
+ d.cipher_ids[0]=3;d.cipher_ids[1]=3;
+ CHECK(fv_volume_descriptor_encode(&d,UINT64_MAX,header));
+ CHECK(fv_volume_descriptor_decode(header,128,UINT64_MAX,&decoded));CHECK(decoded.cipher_ids[0]==3);
+ CHECK(!fv_derive_working_keys(vmk,&d,&changed));
+ CHECK(zero(changed.layers[0]+32,32) && zero(changed.layers[1]+32,32));
+ CHECK(memcmp(changed.layers[0],changed.layers[1],32));
+ CHECK(EVP_Digest(header,128,digest,&hash_bytes,EVP_sha256(),NULL));
+ n=sizeof(label);memcpy(ctx,label,n);memcpy(ctx+n,digest,32);n+=32;
+ memset(ctx+n,0,6);ctx[n+4]=3;n+=6;
+ reference_hkdf(d.volume_id,16,vmk,32,ctx,(int)n,expected,32);
+ CHECK(!memcmp(changed.layers[0],expected,32));
  d.layer_count=0;CHECK(fv_derive_working_keys(vmk,&d,&changed));CHECK(zero(&changed,sizeof(changed)));
  fv_working_keys_clear(&keys);CHECK(zero(&keys,sizeof(keys)));
  puts("volume descriptor, policy and key derivation checks passed");return 0;

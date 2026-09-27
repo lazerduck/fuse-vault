@@ -8,9 +8,13 @@ fv_status fv_pipeline_init(fv_pipeline *p, const fv_algorithm *a,
     fv_pipeline_clear(p);
     if (!a || !keys || !n || n > FV_MAX_LAYERS) return FV_INVALID;
     for (size_t i = 0; i < n; ++i) {
-        for (size_t j = 0; j < i; ++j)
-            if (!memcmp(keys[i], keys[j], FV_XTS_KEY_BYTES)) goto invalid;
-        fv_status s = fv_cipher_init(&p->layers[i], a[i], keys[i], FV_XTS_KEY_BYTES);
+        size_t bytes = fv_cipher_key_bytes(a[i]);
+        if (!bytes) goto invalid;
+        for (size_t j = 0; j < i; ++j) {
+            size_t other = fv_cipher_key_bytes(a[j]);
+            if (!memcmp(keys[i], keys[j], bytes < other ? bytes : other)) goto invalid;
+        }
+        fv_status s = fv_cipher_init(&p->layers[i], a[i], keys[i], bytes);
         if (s != FV_OK) { fv_pipeline_clear(p); return s; }
     }
     p->count = n;

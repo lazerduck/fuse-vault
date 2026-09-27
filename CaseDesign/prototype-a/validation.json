@@ -1,0 +1,113 @@
+{
+  "revision": "V2 fit prototype A",
+  "parts": {
+    "base": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 6842.5325934714565,
+      "bounds_mm": [
+        76.1,
+        30.6,
+        11.250000000000004
+      ],
+      "step_round_trip": true,
+      "stl_boundary_or_nonmanifold_edges": 0,
+      "stl_on_bed": true
+    },
+    "lid": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 3789.0486890817892,
+      "bounds_mm": [
+        76.1,
+        30.600000000000005,
+        6.400000099999999
+      ],
+      "step_round_trip": true,
+      "stl_boundary_or_nonmanifold_edges": 0,
+      "stl_on_bed": true
+    },
+    "usb_c_collar": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 164.67565635092132,
+      "bounds_mm": [
+        3.9,
+        14.200000000000001,
+        7.4
+      ],
+      "step_round_trip": true,
+      "stl_boundary_or_nonmanifold_edges": 0,
+      "stl_on_bed": true
+    },
+    "joystick_cap": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 306.10079550527183,
+      "bounds_mm": [
+        10.400000200000001,
+        10.4000002,
+        3.8000001
+      ],
+      "step_round_trip": true,
+      "stl_boundary_or_nonmanifold_edges": 0,
+      "stl_on_bed": true
+    },
+    "back_plunger": {
+      "valid": true,
+      "solids": 1,
+      "volume_mm3": 33.91506349182863,
+      "bounds_mm": [
+        5.0,
+        5.0,
+        3.1500000000000004
+      ],
+      "step_round_trip": true,
+      "stl_boundary_or_nonmanifold_edges": 0,
+      "stl_on_bed": true
+    }
+  },
+  "collisions": [],
+  "plunger_case_collision_at_stop_mm3": 0.0,
+  "plunger_base_collision_at_stop_mm3": 0.0,
+  "sampled_lid_closure": [
+    {
+      "angle_degrees": 0,
+      "base_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 2,
+      "base_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 5,
+      "base_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 10,
+      "base_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 15,
+      "base_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0
+    }
+  ],
+  "nominal_usb_c_exposed_mm": 7.257,
+  "nominal_usb_a_exposed_mm": 15.150000000000006,
+  "limitations": [
+    "No physical fit test.",
+    "USB-A seating, SD installed position and folded flex remain assumptions; square shaft nominal is drawing-derived.",
+    "No structural/load simulation. Lid closure sampled, not a continuous motion proof.",
+    "STLs are bed-oriented; STEP parts use assembly coordinates."
+  ]
+}

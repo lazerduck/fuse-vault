@@ -35,7 +35,7 @@ callbacks; host PIN setup is rejected. The platform must implement actual unlock
 RP-bound bounded verification reuse, physical prompts, and cancellation polling.
 The test executable's RAM commits and simulated input are never firmware sources.
 
-The caller supplies a 64 KiB object image and an independently derived FIDO key,
+The caller supplies a 128 KiB object image and an independently derived FIDO key,
 not the VMK or OTP root. Fresh initialization (all FF) is an explicit caller
 choice. Reopening requires a previously authenticated snapshot. The engine alone
 does not authenticate external storage or distinguish corruption from a fresh
@@ -83,3 +83,6 @@ F3 opt-in composite firmware and real USB test instructions are in
 [`docs/v2-fido-testing.md`](../../docs/v2-fido-testing.md). The persistent
 [delivery ledger](../../docs/v2-fido-progress.md) separates implemented software
 from pending board acceptance.
+
+The snapshot reader expands authenticated legacy 64 KiB images in RAM; see
+[forward migration and downgrade restriction](../../docs/v2-fido-storage.md#expansion-from-the-64-kib-format).

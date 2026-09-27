@@ -59,6 +59,7 @@ class ProtocolTests(unittest.TestCase):
     def test_device_identity_and_stack(self):
         self.assertEqual(stack_code('aes,camellia'), 0x0201)
         self.assertEqual(stack_code('camellia,aes'), 0x0102)
+        self.assertEqual(stack_code('aes,sm4,camellia,sm4'), 0x03020301)
         with tempfile.TemporaryDirectory() as directory:
             p=Path(directory)
             (p/'idVendor').write_text('cafe\n'); (p/'idProduct').write_text('4021\n')
@@ -90,7 +91,7 @@ class EngineIntegration(unittest.TestCase):
         self.assertEqual(self.process.returncode,0)
     def test_real_engine_file_backed_matrix(self):
         plain=hashlib.shake_256(b'test').digest(65*512)  # partial last batch
-        for stack in ['raw','aes','camellia','aes,camellia','camellia,aes','aes,camellia,aes']:
+        for stack in ['raw','aes','camellia','aes,camellia','camellia,aes','aes,camellia,aes','sm4','aes,sm4,camellia,sm4']:
             for batch in [512,4096,32768]:
                 case=run_case(self.client, stack, batch, plain)
                 self.assertTrue(case['verified'])

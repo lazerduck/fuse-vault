@@ -6,7 +6,7 @@
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"%s:%d: %s\n",__FILE__,__LINE__,#x);exit(1);}}while(0)
 #define CAPACITY 2200u
 static const uint8_t password[]="test password",replacement[]="different password";
-static const uint16_t algorithms[4]={1,2,1,2};
+static uint16_t algorithms[4]={1,2,1,2};
 static bool zero(const void *p,size_t n){const uint8_t *b=p;while(n--)if(*b++)return false;return true;}
 typedef struct {
     FILE *sd,*state;
@@ -262,6 +262,8 @@ static void credential_methods(void){
     finish(&f);
 }
 int main(void) {
+    lifecycle();attempts();failures();batches_and_policy();legacy_volume();credential_methods();
+    algorithms[1]=3;algorithms[3]=3;
     lifecycle();attempts();failures();batches_and_policy();legacy_volume();credential_methods();
     puts("Vault: file-backed lifecycle, rewrap/replay, attempt/destruction and commit/SD failure injection passed");
     return 0;

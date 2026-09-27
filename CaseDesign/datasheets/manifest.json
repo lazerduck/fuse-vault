@@ -1,0 +1,35 @@
+{
+  "N096-1608TBBIG09-C08.pdf": {
+    "source": "User-supplied 8248e3d07e4da27b04062054a843a030.pdf",
+    "reviewed_pages": [
+      4,
+      5
+    ],
+    "sha256": "615cd398483765cc47e4f595c5ff754495d3179501921f239a0899387d1c8df6",
+    "review_date": "2026-09-21"
+  },
+  "AM90.pdf": {
+    "source": "https://datasheet.lcsc.com/datasheet/pdf/9c41064df8812b8aa10ec6a2cb22576d.pdf",
+    "reviewed_pages": [
+      1
+    ],
+    "sha256": "b136dcca5b0c54505e1d5b10b2573795472d24c1e8a976313b43722b131c8785",
+    "review_date": "2026-09-21"
+  },
+  "U261-121N-4BS2S.pdf": {
+    "source": "https://datasheet.lcsc.com/datasheet/pdf/91d5ed1fc9987374259cf6538a2f8571.pdf",
+    "reviewed_pages": [
+      1
+    ],
+    "sha256": "7161ad08c9d77e3f6a60e3fc4f9ac67e15cc2559f39fa058aafe9067f69d5bd9",
+    "review_date": "2026-09-21"
+  },
+  "10x10x9-6P-WX.pdf": {
+    "source": "User-supplied fea71882b079fbb8bd7ca1c265fc7f87.pdf",
+    "reviewed_pages": [
+      1
+    ],
+    "sha256": "00b7f4132da77dc971396389d682cf8a38eb620f0fbfa36ef854118ba30a6af4",
+    "review_date": "2026-09-21"
+  }
+}

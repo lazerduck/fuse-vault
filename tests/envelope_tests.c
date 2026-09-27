@@ -63,6 +63,8 @@ static void wrap_vector(uint16_t id,const uint8_t key[32],const uint8_t share[32
 int main(void) {
     vector(aes_header,aes_bad_kw,aes_binding);vector(cam_header,cam_bad_kw,cam_binding);
     vector(pair_header,pair_bad_kw,pair_binding);vector(three_header,three_bad_kw,three_binding);vector(four_header,four_bad_kw,four_binding);
+    vector(sm4_header,sm4_bad_kw,sm4_binding);vector(mixed_sm4_header,mixed_sm4_bad_kw,mixed_sm4_binding);
+    wrap_vector(3,sm4_key_0,sm4_share_0,sm4_wrapped_0);
     wrap_vector(1,aes_key_0,aes_share_0,aes_wrapped_0);wrap_vector(2,cam_key_0,cam_share_0,cam_wrapped_0);
     puts("Envelope: independent fixed vectors, full-byte tampering, KW failure, RNG failure, cost/profile bounds passed");
     return 0;

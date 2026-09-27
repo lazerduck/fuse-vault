@@ -1,0 +1,22 @@
+{
+  "assembly-a.csv": "edf18f4fbe940114a1e05bbdc1286a0b61fb3f671b1f166d17a87c527e66ec5d",
+  "assembly-b.csv": "049a326bb90f3db87745199f6a8f81dac8eb3ba391bbbb7e288dab7700c8eb53",
+  "bottom.png": "4bf369ebe7a7b4a93b78c2e3cec254dfbc8276201ce0b04fd4ba02614c361966",
+  "Drill_NPTH_Through.DRL": "15e9ca635a39f72a3311535ee6cc4f7bffbe8dbffd6318ae61771c9cc5db2b3c",
+  "Drill_PTH_Through.DRL": "017ee34cbbbeffee14602d8ee835210bf1285f67c9f6ce802cf8db4ee0e7be88",
+  "Drill_PTH_Through_Via.DRL": "51bb0dbdc259851abc1f7ec1dab449afee36dda8ff66b2c9974f6763901ecfbf",
+  "Gerber_BoardOutlineLayer.GKO": "f7d55795455355246333fd249f5765736cd68fb09c79808f00f02b7f3fc361f3",
+  "Gerber_BottomLayer.GBL": "ecb2c0d889cd4d3b41733b004bc3153ed051af37137b541585b2477b8138da0c",
+  "Gerber_BottomPasteMaskLayer.GBP": "b5e2376ef1801f875c96fde9c3ef69965f0cb4f5eefc90a14f21975a99d0409e",
+  "Gerber_BottomSilkscreenLayer.GBO": "04bb4e216f8df3121858cf94a5bc26fd6501dc2efd4df889a79b7d4321f524e7",
+  "Gerber_BottomSolderMaskLayer.GBS": "902936f1adedf9a86e26346d6df11c16c6cc9c6b1f8b8e023826c1cad7054882",
+  "Gerber_DocumentLayer.GDL": "34a7712eb3b7de2a96d88c889a457fd0caeb4f667642a7a036703a386cea08f6",
+  "Gerber_DrillDrawingLayer.GDD": "aad4a511c9161bd3bb29bdbca40bd1788c3913e6424f8283dc68c9faba41a767",
+  "Gerber_InnerLayer1.G1": "a7e1f9ae574a0e7332b84bed8a1d43c2e0c08df63ae29ab20bd63d42dc324c76",
+  "Gerber_InnerLayer2.G2": "3721b863d5b639861a3a0c655d92e6f5675a11c9b8dfbe2f8eb14ebc08dc619f",
+  "Gerber_TopLayer.GTL": "d9ff0196a3f88e6caca40546636acb7bd67af329a3470f047a6f7c70d46ae8ce",
+  "Gerber_TopPasteMaskLayer.GTP": "0fc5c1ddfc99e29cd494892d36a5aa7c488475de1305b129d6fd4dc53eb6218e",
+  "Gerber_TopSilkscreenLayer.GTO": "ca4f25e59dffc1d8871261cac6f9fa5b379c814304edce0830f90a61af3e27c7",
+  "Gerber_TopSolderMaskLayer.GTS": "c2953bbfa4fe17822e825fadd80732504a407b0d1c180a8773c782270adf4f63",
+  "top.png": "3f88ec136b5cfec801ed121bb94b9f0d7bb984267a79bcfec715f96e61ac852c"
+}

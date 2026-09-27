@@ -1,0 +1,1971 @@
+{
+  "units": "mm",
+  "coordinates": "Original Gerber XY; bottom PCB Z=0; top PCB Z=thickness",
+  "outline": [
+    [
+      -0.127,
+      -21.237
+    ],
+    [
+      -0.127,
+      0.0
+    ],
+    [
+      73.208,
+      0.0
+    ],
+    [
+      73.208,
+      -21.237
+    ],
+    [
+      -0.127,
+      -21.237
+    ]
+  ],
+  "cutouts": [
+    [
+      [
+        11.42583,
+        -19.52613
+      ],
+      [
+        11.42583,
+        -3.77813
+      ],
+      [
+        13.96583,
+        -3.77813
+      ],
+      [
+        13.96583,
+        -19.52613
+      ],
+      [
+        11.42583,
+        -19.52613
+      ]
+    ]
+  ],
+  "drills": [
+    {
+      "x": 62.52489,
+      "y": -16.93189,
+      "end_x": 62.52489,
+      "end_y": -16.93189,
+      "diameter": 0.95001,
+      "kind": "round",
+      "plating": "NPTH",
+      "sources": "Drill_NPTH_Through.DRL:17"
+    },
+    {
+      "x": 58.12511,
+      "y": -16.93189,
+      "end_x": 58.12511,
+      "end_y": -16.93189,
+      "diameter": 0.95001,
+      "kind": "round",
+      "plating": "NPTH",
+      "sources": "Drill_NPTH_Through.DRL:18"
+    },
+    {
+      "x": 71.025,
+      "y": -8.79907,
+      "end_x": 71.025,
+      "end_y": -8.79907,
+      "diameter": 1.0,
+      "kind": "round",
+      "plating": "NPTH",
+      "sources": "Drill_NPTH_Through.DRL:20"
+    },
+    {
+      "x": 71.025,
+      "y": -13.29919,
+      "end_x": 71.025,
+      "end_y": -13.29919,
+      "diameter": 1.0,
+      "kind": "round",
+      "plating": "NPTH",
+      "sources": "Drill_NPTH_Through.DRL:21"
+    },
+    {
+      "x": 52.45405,
+      "y": -4.07899,
+      "end_x": 52.45405,
+      "end_y": -4.07899,
+      "diameter": 1.2,
+      "kind": "round",
+      "plating": "NPTH",
+      "sources": "Drill_NPTH_Through.DRL:23"
+    },
+    {
+      "x": 60.45403,
+      "y": -4.07899,
+      "end_x": 60.45403,
+      "end_y": -4.07899,
+      "diameter": 1.2,
+      "kind": "round",
+      "plating": "NPTH",
+      "sources": "Drill_NPTH_Through.DRL:24"
+    },
+    {
+      "x": 31.8135,
+      "y": -1.0795,
+      "end_x": 31.8135,
+      "end_y": -1.0795,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:21;Drill_PTH_Through_Via.DRL:15"
+    },
+    {
+      "x": 31.877,
+      "y": -2.286,
+      "end_x": 31.877,
+      "end_y": -2.286,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:22;Drill_PTH_Through_Via.DRL:16"
+    },
+    {
+      "x": 42.57501,
+      "y": -12.51718,
+      "end_x": 42.57501,
+      "end_y": -12.51718,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:24;Drill_PTH_Through_Via.DRL:18"
+    },
+    {
+      "x": 45.07771,
+      "y": -5.79899,
+      "end_x": 45.07771,
+      "end_y": -5.79899,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:25;Drill_PTH_Through_Via.DRL:19"
+    },
+    {
+      "x": 22.97935,
+      "y": -19.51526,
+      "end_x": 22.97935,
+      "end_y": -19.51526,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:26;Drill_PTH_Through_Via.DRL:20"
+    },
+    {
+      "x": 38.12492,
+      "y": -10.46568,
+      "end_x": 38.12492,
+      "end_y": -10.46568,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:27;Drill_PTH_Through_Via.DRL:21"
+    },
+    {
+      "x": 23.76986,
+      "y": -19.93896,
+      "end_x": 23.76986,
+      "end_y": -19.93896,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:28;Drill_PTH_Through_Via.DRL:22"
+    },
+    {
+      "x": 42.31182,
+      "y": -3.42899,
+      "end_x": 42.31182,
+      "end_y": -3.42899,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:29;Drill_PTH_Through_Via.DRL:23"
+    },
+    {
+      "x": 32.90163,
+      "y": -0.80758,
+      "end_x": 32.90163,
+      "end_y": -0.80758,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:30;Drill_PTH_Through_Via.DRL:24"
+    },
+    {
+      "x": 32.7817,
+      "y": -2.29008,
+      "end_x": 32.7817,
+      "end_y": -2.29008,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:31;Drill_PTH_Through_Via.DRL:25"
+    },
+    {
+      "x": 38.39702,
+      "y": -12.77118,
+      "end_x": 38.39702,
+      "end_y": -12.77118,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:32;Drill_PTH_Through_Via.DRL:26"
+    },
+    {
+      "x": 38.43472,
+      "y": -5.69079,
+      "end_x": 38.43472,
+      "end_y": -5.69079,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:33;Drill_PTH_Through_Via.DRL:27"
+    },
+    {
+      "x": 5.71499,
+      "y": -11.25118,
+      "end_x": 5.71499,
+      "end_y": -11.25118,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:34;Drill_PTH_Through_Via.DRL:28"
+    },
+    {
+      "x": 39.81302,
+      "y": -12.77118,
+      "end_x": 39.81302,
+      "end_y": -12.77118,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:35;Drill_PTH_Through_Via.DRL:29"
+    },
+    {
+      "x": 54.82999,
+      "y": -16.51397,
+      "end_x": 54.82999,
+      "end_y": -16.51397,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:36;Drill_PTH_Through_Via.DRL:30"
+    },
+    {
+      "x": 56.35399,
+      "y": -18.54596,
+      "end_x": 56.35399,
+      "end_y": -18.54596,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:37;Drill_PTH_Through_Via.DRL:31"
+    },
+    {
+      "x": 42.97511,
+      "y": -10.44618,
+      "end_x": 42.97511,
+      "end_y": -10.44618,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:38;Drill_PTH_Through_Via.DRL:32"
+    },
+    {
+      "x": 60.48148,
+      "y": -7.92578,
+      "end_x": 60.48148,
+      "end_y": -7.92578,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:39;Drill_PTH_Through_Via.DRL:33"
+    },
+    {
+      "x": 44.64521,
+      "y": -11.75518,
+      "end_x": 44.64521,
+      "end_y": -11.75518,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:40;Drill_PTH_Through_Via.DRL:34"
+    },
+    {
+      "x": 62.33757,
+      "y": -8.70719,
+      "end_x": 62.33757,
+      "end_y": -8.70719,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:41;Drill_PTH_Through_Via.DRL:35"
+    },
+    {
+      "x": 63.60757,
+      "y": -9.97718,
+      "end_x": 63.60757,
+      "end_y": -9.97718,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:42;Drill_PTH_Through_Via.DRL:36"
+    },
+    {
+      "x": 45.07771,
+      "y": -4.99889,
+      "end_x": 45.07771,
+      "end_y": -4.99889,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:43;Drill_PTH_Through_Via.DRL:37"
+    },
+    {
+      "x": 31.15364,
+      "y": -3.17499,
+      "end_x": 31.15364,
+      "end_y": -3.17499,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:44;Drill_PTH_Through_Via.DRL:38"
+    },
+    {
+      "x": 43.00671,
+      "y": -5.39889,
+      "end_x": 43.00671,
+      "end_y": -5.39889,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:45;Drill_PTH_Through_Via.DRL:39"
+    },
+    {
+      "x": 16.59076,
+      "y": -3.53999,
+      "end_x": 16.59076,
+      "end_y": -3.53999,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:46;Drill_PTH_Through_Via.DRL:40"
+    },
+    {
+      "x": 48.53881,
+      "y": -14.53007,
+      "end_x": 48.53881,
+      "end_y": -14.53007,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:47;Drill_PTH_Through_Via.DRL:41"
+    },
+    {
+      "x": 57.68279,
+      "y": -9.45008,
+      "end_x": 57.68279,
+      "end_y": -9.45008,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:48;Drill_PTH_Through_Via.DRL:42"
+    },
+    {
+      "x": 47.87171,
+      "y": -14.00877,
+      "end_x": 47.87171,
+      "end_y": -14.00877,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:49;Drill_PTH_Through_Via.DRL:43"
+    },
+    {
+      "x": 57.54398,
+      "y": -8.67478,
+      "end_x": 57.54398,
+      "end_y": -8.67478,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:50;Drill_PTH_Through_Via.DRL:44"
+    },
+    {
+      "x": 43.77491,
+      "y": -11.73568,
+      "end_x": 43.77491,
+      "end_y": -11.73568,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:51;Drill_PTH_Through_Via.DRL:45"
+    },
+    {
+      "x": 2.66089,
+      "y": -10.85598,
+      "end_x": 2.66089,
+      "end_y": -10.85598,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:52;Drill_PTH_Through_Via.DRL:46"
+    },
+    {
+      "x": 0.8829,
+      "y": -8.91808,
+      "end_x": 0.8829,
+      "end_y": -8.91808,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:53;Drill_PTH_Through_Via.DRL:47"
+    },
+    {
+      "x": 2.405,
+      "y": -9.41788,
+      "end_x": 2.405,
+      "end_y": -9.41788,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:54;Drill_PTH_Through_Via.DRL:48"
+    },
+    {
+      "x": 3.67499,
+      "y": -7.63988,
+      "end_x": 3.67499,
+      "end_y": -7.63988,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:55;Drill_PTH_Through_Via.DRL:49"
+    },
+    {
+      "x": 4.3399,
+      "y": -9.39798,
+      "end_x": 4.3399,
+      "end_y": -9.39798,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:56;Drill_PTH_Through_Via.DRL:50"
+    },
+    {
+      "x": 0.7839,
+      "y": -9.90598,
+      "end_x": 0.7839,
+      "end_y": -9.90598,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:57;Drill_PTH_Through_Via.DRL:51"
+    },
+    {
+      "x": 40.93702,
+      "y": -5.36739,
+      "end_x": 40.93702,
+      "end_y": -5.36739,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:58;Drill_PTH_Through_Via.DRL:52"
+    },
+    {
+      "x": 39.41302,
+      "y": -1.0494,
+      "end_x": 39.41302,
+      "end_y": -1.0494,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:59;Drill_PTH_Through_Via.DRL:53"
+    },
+    {
+      "x": 40.32102,
+      "y": -3.29639,
+      "end_x": 40.32102,
+      "end_y": -3.29639,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:60;Drill_PTH_Through_Via.DRL:54"
+    },
+    {
+      "x": 36.00303,
+      "y": -2.53439,
+      "end_x": 36.00303,
+      "end_y": -2.53439,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:61;Drill_PTH_Through_Via.DRL:55"
+    },
+    {
+      "x": 7.14609,
+      "y": -9.83998,
+      "end_x": 7.14609,
+      "end_y": -9.83998,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:62;Drill_PTH_Through_Via.DRL:56"
+    },
+    {
+      "x": 9.17809,
+      "y": -7.80798,
+      "end_x": 9.17809,
+      "end_y": -7.80798,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:63;Drill_PTH_Through_Via.DRL:57"
+    },
+    {
+      "x": 10.60608,
+      "y": -2.4057,
+      "end_x": 10.60608,
+      "end_y": -2.4057,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:64;Drill_PTH_Through_Via.DRL:58"
+    },
+    {
+      "x": 41.47432,
+      "y": -2.53999,
+      "end_x": 41.47432,
+      "end_y": -2.53999,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:65;Drill_PTH_Through_Via.DRL:59"
+    },
+    {
+      "x": 17.76296,
+      "y": -3.99799,
+      "end_x": 17.76296,
+      "end_y": -3.99799,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:66;Drill_PTH_Through_Via.DRL:60"
+    },
+    {
+      "x": 17.76296,
+      "y": -2.286,
+      "end_x": 17.76296,
+      "end_y": -2.286,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:67;Drill_PTH_Through_Via.DRL:61"
+    },
+    {
+      "x": 51.9542,
+      "y": -16.25997,
+      "end_x": 51.9542,
+      "end_y": -16.25997,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:68;Drill_PTH_Through_Via.DRL:62"
+    },
+    {
+      "x": 43.06421,
+      "y": -8.74478,
+      "end_x": 43.06421,
+      "end_y": -8.74478,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:69;Drill_PTH_Through_Via.DRL:63"
+    },
+    {
+      "x": 53.30799,
+      "y": -16.25997,
+      "end_x": 53.30799,
+      "end_y": -16.25997,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:70;Drill_PTH_Through_Via.DRL:64"
+    },
+    {
+      "x": 43.02621,
+      "y": -7.97338,
+      "end_x": 43.02621,
+      "end_y": -7.97338,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:71;Drill_PTH_Through_Via.DRL:65"
+    },
+    {
+      "x": 56.26809,
+      "y": -12.15698,
+      "end_x": 56.26809,
+      "end_y": -12.15698,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:72;Drill_PTH_Through_Via.DRL:66"
+    },
+    {
+      "x": 45.31221,
+      "y": -10.16088,
+      "end_x": 45.31221,
+      "end_y": -10.16088,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:73;Drill_PTH_Through_Via.DRL:67"
+    },
+    {
+      "x": 45.58571,
+      "y": -6.99889,
+      "end_x": 45.58571,
+      "end_y": -6.99889,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:74;Drill_PTH_Through_Via.DRL:68"
+    },
+    {
+      "x": 46.09371,
+      "y": -10.04688,
+      "end_x": 46.09371,
+      "end_y": -10.04688,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:75;Drill_PTH_Through_Via.DRL:69"
+    },
+    {
+      "x": 59.65418,
+      "y": -16.25997,
+      "end_x": 59.65418,
+      "end_y": -16.25997,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:76;Drill_PTH_Through_Via.DRL:70"
+    },
+    {
+      "x": 45.17621,
+      "y": -9.40198,
+      "end_x": 45.17621,
+      "end_y": -9.40198,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:77;Drill_PTH_Through_Via.DRL:71"
+    },
+    {
+      "x": 56.94599,
+      "y": -16.76797,
+      "end_x": 56.94599,
+      "end_y": -16.76797,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:78;Drill_PTH_Through_Via.DRL:72"
+    },
+    {
+      "x": 57.96198,
+      "y": -18.03796,
+      "end_x": 57.96198,
+      "end_y": -18.03796,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:79;Drill_PTH_Through_Via.DRL:73"
+    },
+    {
+      "x": 45.26611,
+      "y": -13.21197,
+      "end_x": 45.26611,
+      "end_y": -13.21197,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:80;Drill_PTH_Through_Via.DRL:74"
+    },
+    {
+      "x": 37.84122,
+      "y": -8.89398,
+      "end_x": 37.84122,
+      "end_y": -8.89398,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:81;Drill_PTH_Through_Via.DRL:75"
+    },
+    {
+      "x": 26.59295,
+      "y": -7.32689,
+      "end_x": 26.59295,
+      "end_y": -7.32689,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:82;Drill_PTH_Through_Via.DRL:76"
+    },
+    {
+      "x": 34.46693,
+      "y": -6.56489,
+      "end_x": 34.46693,
+      "end_y": -6.56489,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:83;Drill_PTH_Through_Via.DRL:77"
+    },
+    {
+      "x": 39.49392,
+      "y": -3.31589,
+      "end_x": 39.49392,
+      "end_y": -3.31589,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:84;Drill_PTH_Through_Via.DRL:78"
+    },
+    {
+      "x": 40.46712,
+      "y": -10.62888,
+      "end_x": 40.46712,
+      "end_y": -10.62888,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:85;Drill_PTH_Through_Via.DRL:79"
+    },
+    {
+      "x": 38.18153,
+      "y": -9.65318,
+      "end_x": 38.18153,
+      "end_y": -9.65318,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:86;Drill_PTH_Through_Via.DRL:80"
+    },
+    {
+      "x": 27.41565,
+      "y": -13.30707,
+      "end_x": 27.41565,
+      "end_y": -13.30707,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:87;Drill_PTH_Through_Via.DRL:81"
+    },
+    {
+      "x": 35.85653,
+      "y": -8.59878,
+      "end_x": 35.85653,
+      "end_y": -8.59878,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:88;Drill_PTH_Through_Via.DRL:82"
+    },
+    {
+      "x": 22.82705,
+      "y": -11.39278,
+      "end_x": 22.82705,
+      "end_y": -11.39278,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:89;Drill_PTH_Through_Via.DRL:83"
+    },
+    {
+      "x": 36.63803,
+      "y": -11.21478,
+      "end_x": 36.63803,
+      "end_y": -11.21478,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:90;Drill_PTH_Through_Via.DRL:84"
+    },
+    {
+      "x": 22.56685,
+      "y": -10.65298,
+      "end_x": 22.56685,
+      "end_y": -10.65298,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:91;Drill_PTH_Through_Via.DRL:85"
+    },
+    {
+      "x": 35.34853,
+      "y": -9.50688,
+      "end_x": 35.34853,
+      "end_y": -9.50688,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:92;Drill_PTH_Through_Via.DRL:86"
+    },
+    {
+      "x": 22.41916,
+      "y": -12.04688,
+      "end_x": 22.41916,
+      "end_y": -12.04688,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:93;Drill_PTH_Through_Via.DRL:87"
+    },
+    {
+      "x": 35.85653,
+      "y": -10.30668,
+      "end_x": 35.85653,
+      "end_y": -10.30668,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:94;Drill_PTH_Through_Via.DRL:88"
+    },
+    {
+      "x": 26.23855,
+      "y": -12.59267,
+      "end_x": 26.23855,
+      "end_y": -12.59267,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:95;Drill_PTH_Through_Via.DRL:89"
+    },
+    {
+      "x": 22.66795,
+      "y": -12.95707,
+      "end_x": 22.66795,
+      "end_y": -12.95707,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:96;Drill_PTH_Through_Via.DRL:90"
+    },
+    {
+      "x": 28.06604,
+      "y": -10.09898,
+      "end_x": 28.06604,
+      "end_y": -10.09898,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:97;Drill_PTH_Through_Via.DRL:91"
+    },
+    {
+      "x": 39.12122,
+      "y": -5.34789,
+      "end_x": 39.12122,
+      "end_y": -5.34789,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:98;Drill_PTH_Through_Via.DRL:92"
+    },
+    {
+      "x": 41.15322,
+      "y": -3.31589,
+      "end_x": 41.15322,
+      "end_y": -3.31589,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:99;Drill_PTH_Through_Via.DRL:93"
+    },
+    {
+      "x": 46.85431,
+      "y": -9.98518,
+      "end_x": 46.85431,
+      "end_y": -9.98518,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:100;Drill_PTH_Through_Via.DRL:94"
+    },
+    {
+      "x": 29.87764,
+      "y": -4.10309,
+      "end_x": 29.87764,
+      "end_y": -4.10309,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:101;Drill_PTH_Through_Via.DRL:95"
+    },
+    {
+      "x": 20.98766,
+      "y": -3.59509,
+      "end_x": 20.98766,
+      "end_y": -3.59509,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:102;Drill_PTH_Through_Via.DRL:96"
+    },
+    {
+      "x": 53.90009,
+      "y": -13.89797,
+      "end_x": 53.90009,
+      "end_y": -13.89797,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:103;Drill_PTH_Through_Via.DRL:97"
+    },
+    {
+      "x": 46.59251,
+      "y": -16.37957,
+      "end_x": 46.59251,
+      "end_y": -16.37957,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:104;Drill_PTH_Through_Via.DRL:98"
+    },
+    {
+      "x": 31.24104,
+      "y": -18.55086,
+      "end_x": 31.24104,
+      "end_y": -18.55086,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:105;Drill_PTH_Through_Via.DRL:99"
+    },
+    {
+      "x": 47.7423,
+      "y": -8.50898,
+      "end_x": 47.7423,
+      "end_y": -8.50898,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:106;Drill_PTH_Through_Via.DRL:100"
+    },
+    {
+      "x": 47.8693,
+      "y": -7.23899,
+      "end_x": 47.8693,
+      "end_y": -7.23899,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:107;Drill_PTH_Through_Via.DRL:101"
+    },
+    {
+      "x": 33.27303,
+      "y": -10.67688,
+      "end_x": 33.27303,
+      "end_y": -10.67688,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:108;Drill_PTH_Through_Via.DRL:102"
+    },
+    {
+      "x": 39.98312,
+      "y": -9.91488,
+      "end_x": 39.98312,
+      "end_y": -9.91488,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:109;Drill_PTH_Through_Via.DRL:103"
+    },
+    {
+      "x": 22.79895,
+      "y": -4.04699,
+      "end_x": 22.79895,
+      "end_y": -4.04699,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:110;Drill_PTH_Through_Via.DRL:104"
+    },
+    {
+      "x": 21.54096,
+      "y": -0.778,
+      "end_x": 21.54096,
+      "end_y": -0.778,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:111;Drill_PTH_Through_Via.DRL:105"
+    },
+    {
+      "x": 13.54497,
+      "y": -2.2782,
+      "end_x": 13.54497,
+      "end_y": -2.2782,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:112;Drill_PTH_Through_Via.DRL:106"
+    },
+    {
+      "x": 7.28998,
+      "y": -3.73809,
+      "end_x": 7.28998,
+      "end_y": -3.73809,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:113;Drill_PTH_Through_Via.DRL:107"
+    },
+    {
+      "x": 66.22497,
+      "y": -16.30387,
+      "end_x": 66.22497,
+      "end_y": -16.30387,
+      "diameter": 0.305,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:114;Drill_PTH_Through_Via.DRL:108"
+    },
+    {
+      "x": 1.94297,
+      "y": -6.39305,
+      "end_x": 0.643,
+      "end_y": -6.39305,
+      "diameter": 0.50002,
+      "kind": "slot",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:116"
+    },
+    {
+      "x": 1.94297,
+      "y": -14.94295,
+      "end_x": 0.643,
+      "end_y": -14.94295,
+      "diameter": 0.50002,
+      "kind": "slot",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:117"
+    },
+    {
+      "x": 68.85005,
+      "y": -7.54906,
+      "end_x": 68.85005,
+      "end_y": -7.54906,
+      "diameter": 1.0,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:119"
+    },
+    {
+      "x": 68.85005,
+      "y": -10.04905,
+      "end_x": 68.85005,
+      "end_y": -10.04905,
+      "diameter": 1.0,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:120"
+    },
+    {
+      "x": 68.85005,
+      "y": -12.04905,
+      "end_x": 68.85005,
+      "end_y": -12.04905,
+      "diameter": 1.0,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:121"
+    },
+    {
+      "x": 68.85005,
+      "y": -14.54904,
+      "end_x": 68.85005,
+      "end_y": -14.54904,
+      "diameter": 1.0,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:122"
+    },
+    {
+      "x": 70.84982,
+      "y": -5.04906,
+      "end_x": 70.84982,
+      "end_y": -5.04906,
+      "diameter": 2.59999,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:124"
+    },
+    {
+      "x": 70.84982,
+      "y": -17.04904,
+      "end_x": 70.84982,
+      "end_y": -17.04904,
+      "diameter": 2.59999,
+      "kind": "round",
+      "plating": "PTH",
+      "sources": "Drill_PTH_Through.DRL:125"
+    }
+  ],
+  "placements": [
+    {
+      "ref": "C1",
+      "x": 24.257,
+      "y": -3.683,
+      "rotation": 270.0,
+      "side": "T",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C2",
+      "x": 5.461,
+      "y": -14.351,
+      "rotation": 180.0,
+      "side": "T",
+      "footprint": "C0402",
+      "device": "MG15B104K160CT",
+      "manufacturer": "Walsin(\u534e\u65b0\u79d1)",
+      "supplier_part": "C327781"
+    },
+    {
+      "ref": "C3",
+      "x": 10.225,
+      "y": -16.067,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "C0603",
+      "device": "TCC0603X5R226K6R3CT",
+      "manufacturer": "CCTC(\u4e09\u73af)",
+      "supplier_part": "C49275042"
+    },
+    {
+      "ref": "C4",
+      "x": 10.222,
+      "y": -19.115,
+      "rotation": 270.0,
+      "side": "T",
+      "footprint": "C0603",
+      "device": "TCC0603X5R226K6R3CT",
+      "manufacturer": "CCTC(\u4e09\u73af)",
+      "supplier_part": "C49275042"
+    },
+    {
+      "ref": "C5",
+      "x": 38.901,
+      "y": -2.628,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C6",
+      "x": 7.874,
+      "y": -8.382,
+      "rotation": 180.0,
+      "side": "T",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C7",
+      "x": 34.466,
+      "y": -3.81,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C8",
+      "x": 46.775,
+      "y": -7.073,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "GRM155D71A475ME15D",
+      "manufacturer": "muRata(\u6751\u7530)",
+      "supplier_part": "C20044522"
+    },
+    {
+      "ref": "C9",
+      "x": 34.348,
+      "y": -7.327,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C10",
+      "x": 43.688,
+      "y": -13.921,
+      "rotation": 270.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C11",
+      "x": 32.703,
+      "y": -17.789,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0603",
+      "device": "FCC0603N150J500CT",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C5137617"
+    },
+    {
+      "ref": "C12",
+      "x": 41.594,
+      "y": -15.81,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0603",
+      "device": "FCC0603N150J500CT",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C5137617"
+    },
+    {
+      "ref": "C13",
+      "x": 26.162,
+      "y": -11.43,
+      "rotation": 270.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C14",
+      "x": 45.46,
+      "y": -17.007,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C15",
+      "x": 45.421,
+      "y": -15.618,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "TCC0402X5R105K250AT",
+      "manufacturer": "CCTC(\u4e09\u73af)",
+      "supplier_part": "C5359886"
+    },
+    {
+      "ref": "C16",
+      "x": 45.548,
+      "y": -18.698,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "C0603",
+      "device": "MH0603A106M100N8RN",
+      "manufacturer": "Sunway(\u4fe1\u7ef4\u901a\u4fe1)",
+      "supplier_part": "C54349904"
+    },
+    {
+      "ref": "C17",
+      "x": 31.711,
+      "y": -6.135,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "GRM155D71A475ME15D",
+      "manufacturer": "muRata(\u6751\u7530)",
+      "supplier_part": "C20044522"
+    },
+    {
+      "ref": "C18",
+      "x": 46.814,
+      "y": -9.017,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C19",
+      "x": 40.767,
+      "y": -1.27,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C20",
+      "x": 34.378,
+      "y": -4.914,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C21",
+      "x": 46.736,
+      "y": -5.08,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C22",
+      "x": 33.958,
+      "y": -11.352,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C23",
+      "x": 41.91,
+      "y": -1.27,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C24",
+      "x": 34.29,
+      "y": -8.636,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "C0402",
+      "device": "CL05B104KO5NNNC",
+      "manufacturer": "SAMSUNG(\u4e09\u661f)",
+      "supplier_part": "C1525"
+    },
+    {
+      "ref": "C30",
+      "x": 7.874,
+      "y": -6.724,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "C0603",
+      "device": "MH0603A106M100N8RN",
+      "manufacturer": "Sunway(\u4fe1\u7ef4\u901a\u4fe1)",
+      "supplier_part": "C54349904"
+    },
+    {
+      "ref": "CARD1",
+      "x": 57.404,
+      "y": -9.779,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "TF-SMD_TF-PUSH",
+      "device": "TF PUSH",
+      "manufacturer": "SHOU HAN(\u9996\u97e9)",
+      "supplier_part": "C393941"
+    },
+    {
+      "ref": "D1",
+      "x": 5.08,
+      "y": -2.667,
+      "rotation": 180.0,
+      "side": "T",
+      "footprint": "SOD-123_L2.7-W1.6-LS3.7-RD-1",
+      "device": "B5819W SL",
+      "manufacturer": "CJ(\u6c5f\u82cf\u957f\u7535/\u957f\u6676)",
+      "supplier_part": "C8598"
+    },
+    {
+      "ref": "D2",
+      "x": 61.341,
+      "y": -1.778,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "SOD-123_L2.7-W1.6-LS3.7-RD-1",
+      "device": "B5819W SL",
+      "manufacturer": "CJ(\u6c5f\u82cf\u957f\u7535/\u957f\u6676)",
+      "supplier_part": "C8598"
+    },
+    {
+      "ref": "D3",
+      "x": 66.294,
+      "y": -5.334,
+      "rotation": 270.0,
+      "side": "T",
+      "footprint": "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL",
+      "device": "USBLC6-2SC6_C2687116",
+      "manufacturer": "UMW(\u53cb\u53f0\u534a\u5bfc\u4f53)",
+      "supplier_part": "C2687116"
+    },
+    {
+      "ref": "D4",
+      "x": 4.572,
+      "y": -9.398,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BL",
+      "device": "USBLC6-2SC6_C2687116",
+      "manufacturer": "UMW(\u53cb\u53f0\u534a\u5bfc\u4f53)",
+      "supplier_part": "C2687116"
+    },
+    {
+      "ref": "J1",
+      "x": 69.85,
+      "y": -11.049,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "USB-AM-TH_AM90",
+      "device": "AM90",
+      "manufacturer": "SHOU HAN(\u9996\u97e9)",
+      "supplier_part": "C404965"
+    },
+    {
+      "ref": "J2",
+      "x": 1.143,
+      "y": -10.668,
+      "rotation": 270.0,
+      "side": "T",
+      "footprint": "USB-C-SMD_U261-121N-4BS2S",
+      "device": "U261-121N-4BS2S",
+      "manufacturer": "XKB Connection(\u4e2d\u56fd\u661f\u5764)",
+      "supplier_part": "C2879827"
+    },
+    {
+      "ref": "L1",
+      "x": 5.842,
+      "y": -17.78,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "IND-SMD_L5.0-W5.0",
+      "device": "ZENR5040T3R9N-3.9uH",
+      "manufacturer": "ZE(\u589e\u76ca)",
+      "supplier_part": "C42428060"
+    },
+    {
+      "ref": "L2",
+      "x": 26.115,
+      "y": -3.001,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "IND-SMD_L5.0-W5.0_NR5020M150AS",
+      "device": "NR5020M3R3A",
+      "manufacturer": "Coilank(\u9a70\u5174\u7535\u611f)",
+      "supplier_part": "C47327049"
+    },
+    {
+      "ref": "Q1",
+      "x": 29.591,
+      "y": -11.811,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "SOT-23_L2.9-W1.3-P1.90-LS2.4-BR",
+      "device": "AO3401A_C347476",
+      "manufacturer": "UMW(\u53cb\u53f0\u534a\u5bfc\u4f53)",
+      "supplier_part": "C347476"
+    },
+    {
+      "ref": "R1",
+      "x": 34.417,
+      "y": -1.016,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "R0603",
+      "device": "FRQ0603F27R0TS",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C7468521"
+    },
+    {
+      "ref": "R2",
+      "x": 52.832,
+      "y": -18.542,
+      "rotation": 270.0,
+      "side": "B",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R3",
+      "x": 38.423,
+      "y": -13.65,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "R0603",
+      "device": "FRC0603F1001TS",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C2907002"
+    },
+    {
+      "ref": "R4",
+      "x": 67.691,
+      "y": -2.286,
+      "rotation": 270.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-07100KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60491"
+    },
+    {
+      "ref": "R5",
+      "x": 3.989,
+      "y": -11.886,
+      "rotation": 180.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-07100KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60491"
+    },
+    {
+      "ref": "R6",
+      "x": 5.715,
+      "y": -12.446,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "FRC0402F1203TS",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C2909314"
+    },
+    {
+      "ref": "R7",
+      "x": 66.04,
+      "y": -2.286,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "FRC0402F1203TS",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C2909314"
+    },
+    {
+      "ref": "R8",
+      "x": 22.686,
+      "y": -3.175,
+      "rotation": 180.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R9",
+      "x": 13.843,
+      "y": -2.921,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R10",
+      "x": 34.417,
+      "y": -2.413,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "R0603",
+      "device": "FRQ0603F27R0TS",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C7468521"
+    },
+    {
+      "ref": "R11",
+      "x": 4.428,
+      "y": -6.731,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "R0603",
+      "device": "CRF0603Q512FN",
+      "manufacturer": "SIE(\u6c38\u661f\u79d1\u6280)",
+      "supplier_part": "C54973944"
+    },
+    {
+      "ref": "R12",
+      "x": 61.035,
+      "y": -18.594,
+      "rotation": 270.0,
+      "side": "B",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R13",
+      "x": 59.817,
+      "y": -18.646,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R14",
+      "x": 58.674,
+      "y": -18.669,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R15",
+      "x": 57.225,
+      "y": -18.721,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R16",
+      "x": 54.102,
+      "y": -18.519,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R17",
+      "x": 49.784,
+      "y": -18.542,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "R0805",
+      "device": "HRC0805F0000FNTN",
+      "manufacturer": "HC(\u534e\u6a59\u718a\u732b)",
+      "supplier_part": "C54921091"
+    },
+    {
+      "ref": "R18",
+      "x": 48.124,
+      "y": -11.421,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "R0603",
+      "device": "1RC0603J0220",
+      "manufacturer": "SAE(\u4e16\u76df/\u4e16\u7231)",
+      "supplier_part": "C54531690"
+    },
+    {
+      "ref": "R19",
+      "x": 59.742,
+      "y": -7.441,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R20",
+      "x": 58.345,
+      "y": -7.441,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R21",
+      "x": 56.948,
+      "y": -7.441,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R22",
+      "x": 62.611,
+      "y": -7.493,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R23",
+      "x": 61.214,
+      "y": -7.493,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R24",
+      "x": 47.823,
+      "y": -10.331,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R25",
+      "x": 27.178,
+      "y": -8.255,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "R0603",
+      "device": "FRQ0603F27R0TS",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C7468521"
+    },
+    {
+      "ref": "R27",
+      "x": 33.909,
+      "y": -12.827,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "R0402",
+      "device": "RC0402FR-0710KL",
+      "manufacturer": "YAGEO(\u56fd\u5de8)",
+      "supplier_part": "C60490"
+    },
+    {
+      "ref": "R30",
+      "x": 31.327,
+      "y": -4.799,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "R0603",
+      "device": "FRC0603F33R0TS",
+      "manufacturer": "FOJAN(\u5bcc\u6377)",
+      "supplier_part": "C2909394"
+    },
+    {
+      "ref": "SW1",
+      "x": 6.731,
+      "y": -3.302,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "SW-SMD_4P-L5.2-W5.2-P3.70-LS6.4",
+      "device": "TS-1140SP-4x4x2.0H-260",
+      "manufacturer": "CAX(\u521b\u90fd)",
+      "supplier_part": "C51927161"
+    },
+    {
+      "ref": "SW2",
+      "x": 6.858,
+      "y": -17.526,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "SW-SMD_4P-L5.2-W5.2-P3.70-LS6.4",
+      "device": "TS-1140SP-4x4x2.0H-260",
+      "manufacturer": "CAX(\u521b\u90fd)",
+      "supplier_part": "C51927161"
+    },
+    {
+      "ref": "SW3",
+      "x": 60.325,
+      "y": -14.732,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "SW-SMD-6P-L10.5-W10.0_C2858290",
+      "device": "10*10*9-6P WX",
+      "manufacturer": "SHOU HAN(\u9996\u97e9)",
+      "supplier_part": "C2858290"
+    },
+    {
+      "ref": "SW4",
+      "x": 49.149,
+      "y": -15.875,
+      "rotation": 270.0,
+      "side": "T",
+      "footprint": "SW-SMD_4P-L4.5-W4.5-P3.00-LS6.8",
+      "device": "LXW-TS-45X45X38-SMD",
+      "manufacturer": "LXWCONN(\u8fde\u5174\u65fa\u7535\u5b50)",
+      "supplier_part": "C53447035"
+    },
+    {
+      "ref": "SWCLK",
+      "x": 18.657,
+      "y": -19.96,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "Test-Point-0.5mm",
+      "device": "Test-Point",
+      "manufacturer": "",
+      "supplier_part": ""
+    },
+    {
+      "ref": "SWDIO",
+      "x": 20.562,
+      "y": -19.976,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "Test-Point-0.5mm",
+      "device": "Test-Point",
+      "manufacturer": "",
+      "supplier_part": ""
+    },
+    {
+      "ref": "RUN",
+      "x": 22.471,
+      "y": -19.921,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "Test-Point-0.5mm",
+      "device": "Test-Point",
+      "manufacturer": "",
+      "supplier_part": ""
+    },
+    {
+      "ref": "BOOTSEL",
+      "x": 24.384,
+      "y": -19.939,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "Test-Point-0.5mm",
+      "device": "Test-Point",
+      "manufacturer": "",
+      "supplier_part": ""
+    },
+    {
+      "ref": "3V3",
+      "x": 26.306,
+      "y": -19.907,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "Test-Point-0.5mm",
+      "device": "Test-Point",
+      "manufacturer": "",
+      "supplier_part": ""
+    },
+    {
+      "ref": "GND",
+      "x": 28.27,
+      "y": -19.862,
+      "rotation": 0.0,
+      "side": "T",
+      "footprint": "Test-Point-0.5mm",
+      "device": "Test-Point",
+      "manufacturer": "",
+      "supplier_part": ""
+    },
+    {
+      "ref": "U1",
+      "x": 37.846,
+      "y": -16.256,
+      "rotation": 0.0,
+      "side": "B",
+      "footprint": "CRYSTAL-SMD_4P-L3.2-W2.5-BL",
+      "device": "ABM8-272-T3_C20625731",
+      "manufacturer": "ABRACON",
+      "supplier_part": "C20625731"
+    },
+    {
+      "ref": "U2",
+      "x": 40.467,
+      "y": -7.907,
+      "rotation": 180.0,
+      "side": "B",
+      "footprint": "QFN-60_L7.0-W7.0-P0.40-TL-EP3.4",
+      "device": "RP2354A",
+      "manufacturer": "Raspberry Pi(\u6811\u8393\u6d3e)",
+      "supplier_part": "C41378174"
+    },
+    {
+      "ref": "U3",
+      "x": 23.241,
+      "y": -11.557,
+      "rotation": 90.0,
+      "side": "B",
+      "footprint": "FPC-SMD_8P-P0.50_SHOUHAN_CTSJ-H2.0",
+      "device": "0.5-8P CTSJ-H2.0 119",
+      "manufacturer": "SHOU HAN(\u9996\u97e9)",
+      "supplier_part": "C5373445"
+    },
+    {
+      "ref": "U4",
+      "x": 18.161,
+      "y": -2.032,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "MSOP-10_L3.0-W3.0-P0.50-LS5.0-BL",
+      "device": "FSUSB42MUX",
+      "manufacturer": "onsemi(\u5b89\u68ee\u7f8e)",
+      "supplier_part": "C11355"
+    },
+    {
+      "ref": "U5",
+      "x": 8.763,
+      "y": -12.7,
+      "rotation": 90.0,
+      "side": "T",
+      "footprint": "TSOT-26_L2.9-W1.6-P0.95-LS2.8-BL",
+      "device": "AP63203WU-7",
+      "manufacturer": "DIODES(\u7f8e\u53f0)",
+      "supplier_part": "C780769"
+    }
+  ]
+}

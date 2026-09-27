@@ -10,6 +10,7 @@ set(FV_MBEDTLS_DIR "${PICO_SDK_PATH}/lib/mbedtls" CACHE PATH "Mbed TLS source")
 option(FV_HMAC_PICO "Use SHA accelerator" ON)
 option(FV_CIPHERS_RAM "Run cipher hot paths from SRAM" ON)
 option(FV_DEVICE_UI "Enable device setup and controls" OFF)
+option(FV_TFT_DISPLAY "Drive physical ST7735S screen when device UI is enabled" ON)
 option(FV_DEBUG_SCREEN "Expose framebuffer and injected keys over CDC" OFF)
 option(FV_USB_MSC "Expose vault sectors through USB mass storage" OFF)
 option(FV_DEBUG_SESSION "Allow public-fixture USB lock/unlock commands" OFF)
@@ -43,6 +44,14 @@ endif()
 add_executable(fuse_vault_security main.c usb.c commands.c usb_mux.c
   ../../src/platform/rp2354/entropy.c ../../src/platform/rp2354/sd_native.c
   ../../src/platform/rp2354/authority.c)
+if(FV_DEVICE_UI AND FV_TFT_DISPLAY)
+  target_sources(fuse_vault_security PRIVATE tft_display.c)
+  target_link_libraries(fuse_vault_security PRIVATE hardware_spi)
+endif()
+if(FV_DEBUG_SCREEN)
+  target_sources(fuse_vault_security PRIVATE ram_debug.c)
+  target_link_options(fuse_vault_security PRIVATE -Wl,--wrap=_sbrk)
+endif()
 if(FV_USB_FIDO)
   add_subdirectory(../../src/fido fido)
   target_sources(fuse_vault_security PRIVATE fido_adapter.c)
@@ -71,6 +80,7 @@ target_compile_definitions(fuse_vault_security PRIVATE FV_SD_CLOCK_HZ=${FV_SD_CL
   FV_USB_MSC=$<BOOL:${FV_USB_MSC}>
   FV_USB_FIDO=$<BOOL:${FV_USB_FIDO}>
   FV_DEVICE_UI=$<BOOL:${FV_DEVICE_UI}>
+  FV_TFT_DISPLAY=$<BOOL:${FV_TFT_DISPLAY}>
   FV_DEBUG_SCREEN=$<BOOL:${FV_DEBUG_SCREEN}>
   FV_DEBUG_SESSION=$<BOOL:${FV_DEBUG_SESSION}>
   FV_DEBUG_OTP_INSPECT=$<BOOL:${FV_DEBUG_OTP_INSPECT}>

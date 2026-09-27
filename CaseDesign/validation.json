@@ -1,0 +1,136 @@
+{
+  "board_size_mm": [
+    73.335,
+    21.237,
+    1.6
+  ],
+  "board_valid": true,
+  "board_solids": 1,
+  "board_volume_mm3": 2383.8679632446156,
+  "independent_expected_volume_mm3": 2383.867963244658,
+  "unique_drill_features": 107,
+  "round_holes": 105,
+  "slots": 2,
+  "cpl_rows": 77,
+  "step_round_trip": {
+    "reference": {
+      "solids": 73,
+      "valid": true,
+      "volume_before": 5991.9209095633605,
+      "volume_after": 5991.920909563297
+    },
+    "keepouts": {
+      "solids": 98,
+      "valid": true,
+      "volume_before": 18185.179577763094,
+      "volume_after": 18185.179577763545
+    }
+  },
+  "render_registration_landmarks": [
+    {
+      "side": "top",
+      "ref": "SW3",
+      "observed_pixel": [
+        711,
+        393
+      ],
+      "predicted_pixel": [
+        710.3395650098862,
+        392.98224796346
+      ],
+      "error_px": 0.6606735282784773,
+      "error_mm": 0.06719901968973942
+    },
+    {
+      "side": "top",
+      "ref": "SW4",
+      "observed_pixel": [
+        601,
+        405
+      ],
+      "predicted_pixel": [
+        600.4616622349492,
+        404.23087065028017
+      ],
+      "error_px": 0.9388117520995866,
+      "error_mm": 0.09548926468824295
+    },
+    {
+      "side": "top",
+      "ref": "L1",
+      "observed_pixel": [
+        174,
+        423
+      ],
+      "predicted_pixel": [
+        174.6847889820686,
+        422.9785751283138
+      ],
+      "error_px": 0.6851240581743672,
+      "error_mm": 0.06968595396146632
+    },
+    {
+      "side": "bottom",
+      "ref": "SW1",
+      "observed_pixel": [
+        809,
+        281
+      ],
+      "predicted_pixel": [
+        808.5749232971978,
+        280.4960210952583
+      ],
+      "error_px": 0.6593064080455087,
+      "error_mm": 0.06705996592790205
+    },
+    {
+      "side": "bottom",
+      "ref": "SW2",
+      "observed_pixel": [
+        808,
+        421
+      ],
+      "predicted_pixel": [
+        807.3263107656644,
+        420.47888119790935
+      ],
+      "error_px": 0.8517170835154609,
+      "error_mm": 0.08663061348072999
+    },
+    {
+      "side": "bottom",
+      "ref": "U2",
+      "observed_pixel": [
+        477,
+        325
+      ],
+      "predicted_pixel": [
+        476.89624326719843,
+        325.81527522719784
+      ],
+      "error_px": 0.8218510544400082,
+      "error_mm": 0.08359285308926212
+    },
+    {
+      "side": "bottom",
+      "ref": "L2",
+      "observed_pixel": [
+        619,
+        277
+      ],
+      "predicted_pixel": [
+        617.9992909252062,
+        277.5337853745821
+      ],
+      "error_px": 1.1341717147294974,
+      "error_mm": 0.11535989278736156
+    }
+  ],
+  "max_landmark_error_px": 1.1341717147294974,
+  "limitations": [
+    "Render checks validate XY only; no Z measurements available.",
+    "Component envelope dimensions and offsets have mixed evidence; see parameters.json.",
+    "TFT geometry and flex route are provisional.",
+    "Reference STL contains separate overlapping solids and is for viewing, not printing a finished assembly."
+  ]
+}

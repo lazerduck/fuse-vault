@@ -6,5 +6,5 @@ typedef struct fv_cipher_ops {
     int (*init)(fv_key_context *, const uint8_t *);
     int (*block)(fv_key_context *, int, int, const uint8_t *, uint8_t *);
 } fv_cipher_ops;
-extern const fv_cipher_ops fv_aes_ops, fv_camellia_ops;
+extern const fv_cipher_ops fv_aes_ops, fv_camellia_ops, fv_sm4_ops;
 #endif

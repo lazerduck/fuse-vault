@@ -2,9 +2,10 @@
 #include "keywrap_compat.h"
 #include <mbedtls/aes.h>
 #include <mbedtls/camellia.h>
+#include <gmssl/sm4.h>
 typedef struct {
     uint16_t id;int decrypt;int *error;
-    union {mbedtls_aes_context aes;mbedtls_camellia_context camellia;} cipher;
+    union {mbedtls_aes_context aes;mbedtls_camellia_context camellia;SM4_KEY sm4;} cipher;
 } block_context;
 static void crypt(const void *opaque,size_t n,uint8_t *out,const uint8_t *in) {
     const block_context *c=opaque;int r=-1;
@@ -12,6 +13,7 @@ static void crypt(const void *opaque,size_t n,uint8_t *out,const uint8_t *in) {
         /* Library ECB interfaces are non-const even with prepared schedules. */
         if(c->id==1)r=mbedtls_aes_crypt_ecb((mbedtls_aes_context *)&c->cipher.aes,
             c->decrypt?MBEDTLS_AES_DECRYPT:MBEDTLS_AES_ENCRYPT,in,out);
+        else if(c->id==3){sm4_encrypt(&c->cipher.sm4,in,out);r=0;}
         else r=mbedtls_camellia_crypt_ecb((mbedtls_camellia_context *)&c->cipher.camellia,
             c->decrypt?MBEDTLS_CAMELLIA_DECRYPT:MBEDTLS_CAMELLIA_ENCRYPT,in,out);
     }
@@ -22,10 +24,14 @@ static int run(uint16_t id,const uint8_t *key,const uint8_t *in,uint8_t *out,int
     memset(out,0,decrypt?32:40);int error=0,result=-1;
     block_context c={.id=id,.decrypt=decrypt,.error=&error};
     const uint8_t iv[8]={0xa6,0xa6,0xa6,0xa6,0xa6,0xa6,0xa6,0xa6};
-    if(!key || !in || (id!=1 && id!=2))goto done;
+    if(!key || !in || (id!=1 && id!=2 && id!=3))goto done;
     if(id==1) {
         mbedtls_aes_init(&c.cipher.aes);
         if(decrypt?mbedtls_aes_setkey_dec(&c.cipher.aes,key,256):mbedtls_aes_setkey_enc(&c.cipher.aes,key,256))goto done;
+    } else if(id==3) {
+        /* SM4 consumes the first 16 bytes of the domain-separated HKDF key. */
+        if(decrypt)sm4_set_decrypt_key(&c.cipher.sm4,key);
+        else sm4_set_encrypt_key(&c.cipher.sm4,key);
     } else {
         mbedtls_camellia_init(&c.cipher.camellia);
         if(decrypt?mbedtls_camellia_setkey_dec(&c.cipher.camellia,key,256):mbedtls_camellia_setkey_enc(&c.cipher.camellia,key,256))goto done;

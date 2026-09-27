@@ -3,6 +3,12 @@
 #include "fido_adapter.h"
 #endif
 #include "device_ui_adapter.h"
+#if FV_TFT_DISPLAY
+#include "tft_display.h"
+#endif
+#if FV_DEBUG_SCREEN
+#include "ram_debug.h"
+#endif
 #include "pico/stdlib.h"
 #include <stdio.h>
 #include <string.h>
@@ -25,6 +31,9 @@ void fv_device_ui_refresh(void){refresh=true;}
 void fv_device_ui_media_changed(bool unlocked){if(ui.device.unlocked!=unlocked)refresh=true;}
 void fv_device_ui_init(void){
     fv_ui_init(&ui);ui.fido_enabled=FV_USB_FIDO;
+#if FV_TFT_DISPLAY
+    fv_tft_init();
+#endif
     for(unsigned p=10;p<=15;p++){gpio_init(p);gpio_set_dir(p,GPIO_IN);gpio_disable_pulls(p);}
 }
 void fv_device_ui_poll(void){
@@ -91,11 +100,19 @@ void fv_device_ui_poll(void){
         }else fv_ui_wipe(&mailbox,sizeof(mailbox));
         fv_ui_wipe(&c,sizeof(c));
     }
+#if FV_TFT_DISPLAY
+    fv_tft_poll(ui.framebuffer);
+#endif
 }
 bool fv_device_ui_command(const char *command,char *out,size_t size){
 #if FV_DEBUG_SCREEN
     if(!strcmp(command,"SCREEN")){
-        int n=snprintf(out,size,"{\"command\":\"screen\",\"ok\":true,\"width\":160,\"height\":80,\"format\":\"mono-msb\",\"screen\":%u,\"busy\":%s,\"allow_mounted\":%s,\"input_id\":%u,\"pixels\":\"",(unsigned)ui.screen,(ui.screen==UI_WAIT || ui.fido_done)?"true":"false",ui.fido_modal?"true":"false",(unsigned)ui.fido_generation);
+        fv_ram_debug ram=fv_ram_debug_read();
+        int n=snprintf(out,size,"{\"command\":\"screen\",\"ok\":true,\"width\":160,\"height\":80,\"format\":\"mono-msb\",\"screen\":%u,\"busy\":%s,\"allow_mounted\":%s,\"input_id\":%u,"
+            "\"ram\":{\"total_bytes\":%u,\"fixed_bytes\":%u,\"heap_reserved_bytes\":%u,\"heap_peak_reserved_bytes\":%u,\"uncommitted_bytes\":%u},\"pixels\":\"",
+            (unsigned)ui.screen,(ui.screen==UI_WAIT || ui.fido_done)?"true":"false",ui.fido_modal?"true":"false",(unsigned)ui.fido_generation,
+            (unsigned)ram.total_bytes,(unsigned)ram.fixed_bytes,(unsigned)ram.heap_reserved_bytes,
+            (unsigned)ram.heap_peak_reserved_bytes,(unsigned)ram.uncommitted_bytes);
         if(n<0 || (size_t)n+2*FV_SCREEN_BYTES+4>=size)return false;
         const char hex[]="0123456789abcdef";
         for(unsigned i=0;i<FV_SCREEN_BYTES;i++){out[n++]=hex[ui.framebuffer[i]>>4];out[n++]=hex[ui.framebuffer[i]&15];}

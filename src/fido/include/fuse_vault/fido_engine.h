@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#define FV_FIDO_STORE_BYTES 65536u
+#define FV_FIDO_STORE_BYTES 131072u
 #define FV_FIDO_ENGINE_MESSAGE_SIZE 2048u
 #define FV_FIDO_ENGINE_RESPONSE_SIZE 4096u
 /* One serialized synchronous instance, owned by the vault worker in firmware.

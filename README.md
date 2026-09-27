@@ -7,6 +7,8 @@ the next action are tracked in the [V2 FIDO delivery ledger](docs/v2-fido-progre
 The [browser/passkey-management runbook](docs/v2-fido-browser-testing.md) covers F4 testing.
 Current development priorities are tracked in the
 [V2 software completion and polish plan](docs/v2-software-polish.md).
+For offline screen previews, run `python3 tools/ui_preview.py` (host C compiler
+and Pillow required); no USB connection is needed.
 
 ## V2 source
 

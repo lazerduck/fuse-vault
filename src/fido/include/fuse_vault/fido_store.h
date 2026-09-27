@@ -25,7 +25,9 @@ typedef struct {
     bool ready;
 } fv_fido_store;
 
-/* Read-only; fails on absent/corrupt snapshots and wipes output on error. Only
+/* Read-only; authenticated legacy 64 KiB snapshots expand in RAM. Subsequent
+ * commits use 128 KiB/version 2; old firmware must not be used afterwards.
+ * Fails on absent/corrupt snapshots and wipes output on error. Only
  * call with a successfully unlocked vault. No automatic format/fresh-store path. */
 fv_fido_store_result fv_fido_store_open(fv_fido_store *, const fv_vault *,
     uint8_t image[FV_FIDO_STORE_BYTES]);

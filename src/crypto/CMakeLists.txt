@@ -2,18 +2,21 @@ set(FV_MBEDTLS_DIR "" CACHE PATH "Mbed TLS 3.6 source directory (e.g. Pico SDK l
 if(NOT EXISTS "${FV_MBEDTLS_DIR}/library/aes.c")
   message(FATAL_ERROR "Set FV_MBEDTLS_DIR to an existing Mbed TLS 3.6 source checkout")
 endif()
-add_library(fv_crypto STATIC hmac.c hmac_self_test.c cipher.c pipeline.c backends/mbedtls.c
+set(FV_SM4_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../third_party/gmssl_sm4")
+add_library(fv_crypto STATIC backends/sm4.c
+  ${FV_SM4_DIR}/sm4_common.c ${FV_SM4_DIR}/sm4_enc.c ${FV_SM4_DIR}/sm4_setkey.c
+  hmac.c hmac_self_test.c cipher.c pipeline.c backends/mbedtls.c
   ${FV_MBEDTLS_DIR}/library/aes.c
   ${FV_MBEDTLS_DIR}/library/ctr_drbg.c
   ${FV_MBEDTLS_DIR}/library/sha256.c
   ${FV_MBEDTLS_DIR}/library/camellia.c
   ${FV_MBEDTLS_DIR}/library/platform_util.c)
-target_include_directories(fv_crypto PUBLIC include ${FV_MBEDTLS_DIR}/include PRIVATE .)
+target_include_directories(fv_crypto PUBLIC include ${FV_MBEDTLS_DIR}/include ${FV_SM4_DIR}/upstream/include PRIVATE .)
 target_compile_definitions(fv_crypto PUBLIC MBEDTLS_CONFIG_FILE="fuse_vault/mbedtls_config.h")
 target_compile_options(fv_crypto PRIVATE -Wall -Wextra -Wpedantic)
 
 option(FV_AES_RAM "Diagnostic: run AES block routines from Pico SRAM" OFF)
-option(FV_CIPHERS_RAM "Run AES and Camellia hot paths and tables from Pico SRAM" OFF)
+option(FV_CIPHERS_RAM "Run AES, Camellia and SM4 hot paths and tables from Pico SRAM" OFF)
 if(FV_AES_RAM OR FV_CIPHERS_RAM)
   if(NOT TARGET pico_stdlib)
     message(FATAL_ERROR "RAM cipher placement requires a Pico SDK build")
@@ -23,6 +26,8 @@ if(FV_AES_RAM OR FV_CIPHERS_RAM)
     COMPILE_OPTIONS -include ${CMAKE_CURRENT_SOURCE_DIR}/backends/pico_aes_ram.h)
 endif()
 if(FV_CIPHERS_RAM)
+  set_property(SOURCE ${FV_SM4_DIR}/sm4_enc.c ${FV_SM4_DIR}/sm4_common.c APPEND PROPERTY
+    COMPILE_OPTIONS -include ${CMAKE_CURRENT_SOURCE_DIR}/backends/pico_sm4_ram.h)
   set_property(SOURCE ${FV_MBEDTLS_DIR}/library/camellia.c APPEND PROPERTY
     COMPILE_OPTIONS -include ${CMAKE_CURRENT_SOURCE_DIR}/backends/pico_camellia_ram.h)
 endif()
