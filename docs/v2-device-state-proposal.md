@@ -167,7 +167,7 @@ as part of ordinary test execution.
 
 ## Portable adapter implementation
 
-`src/security/vault.c` implements the attempt and header transaction logic above.
+`src/shared/security/vault.c` implements the attempt and header transaction logic above.
 `fv_device_authority` is a logical callback boundary, with sequence-checked atomic
 commits and idempotent destruction. It is NOT the on-flash record format. Tests
 persist a separate mock state file and inject failures before/after atomic commit;

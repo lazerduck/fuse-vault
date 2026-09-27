@@ -12,7 +12,7 @@ F4 will add resident credential management and a localhost WebAuthn application.
 From the repository root:
 
 ```sh
-cmake -S firmware/security -B build-pico-fido \
+cmake -S src/pico/device -B build-pico-fido \
   -DPICO_SDK_PATH=/home/adam/pico-sdk -DPICO_NO_PICOTOOL=1 \
   -DCMAKE_BUILD_TYPE=Release -DFV_USB_MSC=ON -DFV_DEVICE_UI=ON \
   -DFV_USB_FIDO=ON -DFV_DEBUG_SCREEN=ON -DFV_DEBUG_SESSION=OFF \
@@ -43,16 +43,16 @@ USB identity is not a certified/product-assigned authenticator identity.
 ## First test on the board
 
 1. Use an enrolled test vault. Open the development framebuffer viewer:
-   `python3 tools/device_ui.py --device BOARD_SERIAL`.
+   `python3 src/host/tools/device_ui.py --device BOARD_SERIAL`.
 2. Unlock through the device's configured pattern/wheels/words. With the disk
    unmounted, choose **Settings → Initialize FIDO → Initialize**. This explicitly
    erases the reserved passkey store, preserving the USB data region. Do it once
    for an uninitialized test device, not before each login. Missing/corrupt stores
    otherwise fail closed; a host request never initializes them automatically.
-3. Check discovery with `python3 tools/fido_smoke.py info`.
-4. Register using `python3 tools/fido_smoke.py register`. Verify the displayed
+3. Check discovery with `python3 src/host/tools/fido_smoke.py info`.
+4. Register using `python3 src/host/tools/fido_smoke.py register`. Verify the displayed
    `REGISTER …fuse-vault.test` RP, then Select to approve or Back to reject.
-5. Run `python3 tools/fido_smoke.py login`. Verify the displayed RP and approve.
+5. Run `python3 src/host/tools/fido_smoke.py login`. Verify the displayed RP and approve.
 6. Safely unmount/eject, unplug/reconnect, then repeat `login`. Unlock/re-verify
    when prompted. The saved public credential record must still verify the
    assertion against the same public key.
@@ -154,9 +154,9 @@ The latest UF2 includes a pinned local USBD patch that limits each task pass to
 eight events. No SDK files were changed. Regression commands:
 
 ```sh
-ASAN_OPTIONS=detect_leaks=0 python3 tools/test_usb_task_budget.py \
+ASAN_OPTIONS=detect_leaks=0 python3 src/host/tools/test_usb_task_budget.py \
   --sdk /home/adam/pico-sdk --firmware-build build-pico-fido --sanitize
-ASAN_OPTIONS=detect_leaks=0 python3 tools/test_usb_pipeline_driver.py \
+ASAN_OPTIONS=detect_leaks=0 python3 src/host/tools/test_usb_pipeline_driver.py \
   --sdk /home/adam/pico-sdk --firmware-build build-pico-fido --sanitize
 ```
 

@@ -129,22 +129,22 @@ destructive and cannot trigger automatic authority reinitialization.
 ## Debug workflow
 
 Enable `FV_DEBUG_OTP_INSPECT=ON` and `FV_DEBUG_ENROLLMENT=ON` when building
-`firmware/security`. Both options default OFF. The normal internal destruction
+`src/pico/device`. Both options default OFF. The normal internal destruction
 callback remains part of authority enforcement even when debug commands are absent.
 
 ```sh
-python3 tools/security_probe.py --port "$PORT" info
-python3 tools/security_probe.py --port "$PORT" state
-python3 tools/security_probe.py --port "$PORT" snapshot --out results/otp-pre-provision.json
-python3 tools/security_probe.py --port "$PORT" provision --confirm-device "$DEVICE_ID"
-python3 tools/security_probe.py --port "$PORT" create --erase-sd --confirm-device "$DEVICE_ID"
+python3 src/host/tools/security_probe.py --port "$PORT" info
+python3 src/host/tools/security_probe.py --port "$PORT" state
+python3 src/host/tools/security_probe.py --port "$PORT" snapshot --out results/otp-pre-provision.json
+python3 src/host/tools/security_probe.py --port "$PORT" provision --confirm-device "$DEVICE_ID"
+python3 src/host/tools/security_probe.py --port "$PORT" create --erase-sd --confirm-device "$DEVICE_ID"
 # Fully disconnect power, reconnect, then:
-python3 tools/security_probe.py --port "$PORT" check --credential original
-python3 tools/security_probe.py --port "$PORT" wrong
+python3 src/host/tools/security_probe.py --port "$PORT" check --credential original
+python3 src/host/tools/security_probe.py --port "$PORT" wrong
 # Power-cycle and check that attempts == 1 before a successful unlock resets it:
-python3 tools/security_probe.py --port "$PORT" state
-python3 tools/security_probe.py --port "$PORT" change --credential original
-python3 tools/security_probe.py --port "$PORT" check --credential replacement
+python3 src/host/tools/security_probe.py --port "$PORT" state
+python3 src/host/tools/security_probe.py --port "$PORT" change --credential original
+python3 src/host/tools/security_probe.py --port "$PORT" check --credential replacement
 ```
 
 `create` is restricted to a provisioned EMPTY enrollment and writes a public test
@@ -156,10 +156,10 @@ current token. It is not a harmless simulation or an unlimited password test.
 For the explicit sacrificial-board invalidation experiment:
 
 ```sh
-python3 tools/security_probe.py --port "$PORT" destroy --confirm-device "$DEVICE_ID"
-python3 tools/security_probe.py --port "$PORT" snapshot --out results/otp-post-destroy.json
+python3 src/host/tools/security_probe.py --port "$PORT" destroy --confirm-device "$DEVICE_ID"
+python3 src/host/tools/security_probe.py --port "$PORT" snapshot --out results/otp-post-destroy.json
 # Power-cycle, confirm DESTROYED/denied, then provision the next slot if wanted:
-python3 tools/security_probe.py --port "$PORT" provision --confirm-device "$DEVICE_ID"
+python3 src/host/tools/security_probe.py --port "$PORT" provision --confirm-device "$DEVICE_ID"
 ```
 
 Provision/create/destroy require the exact currently connected device ID in the

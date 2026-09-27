@@ -1,0 +1,8 @@
+add_library(fv_fido_transport STATIC hid.c verification.c)
+target_include_directories(fv_fido_transport PUBLIC include)
+target_compile_options(fv_fido_transport PRIVATE -Wall -Wextra -Werror)
+add_library(fv_fido_store STATIC store.c image_upgrade.c)
+target_include_directories(fv_fido_store PUBLIC include)
+target_link_libraries(fv_fido_store PUBLIC fv_security)
+target_compile_options(fv_fido_store PRIVATE -Wall -Wextra -Werror -fstack-usage)
+include(../../../third_party/pico_fido/engine.cmake)

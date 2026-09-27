@@ -35,7 +35,7 @@ target_include_directories(fv_fido_engine PRIVATE
     ${FV_PICO_ROOT}/engine ${FV_PICO_ROOT}/sdk ${FV_PICO_ROOT}/sdk/fs
     ${FV_PICO_ROOT}/sdk/usb ${FV_PICO_ROOT}/sdk/rng ${FV_PICO_ROOT}/sdk/otp
     ${FV_PICO_ROOT}/../tinycbor)
-target_include_directories(fv_fido_engine PUBLIC ${FV_PICO_ROOT}/../../src/fido/include)
+target_include_directories(fv_fido_engine PUBLIC ${FV_PICO_ROOT}/../../src/shared/fido/include)
 target_compile_definitions(fv_fido_engine PRIVATE FV_PICO_PORT=1
     USB_ITF_HID=1 USB_BUFFER_SIZE=4096u CBOR_NO_FLOATING_POINT
     ENABLE_POWER_ON_RESET=1)

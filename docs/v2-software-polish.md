@@ -61,10 +61,10 @@ work, even after UI polish is complete.
 
 ## Offline UI review
 
-Run `python3 tools/ui_preview.py` from the repository root. Requires a host C
+Run `python3 src/host/tools/ui_preview.py` from the repository root. Requires a host C
 compiler and Pillow. The tool compiles the actual UI renderer with synthetic
 fixtures, without firmware, USB or vault access. It writes a 30-screen contact
 sheet and an HTML gallery with native-size and enlarged views to
 `/tmp/fuse-vault-ui-preview`. Use `--output PATH` to select another output folder.
-The fixture source is `tools/ui_preview.c`; behavioral navigation and authorization
-checks remain in `tests/device_ui_tests.c` and the FIDO adapter tests.
+The fixture source is `src/host/tools/ui_preview.c`; behavioral navigation and authorization
+checks remain in `src/host/tests/device_ui_tests.c` and the FIDO adapter tests.

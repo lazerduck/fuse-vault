@@ -43,7 +43,7 @@ results are not returned after invalidation. BOT class reset drains and clears t
 pipeline before resetting the MSC state machine.
 
 The SDK's MSC callbacks lack command boundaries, and its write-complete callback
-runs after sending status. `firmware/security/msc_command_boundary.cmake` therefore
+runs after sending status. `src/pico/device/msc_command_boundary.cmake` therefore
 generates a minimally extended MSC driver at configure time: a validated READ/WRITE
 begin hook and a BOT-reset cleanup hook. The SDK file itself is untouched. Its SHA256
 is pinned so SDK updates require an explicit patch review. Original licence text
@@ -58,7 +58,7 @@ machine is also run with a deliberately delayed worker, verifying that the next
 receive is armed before SD completion and that CSW cannot report early success:
 
 ```sh
-ASAN_OPTIONS=detect_leaks=0 python3 tools/test_usb_pipeline_driver.py \
+ASAN_OPTIONS=detect_leaks=0 python3 src/host/tools/test_usb_pipeline_driver.py \
   --sdk /home/adam/pico-sdk --firmware-build build-pico-device-ui --sanitize
 ```
 

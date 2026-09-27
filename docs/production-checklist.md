@@ -115,7 +115,7 @@ they do not certify the complete assembled device or all firmware integrations.
 
 ## Remove development surfaces and package
 
-- [ ] Build production application without `firmware/security`/benchmark command
+- [ ] Build production application without `src/pico/device`/benchmark command
   dispatchers, `FV_DEBUG_OTP_INSPECT`, `FV_DEBUG_ENROLLMENT`, `FV_DEBUG_STARTUP`, `FV_DEBUG_BOOT_TRACE`, public test passwords,
   test RNGs, raw memory/secret export or factory reset shortcuts.
 - [x] Build variants demonstrate inspector and enrollment-command handlers can be

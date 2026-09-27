@@ -115,7 +115,7 @@ substitute a browser virtual authenticator for tests of the actual engine/device
 - **Current implementation stage: F4 implemented; initial user browser/board tests passed.**
   Runbook `docs/v2-fido-browser-testing.md`; evidence `results/fido-f4-build-20260921.md`.
   Latest UF2 adds Settings → Passkeys, local stable-ID deletion and browsing. Harness:
-  `python3 tools/fido_web/server.py`, then http://localhost:8000. Preserve existing
+  `python3 src/host/tools/fido_web/server.py`, then http://localhost:8000. Preserve existing
   credentials/settings; do not initialize FIDO again. Agent's temporary UI test
   server was stopped; user starts their own persistent database run.
 - F4.1 **done**: local list/delete/scroll/empty-state UI, cancellation by default,
@@ -144,7 +144,7 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   successful re-verification; wrong verification locks it.
 - F3.3 **done**: simulated firmware/HID/SD client tests, transport/UV/UI/scheduling
   tests, sanitizer coverage, composite and FIDO-disabled ARM builds; real USB
-  smoke client `tools/fido_smoke.py` (register/login/info).
+  smoke client `src/host/tools/fido_smoke.py` (register/login/info).
 - Hardware discovery follow-up: the initial flashed image enumerated as four
   interfaces and Linux granted adam read/write on hidraw3, but python-fido2
   rejected its HID descriptor. Fixed by repeating output report size; descriptor
@@ -163,7 +163,7 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   until empty while deferred MSC operations requeued themselves. This starved the
   outer-loop UI/CDC/FIDO polls, including the mailbox acknowledgement needed by
   the worker. A generated local `usbd_budget.c` now caps each pass at eight events;
-  the SDK is not edited. `tools/test_usb_task_budget.py` reproduces starvation in
+  the SDK is not edited. `src/host/tools/test_usb_task_budget.py` reproduces starvation in
   the original task body and passes with the fixed body, including ASan/UBSan.
   Actual MSC driver overlap/durable completion tests pass for 4/16/32 KiB buffers.
   Both firmware variants build. Subsequent user feedback reports successful
@@ -194,8 +194,8 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   are now linked in firmware with a 64 KiB worker stack reservation. Actual
   high-water/heap and runtime performance still need board measurement.
 - The portable F1 baseline is implemented
-  in `src/fido` and `third_party/pico_fido`, enabled by `FV_ENABLE_FIDO_ENGINE`.
-  Build commands and callback/ownership contracts are in `src/fido/README.md`.
+  in `src/shared/fido` and `third_party/pico_fido`, enabled by `FV_ENABLE_FIDO_ENGINE`.
+  Build commands and callback/ownership contracts are in `src/shared/fido/README.md`.
 - Validation on 2026-09-20: 27/27 V2 CTests with FIDO enabled, 27/27 under ASan/UBSan
   (`detect_leaks=0`), 25/25 with FIDO disabled. Independent python-fido2 verifies
   direct UV, both token protocols, real signatures, resident/nonresident keys,

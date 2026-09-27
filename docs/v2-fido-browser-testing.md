@@ -11,7 +11,7 @@ update; do not initialize FIDO again.
 Install/use the same `python-fido2` environment used by the smoke client. Run:
 
 ```sh
-python3 /home/adam/projects/fuse-vault/tools/fido_web/server.py
+python3 /home/adam/projects/fuse-vault/src/host/tools/fido_web/server.py
 ```
 
 Open **http://localhost:8000** in Chromium or Firefox. Use that exact hostname,
@@ -23,7 +23,7 @@ The default database, `fido-web-test.sqlite3`, is created in the current working
 directory. Keep running from that directory, or supply an absolute path:
 
 ```sh
-python3 /home/adam/projects/fuse-vault/tools/fido_web/server.py \
+python3 /home/adam/projects/fuse-vault/src/host/tools/fido_web/server.py \
   --database /home/adam/fido-web-test.sqlite3
 ```
 

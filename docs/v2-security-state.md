@@ -67,7 +67,7 @@ The [volume design](v2-volume-and-key-design.md) and
 [VMK envelope](v2-vmk-envelope-proposal.md) now have a portable implementation:
 one to four fixed slots, XOR shares, AES/Camellia KW, outer HMAC, binding/KDFs,
 create/unlock/read/write/lock, credential change, header repair and charged attempts.
-The [security module README](../src/security/README.md) documents ownership and APIs.
+The [security module README](../src/shared/security/README.md) documents ownership and APIs.
 
 Fourteen release and fourteen ASan/UBSan tests pass, including independent fixed
 vectors and file-backed lifecycle/failure injection; ARM library compilation passes.
@@ -84,7 +84,7 @@ authentication. No whole-object-store freshness mechanism is added.
 
 ## First Pico integration image
 
-[Security bring-up](../firmware/security/README.md) links the complete portable
+[Security bring-up](../src/pico/device/README.md) links the complete portable
 lifecycle to SD/SHA/cipher backends and a candidate TRNG/CTR-DRBG adapter. It adds
 compile-time removable read-only OTP inspection and a laptop snapshot/diff tool.
 Its test enrollment is deliberately volatile: no permanent OTP slots are assumed,

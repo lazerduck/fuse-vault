@@ -7,31 +7,42 @@ the next action are tracked in the [V2 FIDO delivery ledger](docs/v2-fido-progre
 The [browser/passkey-management runbook](docs/v2-fido-browser-testing.md) covers F4 testing.
 Current development priorities are tracked in the
 [V2 software completion and polish plan](docs/v2-software-polish.md).
-For offline screen previews, run `python3 tools/ui_preview.py` (host C compiler
+For offline screen previews, run `python3 src/host/tools/ui_preview.py` (host C compiler
 and Pillow required); no USB connection is needed.
+
+## Source map
+
+All active source is under `src/`:
+
+- [`src/shared/`](src/README.md): reusable UI, crypto, storage, security and FIDO libraries.
+- [`src/pico/`](src/pico/device/README.md): device applications, board drivers and accelerated backends.
+- [`src/host/`](src/host/CMakeLists.txt): desktop tools, tests and simulated hardware.
+
+See the [source/build guide](src/README.md) and [UI scene guide](src/shared/ui/README.md).
+The main device application is `src/pico/device/`; `v1/` remains an archive.
 
 ## V2 source
 
-The [standalone crypto module](src/crypto/README.md) contains the cipher interface,
+The [standalone crypto module](src/shared/crypto/README.md) contains the cipher interface,
 AES-256-XTS and Camellia-256-XTS implementations, ordered pipelines, desktop tests,
 and a RAM benchmark. See its README for build instructions and current scope.
 
-The [board benchmark firmware](firmware/bench/README.md) adds native four-bit SD,
+The [board benchmark firmware](src/pico/benchmark/README.md) adds native four-bit SD,
 a laptop-controlled binary USB interface and two-core encryption/storage benchmarks.
 
-The [authenticated storage module](src/storage/README.md) adds packed HMAC tags
+The [authenticated storage module](src/shared/storage/README.md) adds packed HMAC tags
 and unset sectors. See [security-state placement](docs/v2-security-state.md) for
 the split between SD metadata and Pico flash/OTP state.
 
 The next-stage [volume format and key lifecycle draft](docs/v2-volume-and-key-design.md)
 defines proposed headers, derivations, unlock and credential-change behaviour for review.
-The [portable vault module](src/security/README.md) implements the four-slot
+The [portable vault module](src/shared/security/README.md) implements the four-slot
 [VMK envelope](docs/v2-vmk-envelope-proposal.md), create/unlock, encrypted storage,
 credential changes and attempt accounting, with desktop lifecycle/failure tests.
 The [OTP enrollment and authenticated flash journal](docs/v2-persistent-authority.md)
 are implemented for hardware testing; the persistent format is not frozen.
 
-The [security bring-up firmware](firmware/security/README.md) links that lifecycle
+The [security bring-up firmware](src/pico/device/README.md) links that lifecycle
 to the Pico/SD and adds TRNG/CTR-DRBG diagnostics, unlock timing, and optional
 OTP snapshots and guarded provisioning/destruction tools. Persistent enrollment
 uses 60,000 PBKDF2 iterations. Physical provisioning and power-cycle verification

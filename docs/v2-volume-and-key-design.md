@@ -221,7 +221,7 @@ The immutable descriptor binds keys to the selected configuration. Do not derive
 future FIDO/signing private keys from these labels; private objects are deferred.
 
 XTS tweak remains `LE64(logical_LBA) || eight zero bytes`. Sector HMAC and metadata
-remain exactly as [implemented](../src/storage/README.md): domain bytes
+remain exactly as [implemented](../src/shared/storage/README.md): domain bytes
 `46 56 2d 53 45 43 54 4f 52 2d 4d 41 43 00 00 01`, volume ID, LE64 logical LBA,
 then the final 512-byte ciphertext. Authenticate written data before decryption;
 unset sectors return zeros without payload reads. No per-sector KDF or RNG.
@@ -397,16 +397,16 @@ these platform dependencies are implemented and tested.
 
 ## 11. Implementation delivered with this revision
 
-- `src/storage/volume_format.c`: strict little-endian descriptor codec with
+- `src/shared/storage/volume_format.c`: strict little-endian descriptor codec with
   fixed/reserved-field, cipher, overflow and capacity checks.
-- `src/security/policy.c` and `key_derivation.c`: policy codec, HKDF/PBKDF2 and
+- `src/shared/security/policy.c` and `key_derivation.c`: policy codec, HKDF/PBKDF2 and
   independent working keys, over the existing software/Pico HMAC abstraction.
-- `src/security/envelope.c` and `key_wrap.c`: 512-byte four-slot header, device
+- `src/shared/security/envelope.c` and `key_wrap.c`: 512-byte four-slot header, device
   binding, fresh salt/shares, AES/Camellia key wrap and complete outer HMAC.
   Small generic Nettle C adaptation retained with upstream source/licences.
-- `src/security/vault.c`: create, unlock, session I/O/lock, credential change,
+- `src/shared/security/vault.c`: create, unlock, session I/O/lock, credential change,
   header repair and attempt/limit state machine over trusted device callbacks.
-- `src/security/journal.c`, `enrollment.c` and the RP2354 authority adapter now
+- `src/shared/security/journal.c`, `enrollment.c` and the RP2354 authority adapter now
   provide authenticated flash records and guarded OTP lifecycle operations.
   Physical verification is pending; host failure-injection tests pass.
 - Tests: independent fixed envelope/KDF vectors, malformed inputs and all-byte
@@ -415,7 +415,7 @@ these platform dependencies are implemented and tested.
   final-attempt success, interrupted attempts/destruction retries, and injected
   SD/atomic-state commit failures. Software and mocked Pico SHA paths are covered.
 
-See [the security module README](../src/security/README.md) for APIs, buffer
+See [the security module README](../src/shared/security/README.md) for APIs, buffer
 ownership, validation and remaining limits. The benchmark firmware still uses
 public test keys: ARM compilation of this library does not activate production
 unlock, persistent flash state, Secure RAM isolation or OTP programming.
@@ -430,7 +430,7 @@ shipped firmware. Existing patterns keep their exact bytes.
 - Profile 3: exactly four bytes, each 0–99, in wheel order. Display uses two decimal
   digits per wheel; encoding uses values, not ASCII or platform integers.
 - Profile 4: exactly four bytes, each 0–63, indexing the fixed word list in
-  `src/ui/credential_entry.c`. Changing that list/order requires a new profile ID.
+  `src/shared/ui/credential_entry.c`. Changing that list/order requires a new profile ID.
 
 Profile ID is already bound into the envelope/KDF context. Profiles 1 and 2 stay
 compatible; out-of-range values, invalid lengths and unknown profiles are rejected.
