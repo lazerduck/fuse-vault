@@ -24,7 +24,7 @@ exposed. Builds with debug screen disabled omit the instrumentation.
 
 With `FV_DEVICE_UI=ON`, physical TFT output defaults on (`FV_TFT_DISPLAY=ON`),
 independently of `FV_DEBUG_SCREEN`. Set `FV_TFT_DISPLAY=OFF` for headless boards.
-The driver uses the same monochrome framebuffer as the USB viewer, including
+The driver uses the same RGB332 colour framebuffer as the USB viewer, including
 software rotation. It expands pixels to white/black RGB565 with a 320-byte stack
 row buffer and a 1,600-byte static cache, sending at most one changed row per
 main-loop pass over SPI0 at 8 MHz (about 331 microseconds on the wire).
@@ -48,7 +48,7 @@ panel is connected or displaying correctly.
   disconnect USB, disable the mux, change SEL and reconnect after 25 ms. Every
   route change invalidates the storage session. GPIO2/3 are the canonical senses;
   duplicated GPIO16/17 stay inputs, without pulls.
-- The firmware owns a 160×80 monochrome framebuffer and the UI state machine.
+- The firmware owns a 160×80 RGB332 colour framebuffer and the UI state machine.
   Physical active-low buttons on GPIO10–15 and development USB key injection feed
   the same handler. The laptop renders the actual framebuffer; it has no separate
   setup implementation. The physical TFT receives the same UI pixels.
@@ -134,8 +134,8 @@ The viewer is the normal unlock path once setup is complete.
 ## Debug protocol and ownership
 
 `SCREEN` returns JSON `{command:"screen",ok:true,width:160,height:80,
-format:"mono-msb",screen:<enum>,busy:<bool>,pixels:<hex>}`. Pixels are 1600 bytes,
-row-major, most significant bit first; 1 is foreground. `KEY UP|DOWN|LEFT|RIGHT|
+format:"rgb332",screen:<enum>,busy:<bool>,pixels:<hex>}`. Pixels are 12800 bytes,
+row-major, one byte per pixel (`RRRGGGBB`). `KEY UP|DOWN|LEFT|RIGHT|
 SELECT|BACK` returns `{command:"key",ok:true,accepted:<bool>}`. Busy input is rejected,
 not queued for later. Frames intentionally show entered arrows, code-wheel values
 and selected words. Debug framebuffer access therefore exposes entered credentials;
@@ -143,7 +143,7 @@ it must be disabled for release. No VMK or derived encryption keys are returned.
 
 ```sh
 python3 /home/adam/projects/fuse-vault/src/host/tools/device_ui.py \
-  --device 66ED2A91873CF67F --snapshot /tmp/vault-screen.pbm
+  --device 66ED2A91873CF67F --snapshot /tmp/vault-screen.ppm
 ```
 
 Core 0 owns UI state, framebuffer, buttons, mux and USB. Core 1 exclusively owns

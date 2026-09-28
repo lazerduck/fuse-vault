@@ -18,6 +18,7 @@ static fv_ui_job mailbox;
 atomic_bool fv_ui_maintenance;
 static atomic_bool disconnected;
 static bool refresh;
+static uint64_t startup_until;
 static atomic_uint format_done, format_total;
 static atomic_uint format_started_ms;
 static uint64_t format_redraw;
@@ -43,6 +44,8 @@ void fv_device_ui_init(void) {
     ui.fido_enabled = FV_USB_FIDO;
 #if FV_TFT_DISPLAY
     fv_tft_init();
+    fv_tft_show_startup();
+    startup_until = time_us_64() + 500000;
 #endif
     fv_pico_buttons_init();
 }
@@ -71,7 +74,7 @@ void fv_device_ui_poll(void) {
         refresh = false;
     }
     fv_ui_key key = fv_pico_buttons_poll(ui.fido_generation);
-    if (key)
+    if (key && time_us_64() >= startup_until)
         fv_ui_keypress(&ui, key);
     if (ui.screen == UI_WAIT && ui.job.op == UI_CREATE) {
         unsigned total = atomic_load(&format_total);
@@ -136,8 +139,7 @@ bool fv_device_ui_command(const char *command, char *out, size_t size) {
         fv_ram_debug ram = fv_ram_debug_read();
         int n = snprintf(
             out, size,
-            "{\"command\":\"screen\",\"ok\":true,\"width\":160,\"height\":80,\"format\":\"mono-"
-            "msb\",\"screen\":%u,\"busy\":%s,\"allow_mounted\":%s,\"input_id\":%u,"
+            "{\"command\":\"screen\",\"ok\":true,\"width\":160,\"height\":80,\"format\":\"rgb332\",\"screen\":%u,\"busy\":%s,\"allow_mounted\":%s,\"input_id\":%u,"
             "\"ram\":{\"total_bytes\":%u,\"fixed_bytes\":%u,\"heap_reserved_bytes\":%u,\"heap_peak_"
             "reserved_bytes\":%u,\"uncommitted_bytes\":%u},\"pixels\":\"",
             (unsigned)ui.screen, (ui.screen == UI_WAIT || ui.fido_done) ? "true" : "false",
@@ -165,7 +167,7 @@ bool fv_device_ui_command(const char *command, char *out, size_t size) {
         for (i = 0; i < 6; i++)
             if (!strcmp(key, keys[i]))
                 break;
-        bool accepted = i < 6 && ui.screen != UI_WAIT && !ui.fido_done &&
+        bool accepted = time_us_64() >= startup_until && i < 6 && ui.screen != UI_WAIT && !ui.fido_done &&
                         (!offset || generation == ui.fido_generation) && (!ui.fido_modal || offset);
         if (accepted)
             fv_ui_keypress(&ui, (fv_ui_key)(i + 1));

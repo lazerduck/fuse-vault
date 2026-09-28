@@ -13,12 +13,21 @@ from storage_session import disks_for_device, mounted_partitions
 
 
 def pixels(frame):
-    if (frame.get('width'), frame.get('height'), frame.get('format')) != (160, 80, 'mono-msb'):
+    if (frame.get('width'), frame.get('height'), frame.get('format')) != (160, 80, 'rgb332'):
         raise ValueError('Unsupported device framebuffer')
     data = bytes.fromhex(frame['pixels'])
-    if len(data) != 1600:
+    if len(data) != 12800:
         raise ValueError('Invalid framebuffer length')
     return data
+
+
+def rgb(value):
+    r, g, b = value >> 5, (value >> 2) & 7, value & 3
+    return (r << 5 | r << 2 | r >> 1, g << 5 | g << 2 | g >> 1, b * 85)
+
+
+def rgb_bytes(data):
+    return bytes(channel for value in data for channel in rgb(value))
 
 
 def port_for(serial):
@@ -39,13 +48,13 @@ def ram_text(frame):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--device', required=True)
-    parser.add_argument('--snapshot', type=Path, help='Save one device screen as PBM and exit')
+    parser.add_argument('--snapshot', type=Path, help='Save one device screen as PPM and exit')
     args = parser.parse_args()
     if args.snapshot:
         transport = SerialTransport(str(port_for(args.device)), product=0x4022)
         try:
             frame = Probe(transport, timeout=5).transact('SCREEN', 'screen')
-            args.snapshot.write_bytes(b'P4\n160 80\n' + pixels(frame))
+            args.snapshot.write_bytes(b'P6\n160 80\n255\n' + rgb_bytes(pixels(frame)))
             print(json.dumps({k: v for k, v in frame.items() if k != 'pixels'}))
         finally:
             transport.close()
@@ -76,7 +85,7 @@ def main():
                            'Uncommitted excludes reusable space inside the heap and does not '
                            'guarantee any single allocation will succeed. Stack usage is not measured.')
     box.pack_start(memory, False, False, 0)
-    screen = bytearray(1600)
+    screen = bytearray(12800)
     notice_until = [0.0]
 
     def draw(widget, context):
@@ -86,11 +95,11 @@ def main():
         context.translate((widget.get_allocated_width() - 160 * scale) / 2,
                           (widget.get_allocated_height() - 80 * scale) / 2)
         context.scale(scale, scale)
-        context.set_source_rgb(0.55, 0.95, 0.8)
-        for bit in range(12800):
-            if screen[bit // 8] & (128 >> (bit % 8)):
-                context.rectangle(bit % 160, bit // 160, 1, 1)
-        context.fill()
+        for bit, value in enumerate(screen):
+            r, g, b = rgb(value)
+            context.set_source_rgb(r / 255, g / 255, b / 255)
+            context.rectangle(bit % 160, bit // 160, 1, 1)
+            context.fill()
     area.connect('draw', draw)
 
     allow_mounted = [False]

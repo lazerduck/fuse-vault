@@ -116,22 +116,16 @@ void ui_draw_line(fv_ui *u, unsigned row, const char *s) {
         for (unsigned y = 0; y < 7; y++)
             for (unsigned b = 0; b < 5; b++)
                 if (glyph_row(*s, y) & (16u >> b)) {
-                    unsigned bit = (row * 10 + y) * 160 + x + b;
-                    u->framebuffer[bit / 8] |= 0x80u >> (bit % 8);
+                    ui_draw_pixel(u, x + b, row * 10 + y, UI_COLOUR_TEXT);
                 }
 }
 /* Pixel-positioned credential controls share the same framebuffer/flip path. */
-void ui_draw_pixel(fv_ui *u, unsigned x, unsigned y, bool on) {
+void ui_draw_pixel(fv_ui *u, unsigned x, unsigned y, fv_ui_colour colour) {
     if (x >= 160 || y >= 80)
         return;
-    unsigned bit = y * 160 + x;
-    uint8_t mask = (uint8_t)(0x80u >> (bit % 8));
-    if (on)
-        u->framebuffer[bit / 8] |= mask;
-    else
-        u->framebuffer[bit / 8] &= (uint8_t)~mask;
+    u->framebuffer[y * FV_SCREEN_WIDTH + x] = colour;
 }
-void ui_draw_text_at(fv_ui *u, unsigned x, unsigned y, const char *s, unsigned scale, bool ink) {
+void ui_draw_text_at(fv_ui *u, unsigned x, unsigned y, const char *s, unsigned scale, fv_ui_colour ink) {
     for (; *s; s++, x += 6 * scale)
         for (unsigned r = 0; r < 7; r++)
             for (unsigned c = 0; c < 5; c++)
@@ -142,29 +136,76 @@ void ui_draw_text_at(fv_ui *u, unsigned x, unsigned y, const char *s, unsigned s
 }
 void ui_draw_rule(fv_ui *u, unsigned y) {
     for (unsigned x = 3; x < 157; x++)
-        ui_draw_pixel(u, x, y, true);
+        ui_draw_pixel(u, x, y, UI_COLOUR_MUTED);
 }
 void ui_draw_header(fv_ui *u, const char *title, const char *detail) {
-    ui_draw_text_at(u, 4, 2, title, 1, true);
+    ui_draw_text_at(u, 4, 2, title, 1, UI_COLOUR_ACCENT);
     ui_draw_rule(u, 12);
     if (detail)
-        ui_draw_text_at(u, 156 - (unsigned)strlen(detail) * 6, 2, detail, 1, true);
+        ui_draw_text_at(u, 156 - (unsigned)strlen(detail) * 6, 2, detail, 1, UI_COLOUR_TEXT);
 }
 void ui_draw_footer(fv_ui *u, const char *back, const char *action) {
     ui_draw_rule(u, 67);
-    ui_draw_text_at(u, 4, 71, back, 1, true);
+    ui_draw_text_at(u, 4, 71, back, 1, UI_COLOUR_TEXT);
     if (action)
-        ui_draw_text_at(u, 156 - (unsigned)strlen(action) * 6, 71, action, 1, true);
+        ui_draw_text_at(u, 156 - (unsigned)strlen(action) * 6, 71, action, 1, UI_COLOUR_TEXT);
 }
 void ui_draw_choice(fv_ui *u, unsigned y, const char *label, bool selected) {
     if (selected)
         for (unsigned r = y; r < y + 9; r++)
             for (unsigned x = 3; x < 157; x++)
-                ui_draw_pixel(u, x, r, true);
-    ui_draw_text_at(u, 7, y + 1, label, 1, !selected);
+                ui_draw_pixel(u, x, r, UI_COLOUR_ACCENT);
+    ui_draw_text_at(u, 7, y + 1, label, 1, selected ? UI_COLOUR_BACKGROUND : UI_COLOUR_TEXT);
 }
 void ui_draw_confirm_choices(fv_ui *u, const char *action) {
     ui_draw_choice(u, 47, "CANCEL", !u->cursor);
     ui_draw_choice(u, 57, action, u->cursor != 0);
     ui_draw_footer(u, "\005 BACK", "\006 SELECT");
+}
+
+/* Ten 50 ms frames: connections converge, fuse, then lock into a vault. */
+void ui_draw_splash(fv_ui *u, unsigned frame) {
+    if (frame > 9) frame = 9;
+    memset(u->framebuffer, 0, sizeof(u->framebuffer));
+    const fv_ui_colour blue = 0x17, amber = 0xf0;
+    for (unsigned side = 0; side < 2; ++side)
+        for (unsigned branch = 0; branch < 3; ++branch) {
+            for (unsigned step = 0; step <= 43; ++step) {
+                unsigned x = side ? 123 - step : 36 + step;
+                int offset = ((int)branch - 1) * 13;
+                unsigned y = (unsigned)(23 + (step < 18 ? offset : offset * (43-(int)step) / 25));
+                bool pulse = frame < 6 && step / 8 == frame;
+                ui_draw_pixel(u, x, y, pulse ? amber : blue);
+                ui_draw_pixel(u, x, y+1, pulse ? amber : blue);
+            }
+            unsigned cx = side ? 125 : 34, cy = 23 + ((int)branch - 1)*13;
+            for (int dy = -3; dy <= 3; ++dy)
+                for (int dx = -3; dx <= 3; ++dx) {
+                    int d = dx*dx+dy*dy;
+                    if (d >= 5 && d <= 12) ui_draw_pixel(u,cx+dx,cy+dy,blue);
+                }
+        }
+    /* Fusion glow contracts into the illuminated centre of the vault door. */
+    unsigned radius = frame < 5 ? 2 : frame < 8 ? 9-(frame-5)*2 : 3;
+    for (int dy = -(int)radius; dy <= (int)radius; ++dy)
+        for (int dx = -(int)radius; dx <= (int)radius; ++dx)
+            if ((unsigned)(dx*dx+dy*dy) <= radius*radius)
+                ui_draw_pixel(u,79+dx,24+dy,dx*dx+dy*dy < 5 ? 0xff : amber);
+    if (frame >= 7) {
+        for (unsigned y = 8; y <= 39; ++y) {
+            unsigned inset = y < 12 ? 12-y : y > 35 ? y-35 : 0;
+            for (unsigned x = 63+inset; x <= 96-inset; ++x)
+                if (x == 63+inset || x == 96-inset || y == 8 || y == 39)
+                    ui_draw_pixel(u,x,y,blue);
+        }
+        /* Four locking bolts and a central combination dial. */
+        for (unsigned n=0;n<4;++n) {
+            ui_draw_pixel(u,79,14+n,UI_COLOUR_TEXT);
+            ui_draw_pixel(u,79,31+n,UI_COLOUR_TEXT);
+            ui_draw_pixel(u,69+n,24,UI_COLOUR_TEXT);
+            ui_draw_pixel(u,86+n,24,UI_COLOUR_TEXT);
+        }
+    }
+    ui_draw_text_at(u,21,47,"FUSE VAULT",2,UI_COLOUR_TEXT);
+    ui_draw_text_at(u,29,68,"PRIVATE BY DESIGN",1,blue);
 }

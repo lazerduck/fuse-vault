@@ -1,5 +1,6 @@
 #include "button_input.h"
 #include "device_ui.h"
+#include "drawing.h"
 #include "scene.h"
 #include "widgets/menu.h"
 #include <stdio.h>
@@ -115,6 +116,16 @@ static void scene_tests(void) {
 }
 
 int main(void) {
+    fv_ui colour_ui;
+    fv_ui_init(&colour_ui);
+    memset(colour_ui.framebuffer, 0, sizeof(colour_ui.framebuffer));
+    for(unsigned i=0;i<256;i++)ui_draw_pixel(&colour_ui,i%160,i/160,(uint8_t)i);
+    for(unsigned i=0;i<256;i++)CHECK(colour_ui.framebuffer[i]==i);
+    ui_draw_pixel(&colour_ui,160,0,255);
+    ui_draw_pixel(&colour_ui,0,80,255);
+    CHECK(colour_ui.framebuffer[160]==160);
+    ui_draw_text_at(&colour_ui,0,10,"A",1,UI_COLOUR_ERROR);
+    CHECK(colour_ui.framebuffer[10*160+1]==UI_COLOUR_ERROR);
     debounce_tests();
     menu_tests();
     scene_tests();

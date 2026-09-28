@@ -29,9 +29,9 @@ void ui_menu_render(fv_ui *u, const ui_menu *menu) {
         if (selected) {
             for (unsigned row = y; row < y + menu->row_height; ++row)
                 for (unsigned x = 3; x < 157; ++x)
-                    ui_draw_pixel(u, x, row, true);
+                    ui_draw_pixel(u, x, row, UI_COLOUR_ACCENT);
         }
-        ui_draw_text_at(u, 7, y + menu->text_offset, menu->items[i].label, 1, !selected);
+        ui_draw_text_at(u, 7, y + menu->text_offset, menu->items[i].label, 1, selected ? UI_COLOUR_BACKGROUND : UI_COLOUR_TEXT);
     }
 }
 

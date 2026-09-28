@@ -35,9 +35,9 @@ static void approve_key(fv_ui *u, fv_ui_key key) {
 
 static void render_fido_init_confirm(fv_ui *u) {
     ui_draw_header(u, "INITIALIZE FIDO?", NULL);
-    ui_draw_text_at(u, 4, 16, "ERASES ALL PASSKEYS", 1, true);
-    ui_draw_text_at(u, 4, 26, "KEEPS USB FILES", 1, true);
-    ui_draw_text_at(u, 4, 36, "RESETS FIDO SETTINGS", 1, true);
+    ui_draw_text_at(u, 4, 16, "ERASES ALL PASSKEYS", 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 4, 26, "KEEPS USB FILES", 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 4, 36, "RESETS FIDO SETTINGS", 1, UI_COLOUR_TEXT);
     ui_draw_confirm_choices(u, "INITIALIZE");
 }
 
@@ -46,8 +46,8 @@ static void render_fido_policy_screen(fv_ui *u) {
     ui_draw_choice(u, 16, "TIMED / SAME SITE", !u->job.fido_policy);
     ui_draw_choice(u, 28, "WHILE UNLOCKED", u->job.fido_policy != 0);
     ui_draw_text_at(
-        u, 4, 43, u->job.fido_policy ? "NO TIME OR SITE LIMIT" : "FIRST 30S / MAX 10 MIN", 1, true);
-    ui_draw_text_at(u, 4, 55, "ALWAYS ASK FOR APPROVAL", 1, true);
+        u, 4, 43, u->job.fido_policy ? "NO TIME OR SITE LIMIT" : "FIRST 30S / MAX 10 MIN", 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 4, 55, "ALWAYS ASK FOR APPROVAL", 1, UI_COLOUR_TEXT);
     ui_draw_footer(u, "\005 BACK", "\006 SAVE");
 }
 
@@ -58,7 +58,7 @@ static void render_fido_approve(fv_ui *u) {
         size_t offset = i * 25;
         if (strlen(u->fido_label) > offset) {
             strncpy(part, u->fido_label + offset, 25);
-            ui_draw_text_at(u, 4, 16 + i * 10, part, 1, true);
+            ui_draw_text_at(u, 4, 16 + i * 10, part, 1, UI_COLOUR_TEXT);
         }
     }
     ui_draw_footer(u, "\005 REJECT", "\006 APPROVE");

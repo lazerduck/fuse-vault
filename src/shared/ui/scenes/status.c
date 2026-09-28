@@ -25,8 +25,7 @@ static void render_wait(fv_ui *u) {
         for (unsigned y = 32; y < 40; y++)
             for (unsigned x = 2; x < 158; x++)
                 if (y == 32 || y == 39 || x == 2 || x == 157 || x < 3 + filled) {
-                    unsigned bit = y * 160 + x;
-                    u->framebuffer[bit / 8] |= 0x80u >> (bit % 8);
+                    ui_draw_pixel(u, x, y, UI_COLOUR_SUCCESS);
                 }
         unsigned rate =
             u->format_milliseconds ? (unsigned)((uint64_t)done * 5000 / u->format_milliseconds) : 0;
@@ -77,9 +76,9 @@ static void render_error(fv_ui *u) {
     char b[40];
     ui_draw_header(u, "OPERATION FAILED", NULL);
     snprintf(b, sizeof(b), "RESULT %d", u->error);
-    ui_draw_text_at(u, 4, 22, b, 1, true);
+    ui_draw_text_at(u, 4, 22, b, 1, UI_COLOUR_ERROR);
     ui_draw_text_at(u, 4, 42, u->error == -6 ? "USE LEGACY DEBUG UNLOCK" : "CHECK CREDENTIAL OR SD",
-                    1, true);
+                    1, UI_COLOUR_TEXT);
     ui_draw_footer(u, "\005 BACK", "\006 RETURN");
 }
 

@@ -115,29 +115,29 @@ static void credential_controls(fv_ui *u) {
     char label[27];
     ui_draw_rule(u, 10);
     ui_draw_rule(u, 67);
-    ui_draw_text_at(u, 4, 71, u->fido_modal ? "\005 CANCEL" : "\005 BACK", 1, true);
+    ui_draw_text_at(u, 4, 71, u->fido_modal ? "\005 CANCEL" : "\005 BACK", 1, UI_COLOUR_TEXT);
     if (e->profile == 3 || e->count == 4)
-        ui_draw_text_at(u, 118, 71, "\006 DONE", 1, true);
+        ui_draw_text_at(u, 118, 71, "\006 DONE", 1, UI_COLOUR_TEXT);
     if (e->profile == 3) {
         for (unsigned i = 0; i < 4; i++) {
             unsigned x = 5 + i * 39;
             snprintf(label, sizeof(label), "%02u", (e->values[i] + 1) % 100);
-            ui_draw_text_at(u, x + 11, 18, label, 1, true);
+            ui_draw_text_at(u, x + 11, 18, label, 1, UI_COLOUR_TEXT);
             if (i == e->selected)
                 for (unsigned y = 30; y < 50; y++)
                     for (unsigned dx = 0; dx < 34; dx++)
-                        ui_draw_pixel(u, x + dx, y, true);
+                        ui_draw_pixel(u, x + dx, y, UI_COLOUR_ACCENT);
             snprintf(label, sizeof(label), "%02u", e->values[i]);
-            ui_draw_text_at(u, x + 6, 33, label, 2, i != e->selected);
+            ui_draw_text_at(u, x + 6, 33, label, 2, i == e->selected ? UI_COLOUR_BACKGROUND : UI_COLOUR_TEXT);
             snprintf(label, sizeof(label), "%02u", (e->values[i] + 99) % 100);
-            ui_draw_text_at(u, x + 11, 55, label, 1, true);
+            ui_draw_text_at(u, x + 11, 55, label, 1, UI_COLOUR_TEXT);
         }
     } else {
         if (e->count == 4)
             snprintf(label, sizeof(label), "REVIEW WORDS");
         else
             snprintf(label, sizeof(label), "WORD %u/4", e->count + 1);
-        ui_draw_text_at(u, (160 - (unsigned)strlen(label) * 6) / 2, 14, label, 1, true);
+        ui_draw_text_at(u, (160 - (unsigned)strlen(label) * 6) / 2, 14, label, 1, UI_COLOUR_TEXT);
         for (unsigned i = 0; i < 4; i++) {
             if (e->count == 4)
                 snprintf(label, sizeof(label), "%u %s", i + 1, fv_entry_word(e->values[i]));
@@ -152,15 +152,15 @@ static void credential_controls(fv_ui *u) {
             unsigned width = (unsigned)strlen(label) * 6 - 1;
             unsigned x = i == 3 ? 4 : i == 1 ? 156 - width : (160 - width) / 2;
             unsigned y = i == 0 ? 27 : i == 2 ? 55 : 41;
-            ui_draw_text_at(u, x, y, label, 1, true);
+            ui_draw_text_at(u, x, y, label, 1, UI_COLOUR_TEXT);
         }
-        ui_draw_text_at(u, 77, 41, "+", 1, true);
+        ui_draw_text_at(u, 77, 41, "+", 1, UI_COLOUR_TEXT);
     }
     if (u->error == 1) {
         for (unsigned y = 11; y < 25; y++)
             for (unsigned x = 0; x < 160; x++)
-                ui_draw_pixel(u, x, y, false);
-        ui_draw_text_at(u, 14, 15, "MISMATCH - TRY AGAIN", 1, true);
+                ui_draw_pixel(u, x, y, UI_COLOUR_BACKGROUND);
+        ui_draw_text_at(u, 14, 15, "MISMATCH - TRY AGAIN", 1, UI_COLOUR_WARNING);
     }
 }
 

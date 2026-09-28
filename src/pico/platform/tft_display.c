@@ -3,18 +3,22 @@
 #include "hardware/spi.h"
 #include "pico/stdlib.h"
 #include <string.h>
+#include "startup_frames.inc"
 
 /* N096-1608TBBIG09-C08: ST7735S, four-wire SPI, 80x160.
  * Datasheet supplies no register recipe. Retain V1's candidate landscape
  * mapping until a physical panel confirms offsets and inversion. */
 #define WIDTH 160u
 #define HEIGHT 80u
-_Static_assert(FV_SCREEN_BYTES == WIDTH * HEIGHT / 8, "TFT framebuffer size");
+_Static_assert(FV_SCREEN_BYTES == WIDTH * HEIGHT, "TFT framebuffer size");
 static uint8_t sent[FV_SCREEN_BYTES];
 static unsigned row;
 static bool first;
 static bool backlight;
 static uint64_t next_frame;
+static uint64_t startup_started;
+static bool startup_active;
+static unsigned startup_frame;
 
 static void command(uint8_t cmd, const uint8_t *data, size_t size) {
     gpio_put(FUSE_VAULT_TFT_CHIP_SELECT_PIN, 0);
@@ -58,28 +62,45 @@ void fv_tft_init(void) {
     command(0x29, NULL, 0); /* display on */
     sleep_ms(100);
     memset(sent, 0, sizeof(sent));
+    startup_active = false;
     row = 0; first = true; backlight = false; next_frame = 0;
 }
 
 void fv_tft_poll(const uint8_t *framebuffer) {
     if (time_us_64() < next_frame) return;
-    const uint8_t *source = framebuffer + row * (WIDTH/8);
-    uint8_t *previous = sent + row * (WIDTH/8);
-    if (first || memcmp(source, previous, WIDTH/8)) {
+    if (startup_active && row == 0) {
+        uint64_t elapsed = time_us_64() - startup_started;
+        if (elapsed >= 500000) startup_active = false;
+        else startup_frame = (unsigned)(elapsed / 50000);
+    }
+    uint8_t decoded[WIDTH];
+    const uint8_t *source;
+    if (startup_active) {
+        for (unsigned x = 0; x < WIDTH; ++x) {
+            uint8_t packed = startup_frames[startup_frame][row * WIDTH / 2 + x / 2];
+            decoded[x] = startup_palette[(x & 1) ? packed & 15 : packed >> 4];
+        }
+        source = decoded;
+    } else source = framebuffer + row * WIDTH;
+    uint8_t *previous = sent + row * WIDTH;
+    if (first || memcmp(source, previous, WIDTH)) {
         /* Single-row transactions leave CS idle between polls. At 8 MHz
          * each update occupies about 331 us, rather than 26 ms per frame.
          * Read the current UI row so cancelled secrets aren't queued. */
         uint8_t pixels[WIDTH * 2];
         for (unsigned x = 0; x < WIDTH; ++x) {
-            uint8_t value = (source[x/8] & (0x80u >> (x%8))) ? 0xff : 0;
-            pixels[2*x] = value; pixels[2*x+1] = value;
+            unsigned r = source[x] >> 5, g = (source[x] >> 2) & 7, b = source[x] & 3;
+            /* Replicate channel bits to span the full RGB565 range. */
+            uint16_t value = (uint16_t)(((r << 2 | r >> 1) << 11) |
+                                       ((g << 3 | g) << 5) | (b << 3 | b << 1 | b >> 1));
+            pixels[2*x] = (uint8_t)(value >> 8); pixels[2*x+1] = (uint8_t)value;
         }
         const uint8_t columns[] = {0, 1, 0, WIDTH};
         const uint8_t rows[] = {0, (uint8_t)(26+row), 0, (uint8_t)(26+row)};
         command(0x2a, columns, sizeof(columns));
         command(0x2b, rows, sizeof(rows));
         command(0x2c, pixels, sizeof(pixels));
-        memcpy(previous, source, WIDTH/8);
+        memcpy(previous, source, WIDTH);
     }
     if (++row == HEIGHT) {
         row = 0; first = false;
@@ -89,4 +110,14 @@ void fv_tft_poll(const uint8_t *framebuffer) {
         }
         next_frame = time_us_64() + 10000;
     }
+}
+
+void fv_tft_show_startup(void) {
+    startup_active = true;
+    startup_started = time_us_64();
+    startup_frame = 0;
+    /* Decode and send the initial frame before turning on the backlight. */
+    for (unsigned y = 0; y < HEIGHT; ++y)
+        fv_tft_poll(NULL);
+    startup_started = time_us_64();
 }

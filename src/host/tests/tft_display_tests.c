@@ -28,7 +28,7 @@ int spi_write_blocking(void *s,const uint8_t *d,size_t n){
     return (int)n;
 }
 int main(void){
-    uint8_t fb[1600]={0};fb[0]=0x81;fb[1599]=1;
+    uint8_t fb[12800]={0};fb[0]=255;fb[7]=255;fb[12799]=255;
     fv_tft_init();assert(!lit && cs);
     for(unsigned i=0;i<80;i++){unsigned before=writes;fv_tft_poll(fb);assert(writes==before+1 && cs);if(i<79)assert(!lit);}
     assert(lit && writes==80);
@@ -36,9 +36,42 @@ int main(void){
     assert(panel[79][318]==255 && panel[79][319]==255);
     now+=10000;for(unsigned i=0;i<80;i++)fv_tft_poll(fb);assert(writes==80);
     /* A cancelled entry must clear pixels, including updates during a scan. */
-    now+=10000;fb[0]=0;fv_tft_poll(fb);fb[1599]=0;
+    now+=10000;fb[0]=0;fv_tft_poll(fb);fb[12799]=0;
     for(unsigned i=1;i<80;i++)fv_tft_poll(fb);
     assert(writes==82 && panel[0][0]==0 && panel[79][318]==0);
     fv_tft_init();assert(!lit);fv_tft_poll(fb);assert(writes==83);
+    /* Every RGB332 value, including changes that keep pixels nonzero. */
+    fv_tft_init();
+    for(unsigned i=0;i<256;i++)fb[i]=(uint8_t)i;
+    for(unsigned i=0;i<80;i++)fv_tft_poll(fb);
+    static const unsigned red[8]={0,4,9,13,18,22,27,31};
+    static const unsigned blue[4]={0,10,21,31};
+    for(unsigned i=0;i<256;i++) {
+        unsigned expected=(red[i>>5]<<11)|(((i>>2)&7)*9<<5)|blue[i&3];
+        unsigned x=(i%160)*2;
+        assert(panel[i/160][x]==(expected>>8));
+        assert(panel[i/160][x+1]==(expected&255));
+    }
+    /* Startup animates independently of the live UI, then hands back at 500 ms. */
+    fv_tft_init();
+    unsigned before = writes;
+    fv_tft_show_startup();
+    assert(lit && writes == before + 80);
+    uint8_t initial[sizeof(panel)];
+    memcpy(initial,panel,sizeof(panel));
+    memset(fb,255,sizeof(fb));
+    for(unsigned f=1;f<10;f++) {
+        now+=50000;
+        for(unsigned i=0;i<80;i++)fv_tft_poll(fb);
+    }
+    assert(memcmp(initial,panel,sizeof(panel)));
+    assert(panel[0][0]==0); /* Still artwork, not the white live UI. */
+    now+=49999;
+    for(unsigned i=0;i<80;i++)fv_tft_poll(fb);
+    assert(panel[0][0]==0);
+    now+=10000; /* Next scheduled scan after the deadline. */
+    for(unsigned i=0;i<80;i++)fv_tft_poll(fb);
+    for(unsigned y=0;y<80;y++)
+        for(unsigned x=0;x<320;x++)assert(panel[y][x]==255);
     return 0;
 }

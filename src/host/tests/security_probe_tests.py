@@ -67,10 +67,22 @@ class Tests(unittest.TestCase):
         with patch('security_probe.SerialTransport', return_value=t), self.assertRaises(RuntimeError):
             main(['--port', 'fake', 'provision', '--confirm-device', 'example'])
         self.assertEqual(t.sent, [b'INFO\n'])
+    def test_colour_screen(self):
+        from device_ui import pixels, rgb_bytes
+        data = bytes(range(256)) * 50
+        frame = dict(command='screen', ok=True, width=160, height=80,
+                     format='rgb332', pixels=data.hex())
+        reply = Probe(Transport(json.dumps(frame).encode() + b'\n')).transact('SCREEN', 'screen')
+        self.assertEqual(pixels(reply), data)
+        self.assertEqual(rgb_bytes(bytes([0, 0xe0, 0x1c, 3, 255])),
+                         bytes([0,0,0, 255,0,0, 0,255,0, 0,0,255, 255,255,255]))
+        frame['pixels'] = '00'
+        with self.assertRaises(ValueError): pixels(frame)
+
     def test_framing(self):
         t = Transport(json.dumps(snapshot()).encode() + b'\n');p = Probe(t)
         self.assertEqual(p.transact('OTP', 'otp'), snapshot());self.assertEqual(t.sent, [b'OTP\n'])
-        for output in (b'{"command":"info","ok":true}\n', b'{"command":"otp","ok":false}\n', b'x'*24576):
+        for output in (b'{"command":"info","ok":true}\n', b'{"command":"otp","ok":false}\n', b'x'*26624):
             with self.assertRaises(RuntimeError): Probe(Transport(output)).transact('OTP', 'otp')
         with self.assertRaises(ValueError): p.transact('OTP\nBAD', 'otp')
         with self.assertRaises(TimeoutError): Probe(Transport(b'')).transact('OTP', 'otp')

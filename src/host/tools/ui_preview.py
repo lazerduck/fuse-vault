@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render synthetic UI states with the device's C renderer, without USB.
 
-Requires a host C compiler and Pillow. Writes PBMs, a PNG contact sheet, and an
+Requires a host C compiler and Pillow. Writes PPMs, a PNG contact sheet, and an
 HTML gallery with enlarged and native-size screens. No real credentials are used.
 """
 import argparse
@@ -11,7 +11,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageDraw
 
 
 def main():
@@ -33,14 +33,13 @@ def main():
             '-o', str(binary),
         ], check=True)
         subprocess.run([str(binary)], cwd=output, check=True)
-    frames = sorted(output.glob('*.pbm'))
+    frames = sorted(output.glob('*.ppm'))
     sheet = Image.new('RGB', (1020, ((len(frames) + 2) // 3) * 200), '#20292b')
     draw = ImageDraw.Draw(sheet)
     cards = []
     for index, path in enumerate(frames):
-        # PBM's black bits are the display's lit pixels.
         with Image.open(path) as source:
-            screen = ImageOps.colorize(source.convert('L'), '#b6f4df', '#061719')
+            screen = source.convert('RGB')
         screen.save(path.with_suffix('.png'))
         x, y = (index % 3) * 340 + 10, (index // 3) * 200
         draw.text((x, y + 8), path.stem, fill='white')

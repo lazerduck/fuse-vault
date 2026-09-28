@@ -75,14 +75,14 @@ static void settings_key(fv_ui *u, fv_ui_key key) {
 static void render_settings(fv_ui *u) {
     ui_menu menu = settings_menu(u);
     char position[16];
-    ui_draw_text_at(u, 4, 2, "SETTINGS", 1, true);
+    ui_draw_text_at(u, 4, 2, "SETTINGS", 1, UI_COLOUR_TEXT);
     snprintf(position, sizeof(position), "%u/%u", u->cursor + 1, menu.count);
-    ui_draw_text_at(u, 130, 2, position, 1, true);
+    ui_draw_text_at(u, 130, 2, position, 1, UI_COLOUR_TEXT);
     ui_draw_rule(u, 12);
     ui_menu_render(u, &menu);
     ui_draw_rule(u, 67);
-    ui_draw_text_at(u, 4, 71, "\005 BACK", 1, true);
-    ui_draw_text_at(u, 76, 71, "EJECT FIRST", 1, true);
+    ui_draw_text_at(u, 4, 71, "\005 BACK", 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 76, 71, "EJECT FIRST", 1, UI_COLOUR_TEXT);
 }
 
 const ui_scene ui_settings_scene = {.key = settings_key, .render = render_settings};

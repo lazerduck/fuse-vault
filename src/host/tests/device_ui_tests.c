@@ -6,13 +6,17 @@
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"line %d: %s\n",__LINE__,#x);exit(1);}}while(0)
 static void key(fv_ui *u,fv_ui_key k){fv_ui_keypress(u,k);}
 static void sequence(fv_ui *u){for(unsigned i=0;i<8;i++)key(u,(fv_ui_key)(1+i%4));key(u,UI_SELECT);}
-static void snapshot(fv_ui *u,const char *path){FILE *f=fopen(path,"wb");CHECK(f);fputs("P4\n160 80\n",f);CHECK(fwrite(u->framebuffer,1,1600,f)==1600);fclose(f);}
+static void snapshot(fv_ui *u,const char *path){FILE *f=fopen(path,"wb");CHECK(f);fputs("P6\n160 80\n255\n",f);
+    for(unsigned i=0;i<FV_SCREEN_BYTES;i++) {
+        unsigned v=u->framebuffer[i],r=v>>5,g=(v>>2)&7,b=v&3;
+        fputc((r<<5)|(r<<2)|(r>>1),f);fputc((g<<5)|(g<<2)|(g>>1),f);fputc(b*85,f);
+    }fclose(f);}
 static void flip_tests(void){
     fv_ui a,b;fv_ui_init(&a);fv_ui_complete(&a,(fv_ui_result){.status=2});b=a;
     key(&b,UI_LEFT);CHECK(b.flipped && b.screen==UI_HOME && !b.pending);
     for(unsigned bit=0;bit<12800;bit++){
         unsigned rotated=12799-bit;
-        CHECK(((a.framebuffer[bit/8]>>(7-bit%8))&1)==((b.framebuffer[rotated/8]>>(7-rotated%8))&1));
+        CHECK(a.framebuffer[bit]==b.framebuffer[rotated]);
     }
     key(&b,UI_RIGHT);CHECK(!b.flipped && !memcmp(a.framebuffer,b.framebuffer,FV_SCREEN_BYTES));
     key(&b,UI_RIGHT);key(&a,UI_SELECT);key(&b,UI_SELECT);
@@ -100,14 +104,14 @@ static void navigation_tests(void){
     fv_ui_result r={.status=2,.unlocked=true,.passkey_count=2,.passkey_id={9}};
     strcpy(r.passkey_site,"github.com");strcpy(r.passkey_account,"Alice");
     fv_ui_complete(&u,r);
-    uint8_t site_pixels[400];memcpy(site_pixels,u.framebuffer+200,sizeof(site_pixels));
+    uint8_t site_pixels[3200];memcpy(site_pixels,u.framebuffer+1600,sizeof(site_pixels));
     for(unsigned i=0;i<10;i++)key(&u,UI_RIGHT);
     CHECK(!u.passkey_page); /* Short labels never scroll to an empty page. */
     memset(r.passkey_account,'a',255);r.passkey_account[255]=0;
     fv_ui_complete(&u,r);
     for(unsigned i=0;i<10;i++)key(&u,UI_RIGHT);
     CHECK(u.passkey_page==5);
-    CHECK(!memcmp(site_pixels,u.framebuffer+200,sizeof(site_pixels))); /* Site remains visible. */
+    CHECK(!memcmp(site_pixels,u.framebuffer+1600,sizeof(site_pixels))); /* Site remains visible. */
     unsigned generation=u.fido_generation;
     key(&u,UI_SELECT);CHECK(u.screen==UI_PASSKEY_DELETE_CONFIRM && !u.cursor && u.passkey_page==5);
     CHECK(u.fido_generation!=generation);
@@ -156,8 +160,6 @@ static void standard_controls_tests(void){
 }
 int main(int argc,char **argv){
     flip_tests();method_tests();fido_tests();passkey_tests();navigation_tests();standard_controls_tests();
-    CHECK(fv_usb_route(false,false)==0);CHECK(fv_usb_route(true,false)==2);
-    CHECK(fv_usb_route(false,true)==1);CHECK(fv_usb_route(true,true)==1);
     for(uint64_t capacity=0;capacity<100000;capacity++){
         uint64_t n=fv_volume_max_blocks(capacity);
         if(capacity<=2066){CHECK(!n);continue;}
@@ -205,8 +207,8 @@ int main(int argc,char **argv){
     fv_ui_init(&u);u.job.op=UI_CREATE;u.format_total=7681727;u.format_done=3840863;u.format_milliseconds=300000;
     fv_ui_render(&u);
     unsigned filled=35*160+30,empty=35*160+130;
-    CHECK(u.framebuffer[filled/8]&(128u>>(filled%8)));
-    CHECK(!(u.framebuffer[empty/8]&(128u>>(empty%8))));
+    CHECK(u.framebuffer[filled]);
+    CHECK(!(u.framebuffer[empty]));
     if(argc>2)snapshot(&u,argv[2]);
     u.format_done=u.format_total;fv_ui_render(&u);CHECK(u.screen==UI_WAIT);
     puts("UI setup, confirmation, policy, lockout, cancellation, progress and capacity checks passed");return 0;

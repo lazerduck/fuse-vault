@@ -110,27 +110,18 @@ void fv_ui_keypress(fv_ui *u, fv_ui_key key) {
     fv_ui_render(u);
 }
 
-static uint8_t reverse_bits(uint8_t byte) {
-    uint8_t reversed = 0;
-    for (unsigned bit = 0; bit < 8; ++bit) {
-        reversed = (uint8_t)((reversed << 1) | (byte & 1));
-        byte >>= 1;
-    }
-    return reversed;
-}
-
 void fv_ui_render(fv_ui *u) {
     memset(u->framebuffer, 0, sizeof(u->framebuffer));
     const ui_scene *scene = ui_scene_get(u->screen);
     if (scene && scene->render)
         scene->render(u);
     if (u->flipped) {
-        /* A 180-degree rotation reverses both byte order and bit order. */
+        /* A 180-degree rotation reverses pixel order, preserving colour. */
         for (unsigned i = 0; i < FV_SCREEN_BYTES / 2; ++i) {
             unsigned opposite = FV_SCREEN_BYTES - 1 - i;
             uint8_t first = u->framebuffer[i];
-            u->framebuffer[i] = reverse_bits(u->framebuffer[opposite]);
-            u->framebuffer[opposite] = reverse_bits(first);
+            u->framebuffer[i] = u->framebuffer[opposite];
+            u->framebuffer[opposite] = first;
         }
     }
 }

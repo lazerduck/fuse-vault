@@ -2,7 +2,11 @@
 #define FV_SECURITY_BRINGUP_H
 #include "pico/util/queue.h"
 #define FV_COMMAND_BYTES 96u
+#if FV_DEBUG_SCREEN
+#define FV_REPLY_BYTES 26624u /* RGB332 frame as hex plus JSON metadata. */
+#else
 #define FV_REPLY_BYTES 24576u
+#endif
 /* Public diagnostic/test commands only; never real credentials or keys. */
 #if FV_USB_MSC
 #include "usb_storage.h"

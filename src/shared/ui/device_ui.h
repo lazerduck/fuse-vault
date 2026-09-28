@@ -4,7 +4,18 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "credential_entry.h"
-#define FV_SCREEN_BYTES 1600
+/* Row-major RGB332: RRR GGG BB, one byte per pixel. */
+#define FV_SCREEN_WIDTH 160u
+#define FV_SCREEN_HEIGHT 80u
+#define FV_SCREEN_BYTES (FV_SCREEN_WIDTH * FV_SCREEN_HEIGHT)
+typedef uint8_t fv_ui_colour;
+#define UI_COLOUR_BACKGROUND 0x00u
+#define UI_COLOUR_TEXT 0xffu
+#define UI_COLOUR_ACCENT 0x1fu
+#define UI_COLOUR_MUTED 0x92u
+#define UI_COLOUR_SUCCESS 0x1cu
+#define UI_COLOUR_WARNING 0xf0u
+#define UI_COLOUR_ERROR 0xe0u
 #define FV_UI_SECRET_MAX 64
 /* Stable profile-2 mapping: up=1, down=2, left=3, right=4. Select submits. */
 typedef enum { UI_UP = 1, UI_DOWN, UI_LEFT, UI_RIGHT, UI_SELECT, UI_BACK } fv_ui_key;
@@ -98,8 +109,4 @@ void fv_ui_cancel(fv_ui *);
 void fv_ui_render(fv_ui *);
 /* Volatile wipe for credentials in UI objects and inter-core messages. */
 void fv_ui_wipe(void *, size_t);
-/* C wins if both supplies are present: 0=none, 1=C, 2=A. */
-static inline unsigned fv_usb_route(bool a, bool c) {
-    return c ? 1 : a ? 2 : 0;
-}
 #endif

@@ -59,7 +59,7 @@ static void render_passkeys(fv_ui *u) {
              u->device.passkey_count);
     ui_draw_header(u, deleting ? "DELETE PASSKEY?" : "PASSKEYS", b);
     if (!u->device.passkey_count) {
-        ui_draw_text_at(u, 22, 33, "NO STORED PASSKEYS", 1, true);
+        ui_draw_text_at(u, 22, 33, "NO STORED PASSKEYS", 1, UI_COLOUR_TEXT);
         ui_draw_footer(u, "\005 BACK", NULL);
         return;
     }
@@ -73,7 +73,7 @@ static void render_passkeys(fv_ui *u) {
             char part[26] = {0};
             if (length > off)
                 strncpy(part, values[v] + off, 25);
-            ui_draw_text_at(u, 4, 15 + (v * 2 + row) * (deleting ? 8 : 10), part, 1, true);
+            ui_draw_text_at(u, 4, 15 + (v * 2 + row) * (deleting ? 8 : 10), part, 1, UI_COLOUR_TEXT);
         }
     if (deleting)
         ui_draw_confirm_choices(u, "DELETE");
@@ -81,7 +81,7 @@ static void render_passkeys(fv_ui *u) {
         unsigned pages = ui_passkey_pages(u);
         if (pages > 1) {
             snprintf(b, sizeof(b), "\003\001 TEXT %u/%u", u->passkey_page + 1, pages);
-            ui_draw_text_at(u, 4, 57, b, 1, true);
+            ui_draw_text_at(u, 4, 57, b, 1, UI_COLOUR_TEXT);
         }
         ui_draw_footer(u, "\005 BACK", "\006 DELETE");
     }

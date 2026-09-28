@@ -77,7 +77,7 @@ To add a scene:
    or scene code. Synthetic preview fixtures may assign it to inspect a frame.
 5. Add navigation tests and a preview fixture when the screen changes visually.
 
-Renderers use the logical 160 x 80 monochrome framebuffer. Orientation is handled
+Renderers use the logical 160 x 80 RGB332 colour framebuffer. Orientation is handled
 centrally, so scenes do not need separate flipped layouts. Menus and scenes share
 one selection cursor because only one scene receives input at a time.
 
@@ -94,3 +94,32 @@ The component tests exercise bounce, held-button release gating, chord rejection
 per-instance menu callbacks and scene entry. The existing UI integration tests
 cover setup/confirmation, cancellation and wiping, credential changes, orientation,
 FIDO approval, passkey navigation/deletion and progress rendering.
+
+## Colour and memory
+
+Pixels and text accept an 8-bit RGB332 colour; use `UI_COLOUR_*` semantic
+colours for common controls. The 160 x 80 framebuffer occupies 12,800 bytes.
+The TFT keeps another 12,800-byte sent-frame cache and converts one row at a
+time to RGB565, retaining the same SPI transfer size and polling behaviour.
+Together these use 22,400 bytes (21.875 KiB) more than the old packed buffers.
+Debug-screen builds reserve another 2 KiB for the hex-encoded screen response.
+Rotation reverses pixel order without changing colour values. Offline previews
+and viewer snapshots use PPM RGB images.
+
+## Startup animation
+
+`ui_draw_splash(ui, frame)` defines ten 50 ms frames: blue circuit connections
+carry amber pulses into a fusion core, which settles into a vault dial. The
+wordmark remains stationary. Run `python3 src/host/tools/generate_splash.py`
+after changing the artwork to regenerate `startup_frames.inc`; add
+`--preview /tmp/fuse-startup.gif` for a looping, enlarged preview.
+
+The device uses the generated 4-bit palette indices directly from flash
+(64,000 bytes plus the palette), decoding only one 160-byte row on the stack.
+No additional RAM framebuffer is reserved. The initial frame is flushed before
+the backlight lights, then the animation runs for 500 ms while USB and worker
+polling continue. Frame selection changes only at scan boundaries. The next
+scan after the deadline displays the latest live UI; physical and debug key
+presses are discarded during startup. The offline gallery includes the settled
+emblem as `00-startup.png`. This is a startup-only animation, not a lock-state
+indicator.

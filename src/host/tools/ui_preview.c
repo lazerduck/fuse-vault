@@ -1,18 +1,26 @@
 /* Offline visual fixtures, rendered by the actual device UI. No vault or USB. */
 #include "device_ui.h"
+#include "drawing.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 static void save(fv_ui *u,const char *name){
-    char path[96];snprintf(path,sizeof(path),"%s.pbm",name);
-    fv_ui_render(u);FILE *f=fopen(path,"wb");
+    char path[96];snprintf(path,sizeof(path),"%s.ppm",name);
+    if (!strcmp(name,"00-startup")) ui_draw_splash(u, 9);
+    else fv_ui_render(u);
+    FILE *f=fopen(path,"wb");
     if(!f){perror(path);exit(1);}
-    fputs("P4\n160 80\n",f);
-    if(fwrite(u->framebuffer,1,FV_SCREEN_BYTES,f)!=FV_SCREEN_BYTES || fclose(f))exit(1);
+    fputs("P6\n160 80\n255\n",f);
+    for(unsigned i=0;i<FV_SCREEN_BYTES;i++) {
+        unsigned v=u->framebuffer[i],r=v>>5,g=(v>>2)&7,b=v&3;
+        fputc((r<<5)|(r<<2)|(r>>1),f);fputc((g<<5)|(g<<2)|(g>>1),f);fputc(b*85,f);
+    }
+    if(ferror(f) || fclose(f))exit(1);
 }
 int main(void){
     fv_ui u;fv_ui_init(&u);u.fido_enabled=true;
+    save(&u,"00-startup");
     fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.attempts=10,.action=1});
     save(&u,"01-locked");
     fv_ui_keypress(&u,UI_SELECT);

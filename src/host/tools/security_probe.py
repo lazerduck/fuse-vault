@@ -21,7 +21,7 @@ class Probe:
         deadline = time.monotonic() + self.timeout
         self.transport.write_all(command.encode('ascii') + b'\n', deadline)
         response = bytearray()
-        while len(response) < 24576:
+        while len(response) < 26624:
             byte = self.transport.read_exact(1, deadline)
             if byte == b'\n':
                 value = json.loads(response)

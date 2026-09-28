@@ -92,7 +92,7 @@ static void render_options(fv_ui *u) {
                    u->cursor == 1);
     ui_draw_choice(u, 40, "REVIEW", u->cursor == 2);
     if (u->cursor < 2)
-        ui_draw_text_at(u, 4, 55, "\003\001 CHANGE", 1, true);
+        ui_draw_text_at(u, 4, 55, "\003\001 CHANGE", 1, UI_COLOUR_TEXT);
     ui_draw_footer(u, "\005 BACK", "\006 SELECT");
 }
 
@@ -107,13 +107,13 @@ static void render_review(fv_ui *u) {
                     (u->flow == UI_FLOW_CHANGE)   ? "KEEPS FILES AND PASSKEYS"
                     : (u->flow == UI_FLOW_POLICY) ? "CHECKS CURRENT CREDENTIAL"
                                                   : "ERASES EXISTING SD DATA",
-                    1, true);
+                    1, UI_COLOUR_TEXT);
     snprintf(b, sizeof(b), "%u FAILURES: %s", (unsigned)u->job.attempts,
              u->job.action == 1 ? "DESTROY" : "LOCKOUT");
-    ui_draw_text_at(u, 4, 26, b, 1, true);
+    ui_draw_text_at(u, 4, 26, b, 1, UI_COLOUR_TEXT);
     if (u->flow != UI_FLOW_POLICY && u->flow != UI_FLOW_CHANGE) {
         snprintf(b, sizeof(b), "%u ENCRYPTION LAYERS", u->job.count);
-        ui_draw_text_at(u, 4, 36, b, 1, true);
+        ui_draw_text_at(u, 4, 36, b, 1, UI_COLOUR_TEXT);
     }
     ui_draw_confirm_choices(u, "CONFIRM");
 }
