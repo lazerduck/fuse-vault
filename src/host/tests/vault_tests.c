@@ -17,17 +17,18 @@ typedef struct {
     unsigned random_byte,commits,fail_commit,bindings,destroys,header_writes,fail_header_write;
     unsigned syncs,fail_sync,corrupt_readback;
     bool uncertain_commit,present,destroyed,fail_destroy;
+    uint64_t sectors;
 } fixture;
 static fv_block_result_t read_blocks(fv_block_device_t *d,uint64_t lba,uint32_t n,uint8_t *out) {
     fixture *f=d->context;
-    if(!f->present || lba>=CAPACITY || n>CAPACITY-lba)return FV_BLOCK_ERROR_IO;
+    if(!f->present || lba>=f->sectors || n>f->sectors-lba)return FV_BLOCK_ERROR_IO;
     if(fseek(f->sd,(long)(512*lba),SEEK_SET) || fread(out,512,n,f->sd)!=n)return FV_BLOCK_ERROR_IO;
     if(f->corrupt_readback && f->header_writes==f->corrupt_readback && (lba==0 || lba==8))out[300]^=1;
     return FV_BLOCK_OK;
 }
 static fv_block_result_t write_blocks(fv_block_device_t *d,uint64_t lba,uint32_t n,const uint8_t *in) {
     fixture *f=d->context;
-    if(!f->present || lba>=CAPACITY || n>CAPACITY-lba)return FV_BLOCK_ERROR_IO;
+    if(!f->present || lba>=f->sectors || n>f->sectors-lba)return FV_BLOCK_ERROR_IO;
     if(lba==0 || lba==8)if(++f->header_writes==f->fail_header_write)return FV_BLOCK_ERROR_IO;
     if(fseek(f->sd,(long)(512*lba),SEEK_SET) || fwrite(in,512,n,f->sd)!=n)return FV_BLOCK_ERROR_IO;
     return FV_BLOCK_OK;
@@ -37,7 +38,7 @@ static fv_block_result_t sync_device(fv_block_device_t *d) {
     if(++f->syncs==f->fail_sync || fflush(f->sd))return FV_BLOCK_ERROR_IO;
     return FV_BLOCK_OK;
 }
-static uint64_t capacity(const fv_block_device_t *d){(void)d;return CAPACITY;}
+static uint64_t capacity(const fv_block_device_t *d){return ((const fixture *)d->context)->sectors;}
 static bool present(const fv_block_device_t *d){return ((const fixture*)d->context)->present;}
 static const fv_block_device_ops_t device_ops={read_blocks,write_blocks,sync_device,capacity,present};
 static int load(void *context,fv_device_state *s) {
@@ -66,7 +67,7 @@ static int random_bytes(void *context,uint8_t *out,size_t n) {
     fixture *f=context;for(size_t i=0;i<n;i++)out[i]=(uint8_t)(++f->random_byte);return 0;
 }
 static void init(fixture *f) {
-    memset(f,0,sizeof(*f));f->sd=tmpfile();f->state=tmpfile();CHECK(f->sd && f->state);f->present=true;
+    memset(f,0,sizeof(*f));f->sd=tmpfile();f->state=tmpfile();CHECK(f->sd && f->state);f->present=true;f->sectors=CAPACITY;
     uint8_t block[512]={0};for(unsigned i=0;i<CAPACITY;i++)CHECK(fwrite(block,512,1,f->sd)==1);CHECK(!fflush(f->sd));
     for(unsigned i=0;i<32;i++){f->root[i]=(uint8_t)i;f->token[i]=(uint8_t)(32+i);}
     f->device=(fv_block_device_t){&device_ops,f};

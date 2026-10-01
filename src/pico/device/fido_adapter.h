@@ -17,6 +17,7 @@ void fv_fido_execute(void);
 void fv_fido_close(void);
 void fv_fido_unlocked(void);
 int fv_fido_initialize(void);
+int fv_fido_prepare_new(const fv_vault *);
 uint8_t fv_fido_policy_get(void);
 int fv_fido_policy_set(uint8_t);
 int fv_fido_manage(bool remove,uint16_t *,uint16_t *,fv_passkey_t *);

@@ -1,6 +1,7 @@
 #include "button_input.h"
 #include "device_ui.h"
 #include "drawing.h"
+#include "startup.h"
 #include "scene.h"
 #include "widgets/menu.h"
 #include <stdio.h>
@@ -107,15 +108,60 @@ static void scene_tests(void) {
     /* FIDO-disabled settings cannot navigate to or submit hidden FIDO actions. */
     ui_scene_show(&u, UI_SETTINGS);
     fv_ui_keypress(&u, UI_UP);
+    fv_ui_keypress(&u, UI_UP);
     CHECK(u.cursor == 2);
     fv_ui_keypress(&u, UI_SELECT);
     CHECK(u.screen == UI_SECRET && u.flow == UI_FLOW_CHANGE && !u.pending);
     fv_ui_keypress(&u, UI_BACK);
-    CHECK(u.screen == UI_HOME && u.flow == UI_FLOW_SETUP);
+    CHECK(u.screen == UI_DASHBOARD && u.flow == UI_FLOW_SETUP);
     CHECK(!memcmp(u.job.secret, (uint8_t[FV_UI_SECRET_MAX]){0}, FV_UI_SECRET_MAX));
 }
 
+static void dashboard_tests(void) {
+    fv_ui u;
+    fv_ui_init(&u);
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});
+    CHECK(u.screen==UI_DASHBOARD && !u.dashboard_bars);
+    fv_ui_activity(&u,1024,2048,500000);
+    CHECK(u.read_kib_tenths==20 && u.write_kib_tenths==40 && u.history_count==1);
+    fv_ui_activity(&u,1,1,0);CHECK(u.history_count==1);
+    for(unsigned i=0;i<70;i++)fv_ui_activity(&u,i*1024,0,500000);
+    CHECK(u.history_count==60 && u.history_next==11 && u.read_kib_tenths==1380);
+    fv_ui_keypress(&u,UI_RIGHT);CHECK(!u.dashboard_bars && u.flipped);
+    fv_ui_keypress(&u,UI_LEFT);CHECK(!u.flipped);
+    ui_scene_show(&u,UI_DASHBOARD_SETTING);
+    fv_ui_keypress(&u,UI_DOWN);fv_ui_keypress(&u,UI_BACK);
+    CHECK(!u.dashboard_bars && u.screen==UI_SETTINGS);
+    fv_ui_keypress(&u,UI_SELECT);CHECK(u.screen==UI_DASHBOARD_SETTING);
+    fv_ui_keypress(&u,UI_DOWN);fv_ui_keypress(&u,UI_SELECT);
+    CHECK(u.dashboard_bars && u.screen==UI_SETTINGS);
+    ui_scene_show(&u,UI_DASHBOARD);
+    fv_ui_keypress(&u,UI_SELECT);CHECK(u.screen==UI_SETTINGS && !u.pending);
+    fv_ui_keypress(&u,UI_BACK);CHECK(u.screen==UI_DASHBOARD && !u.pending);
+    fv_ui_keypress(&u,UI_BACK);CHECK(u.screen==UI_WAIT && u.job.op==UI_LOCK && u.pending);
+    fv_ui_complete(&u,(fv_ui_result){.status=2});
+    CHECK(u.screen==UI_HOME && !u.history_count && !u.read_kib_tenths && u.dashboard_bars);
+    fv_ui_activity(&u,1024,1024,500000);CHECK(!u.history_count);
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});
+    CHECK(u.screen==UI_DASHBOARD && u.dashboard_bars);
+    fv_ui_activity(&u,UINT32_MAX,UINT32_MAX,1);
+    CHECK(u.read_kib_tenths==UINT32_MAX);
+    fv_ui_keypress(&u,UI_LEFT);CHECK(u.dashboard_bars && u.flipped);
+}
+
+static void approval_text_tests(void) {
+    fv_ui u;fv_ui_init(&u);
+    char label[128];memset(label,'A',127);label[127]=0;
+    fv_ui_fido_begin(&u,false,0,label);
+    uint8_t before[FV_SCREEN_BYTES];memcpy(before,u.framebuffer,sizeof(before));
+    label[126]='B';fv_ui_fido_begin(&u,false,0,label);
+    CHECK(memcmp(before,u.framebuffer,sizeof(before))); /* The end must remain visible. */
+    CHECK(!u.fido_done && !u.fido_approved);
+    fv_ui_keypress(&u,UI_BACK);CHECK(u.fido_done && !u.fido_approved);
+}
+
 int main(void) {
+    dashboard_tests();
     fv_ui colour_ui;
     fv_ui_init(&colour_ui);
     memset(colour_ui.framebuffer, 0, sizeof(colour_ui.framebuffer));
@@ -126,6 +172,14 @@ int main(void) {
     CHECK(colour_ui.framebuffer[160]==160);
     ui_draw_text_at(&colour_ui,0,10,"A",1,UI_COLOUR_ERROR);
     CHECK(colour_ui.framebuffer[10*160+1]==UI_COLOUR_ERROR);
+    for(unsigned frame=0;frame<FV_STARTUP_FRAMES;frame++) {
+        ui_draw_splash(&colour_ui,frame);
+        for(unsigned pixel=0;pixel<FV_SCREEN_BYTES;pixel++)
+            CHECK(colour_ui.framebuffer[pixel]==fv_startup_pixel(frame,pixel));
+    }
+    CHECK(fv_startup_pixel(FV_STARTUP_FRAMES,0)==0);
+    CHECK(fv_startup_pixel(0,FV_SCREEN_BYTES)==0);
+    approval_text_tests();
     debounce_tests();
     menu_tests();
     scene_tests();

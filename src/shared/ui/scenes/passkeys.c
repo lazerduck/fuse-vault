@@ -76,7 +76,7 @@ static void render_passkeys(fv_ui *u) {
             ui_draw_text_at(u, 4, 15 + (v * 2 + row) * (deleting ? 8 : 10), part, 1, UI_COLOUR_TEXT);
         }
     if (deleting)
-        ui_draw_confirm_choices(u, "DELETE");
+        ui_draw_danger_choices(u, "DELETE");
     else {
         unsigned pages = ui_passkey_pages(u);
         if (pages > 1) {

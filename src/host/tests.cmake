@@ -109,8 +109,8 @@ target_link_libraries(bitmap_store_tests PRIVATE fv_storage)
 target_compile_options(bitmap_store_tests PRIVATE -Wall -Wextra -Werror)
 add_test(NAME lazy_metadata_bitmap COMMAND bitmap_store_tests)
 
-add_executable(tft_display_tests tests/tft_display_tests.c ${FV_PICO}/platform/tft_display.c)
-target_include_directories(tft_display_tests PRIVATE tests/tft_stubs ${FV_PICO}/platform/include ${FV_PICO}/platform/boards)
+add_executable(tft_display_tests tests/tft_display_tests.c ${FV_PICO}/platform/tft_display.c ${FV_SHARED}/ui/startup.c)
+target_include_directories(tft_display_tests PRIVATE tests/tft_stubs ${FV_SHARED}/ui ${FV_PICO}/platform/include ${FV_PICO}/platform/boards)
 target_compile_options(tft_display_tests PRIVATE -Wall -Wextra -Werror -UNDEBUG)
 add_test(NAME tft_display_transport COMMAND tft_display_tests)
 

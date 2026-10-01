@@ -4,6 +4,8 @@
 static const ui_scene *const scenes[UI_SCREEN_COUNT] = {
     [UI_WAIT] = &ui_wait_scene,
     [UI_HOME] = &ui_home_scene,
+    [UI_DASHBOARD] = &ui_dashboard_scene,
+    [UI_DASHBOARD_SETTING] = &ui_dashboard_setting_scene,
     [UI_SECRET] = &ui_credential_scene,
     [UI_CONFIRM] = &ui_credential_scene,
     [UI_STACK] = &ui_stack_scene,

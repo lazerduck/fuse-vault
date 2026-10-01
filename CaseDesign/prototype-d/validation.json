@@ -1,0 +1,587 @@
+{
+  "revision": "D",
+  "parts": {
+    "base": {
+      "valid_single_solid": true,
+      "STEP_roundtrip": true,
+      "STL_closed_manifold_on_bed": true,
+      "dimensions_mm": [
+        77.3,
+        27.6,
+        9.500000000000004
+      ]
+    },
+    "lid": {
+      "valid_single_solid": true,
+      "STEP_roundtrip": true,
+      "STL_closed_manifold_on_bed": true,
+      "dimensions_mm": [
+        77.3,
+        27.6,
+        6.000000100000001
+      ]
+    },
+    "usb_c_collar": {
+      "valid_single_solid": true,
+      "STEP_roundtrip": true,
+      "STL_closed_manifold_on_bed": true,
+      "dimensions_mm": [
+        3.9,
+        14.200000000000001,
+        7.4
+      ]
+    },
+    "usb_c_end_cap": {
+      "valid_single_solid": true,
+      "STEP_roundtrip": true,
+      "STL_closed_manifold_on_bed": true,
+      "dimensions_mm": [
+        19.757,
+        29.1,
+        15.0
+      ]
+    },
+    "usb_a_end_cap": {
+      "valid_single_solid": true,
+      "STEP_roundtrip": true,
+      "STL_closed_manifold_on_bed": true,
+      "dimensions_mm": [
+        22.049999999999997,
+        29.1,
+        15.0
+      ]
+    },
+    "base_latch_coupon": {
+      "valid_single_solid": true,
+      "STEP_roundtrip": true,
+      "STL_closed_manifold_on_bed": true,
+      "dimensions_mm": [
+        14.799999999999997,
+        6.0,
+        8.700000000000006
+      ]
+    },
+    "lid_latch_coupon": {
+      "valid_single_solid": true,
+      "STEP_roundtrip": true,
+      "STL_closed_manifold_on_bed": true,
+      "dimensions_mm": [
+        14.799999999999997,
+        6.0,
+        6.000000000000003
+      ]
+    }
+  },
+  "checks": [
+    {
+      "check": "base vs lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "base vs usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "base vs usb_c_end_cap",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "base vs usb_a_end_cap",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "lid vs usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "lid vs usb_c_end_cap",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "lid vs usb_a_end_cap",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar vs usb_c_end_cap",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar vs usb_a_end_cap",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap vs usb_a_end_cap",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "base vs electronics and reserves",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "lid vs electronics and reserves",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar vs electronics and reserves",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap vs electronics and reserves",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap vs electronics and reserves",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=0",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=0.25",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=3",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=4",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=6",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "board insertion Z=12",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "continuous PCB insertion",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "continuous SD loading reserve",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "continuous collar body",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "continuous collar flange",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 0",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 0",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 0",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 0.25",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 0.25",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 0.25",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 0.75",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 0.75",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 0.75",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 1.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 1.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 1.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 10",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 10",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 10",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure fixed base 15",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure electronics 15",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closure collar 15",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "receiver release clearance at 0.5mm outward",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 0",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 45",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 90",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 135",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 180",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 225",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 270",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "bare shaft XY sweep 315",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance c0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics c0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance c1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics c1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance c2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics c2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance c4",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics c4",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance c8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics c8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance c15",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics c15",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance c25",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics c25",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance a0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics a0.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance a1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics a1",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance a2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics a2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance a4",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics a4",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance a8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics a8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance a15",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics a15",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap rigid clearance a25",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "cap ribs avoid electronics a25",
+      "volume_mm3": 0.0
+    }
+  ],
+  "failures": [],
+  "intentional_elastic_motion": [
+    {
+      "closure_angle": 0,
+      "latch_elastic_interference_mm3": 0.0
+    },
+    {
+      "closure_angle": 0.25,
+      "latch_elastic_interference_mm3": 0.051851610972001645
+    },
+    {
+      "closure_angle": 0.5,
+      "latch_elastic_interference_mm3": 0.3287077666321367
+    },
+    {
+      "closure_angle": 0.75,
+      "latch_elastic_interference_mm3": 0.5831242901106608
+    },
+    {
+      "closure_angle": 1,
+      "latch_elastic_interference_mm3": 0.5918594423489832
+    },
+    {
+      "closure_angle": 1.5,
+      "latch_elastic_interference_mm3": 0.09431985535144438
+    },
+    {
+      "closure_angle": 2,
+      "latch_elastic_interference_mm3": 0.0
+    },
+    {
+      "closure_angle": 5,
+      "latch_elastic_interference_mm3": 0.0
+    },
+    {
+      "closure_angle": 10,
+      "latch_elastic_interference_mm3": 0.0
+    },
+    {
+      "closure_angle": 15,
+      "latch_elastic_interference_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 0.5,
+      "TPU_detent_interference_mm3": 0.01670480485917525
+    },
+    {
+      "cap": "c",
+      "removal_mm": 1,
+      "TPU_detent_interference_mm3": 0.29439122311446464
+    },
+    {
+      "cap": "c",
+      "removal_mm": 2,
+      "TPU_detent_interference_mm3": 0.9461391794958613
+    },
+    {
+      "cap": "c",
+      "removal_mm": 4,
+      "TPU_detent_interference_mm3": 0.051119020922510694
+    },
+    {
+      "cap": "c",
+      "removal_mm": 8,
+      "TPU_detent_interference_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 15,
+      "TPU_detent_interference_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 25,
+      "TPU_detent_interference_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0.5,
+      "TPU_detent_interference_mm3": 0.01670480486175091
+    },
+    {
+      "cap": "a",
+      "removal_mm": 1,
+      "TPU_detent_interference_mm3": 0.2901321492429941
+    },
+    {
+      "cap": "a",
+      "removal_mm": 2,
+      "TPU_detent_interference_mm3": 0.6707574047115252
+    },
+    {
+      "cap": "a",
+      "removal_mm": 4,
+      "TPU_detent_interference_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 8,
+      "TPU_detent_interference_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 15,
+      "TPU_detent_interference_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 25,
+      "TPU_detent_interference_mm3": 0.0
+    }
+  ],
+  "body_mm": [
+    77.3,
+    27.6,
+    12.1
+  ],
+  "bare_joystick_overall_height_mm": 14.9,
+  "limitations": [
+    "Clip the sacrificial support web from the lower latch slot before testing. Latch force/fatigue and TPU cap retention require physical tests.",
+    "Latch closing samples permit interference only in the designed flexure. No stress simulation.",
+    "FPC depth allowance reduced from 3.5 to 3.0 mm on user feedback; never clamp or crease the real flex.",
+    "Reference heights/card position remain partly assumed; tolerances and real fit unverified.",
+    "Back leaf thickness, slot footprint and actuator gap preserved; thinner roof/root and tactile recess require recheck."
+  ]
+}

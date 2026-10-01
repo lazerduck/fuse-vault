@@ -1,6 +1,8 @@
 # V2 prototype B: pocketability and easier printing
 
-Status: requirements and proposed approach, not new printable geometry.
+Status: prototype B geometry and print files are now in `prototype-b/`. Physical
+print testing remains pending. The latest user preference is a flat lid and a
+wider, lower D-pad cap instead of a raised guard.
 Recorded after the user's prototype-A print feedback. Preserve prototype A and
 its exported bundle as the physical comparison baseline.
 
@@ -24,10 +26,10 @@ its exported bundle as the physical comparison baseline.
 1. Preserve the fit-tested USB-C collar bore and square cap socket. Change them
    only if later board testing gives a reason. Preserve the hook/screw closure and
    compact body envelope as far as practical.
-2. Reduce joystick snagging from every pocket-entry direction. A smooth guard
-   should meet or slightly exceed the resting cap height, with a finger-accessible
-   well and clearance for every direction and centre press. Guard contact loads
-   should go into the case, not the shaft. Avoid an exposed cap underside/lip.
+2. Reduce joystick snagging while retaining the flat lid print face. Use a wider,
+   lower TPU cap with rounded edges and preserve shaft engagement. Check thumb
+   access, nearby back-button clearance and movement. A flat-lid cap remains
+   exposed; a protective guard is a fallback if the next pocket test needs it.
 3. Back control should be flush or slightly recessed and usable without fragile
    support cleanup. No delicate suspended retaining/stop rings. Preserve tactile
    actuation, prevent preload and provide a robust overtravel stop.
@@ -47,17 +49,12 @@ The modelled shaft already reaches Z=10.6. Lowering the cap alone therefore cann
 make it flush with the existing lid; it must retain shaft engagement and roof
 thickness. Do not lower the board or cut the shaft to achieve this.
 
-Propose a smoothly ramped local guard surrounding a shallow joystick well, paired
-with a modestly lower/rounded TPU cap if roof thickness permits. Preserve the
-successful square socket dimensions. Finger access, back-button space, cap tilt,
-centre-press travel and local case width must be checked together in CAD.
-
-A separate guard is worth prototyping first: it can be tuned cheaply and preserves
-the flat lid printing face. If later integrated into the lid, revisit print
-orientation: a raised guard prevents the existing outer-face-down lid lying flat.
-Do not solve pocket snagging by creating new support cleanup around the button.
-Any separate guard needs positive attachment to the shell and rounded transitions;
-friction-only retention next to the joystick is not yet an accepted solution.
+Latest decision: prototype B keeps the lid flat and uses a 15.2 mm diameter cap
+with a top at Z=11.6, leaving 3.4 mm above the lid. The square socket and lead-in
+remain unchanged. The shaft prevents making it flush by lowering the cap alone.
+Four shallow dimples provide directional landmarks. No separate guard is included.
+A wider cap also gives fabric more leverage if it catches; pocket testing must
+establish whether the rounded edges and reduced height are sufficient.
 
 ## Back-button options
 
@@ -94,7 +91,7 @@ a compliant grip are a fallback if an all-TPU cap provides too little protection
 
 Make caps removable without tools, with an unobtrusive grip feature. Tethers or
 on-device parking are optional future choices, not assumed requirements. Check cap
-overlap against the new joystick guard and screw access. Do not claim waterproofing
+overlap against the wider joystick cap and screw access. Do not claim waterproofing
 or a dust seal from a simple protective cap.
 
 ## Low-cost test sequence
@@ -102,7 +99,7 @@ or a dust seal from a simple protective cap.
 1. Print a small flexure/button coupon in PLA and, if needed, PETG; check free return,
    repeated pressing and support-free cleanup. Confirm actuation on the real switch
    when available before freezing the actuator height.
-2. Test a local joystick guard/cap sample for fabric snagging, finger access and cap
+2. Test the wider/lower joystick cap for fabric snagging, finger access and cap
    retention without transmitting side loads into the shaft.
 3. Test cap grip sections, then full end caps, checking removal force and connector
    clearance independently of the PCB.

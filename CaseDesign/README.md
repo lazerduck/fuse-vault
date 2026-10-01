@@ -1,9 +1,22 @@
 # Fuse Vault PCB reference
 
-**Next revision:** [REVISION_B_REQUIREMENTS.md](REVISION_B_REQUIREMENTS.md) records
-the first physical print results and pocketability requirements. Collar/cap fit and
-case closure were reported successful; full V2 board fit is still pending. Prototype
-B will address joystick protection, the fragile back-button mechanism and end caps.
+**Latest: prototype D — slimmer snap-fit case.** [Print and assembly instructions](prototype-d/README.md)
+cover the 12.1 mm body, tighter PCB locators, hook-and-snap closure, TPU covers
+with detents, bare joystick and tactile back-button dimple. Start with the latch
+test pair. The existing USB-C collar is reusable; D needs new base, lid and covers.
+Physical testing is pending; earlier prototypes are preserved.
+
+**Previous prototype C — assembly access.** [Print and assembly instructions](prototype-c/README.md)
+cover the open-top PCB/collar seats, enlarged SD-card loading clearance and
+externally accessible top nut. Print the C base and lid; reuse the previous
+accessories. Built after the first real V2 board trial exposed insertion
+obstructions. C CAD checks pass; a physical re-test is still needed.
+
+**Previous prototype B:** [prototype-b/README.md](prototype-b/README.md) contains
+print files and instructions for the flat lid, wider/lower TPU D-pad, integral
+back-button tab and two TPU USB end caps. Start with the small back-button coupon.
+[REVISION_B_REQUIREMENTS.md](REVISION_B_REQUIREMENTS.md) records the feedback and
+current direction. B printing and populated V2 board fit remain pending.
 
 **First case prototype now available:** [prototype-a/README.md](prototype-a/README.md)
 contains the five-part PLA/TPU fit prototype, single M2 screw, hooked lid and captured

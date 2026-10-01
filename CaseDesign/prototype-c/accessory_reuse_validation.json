@@ -1,0 +1,47 @@
+{
+  "usb_c_collar": {
+    "shape_change_mm3": 0.0,
+    "assembly_position_shift_mm": [
+      0,
+      0,
+      0
+    ],
+    "reuse_physical_part": true
+  },
+  "joystick_cap": {
+    "shape_change_mm3": 0.0,
+    "assembly_position_shift_mm": [
+      0,
+      0,
+      0
+    ],
+    "reuse_physical_part": true
+  },
+  "usb_c_end_cap": {
+    "shape_change_mm3": 0.0,
+    "assembly_position_shift_mm": [
+      0,
+      0,
+      0
+    ],
+    "reuse_physical_part": true
+  },
+  "usb_a_end_cap": {
+    "shape_change_mm3": 0.0,
+    "assembly_position_shift_mm": [
+      1.2,
+      0,
+      0
+    ],
+    "reuse_physical_part": true
+  },
+  "back_button_coupon": {
+    "shape_change_mm3": 0.0,
+    "assembly_position_shift_mm": [
+      0,
+      0,
+      0
+    ],
+    "reuse_physical_part": true
+  }
+}

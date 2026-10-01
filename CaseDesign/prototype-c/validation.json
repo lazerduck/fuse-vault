@@ -1,0 +1,141 @@
+{
+  "revision": "C",
+  "parts": {
+    "base": {
+      "valid_single_solid": true,
+      "step_round_trip": true,
+      "stl_closed_manifold": true,
+      "stl_on_bed": true,
+      "dimensions_mm": [
+        77.30000009999999,
+        30.6,
+        10.800000000000004
+      ]
+    },
+    "lid": {
+      "valid_single_solid": true,
+      "step_round_trip": true,
+      "stl_closed_manifold": true,
+      "stl_on_bed": true,
+      "dimensions_mm": [
+        77.3,
+        30.600000000000005,
+        6.400000099999999
+      ]
+    },
+    "usb_c_collar": {
+      "valid_single_solid": true,
+      "step_round_trip": true,
+      "stl_closed_manifold": true,
+      "stl_on_bed": true,
+      "dimensions_mm": [
+        3.9,
+        14.200000000000001,
+        7.4
+      ]
+    },
+    "joystick_cap": {
+      "valid_single_solid": true,
+      "step_round_trip": true,
+      "stl_closed_manifold": true,
+      "stl_on_bed": true,
+      "dimensions_mm": [
+        15.200000199999991,
+        15.200000200000002,
+        2.8000001
+      ]
+    },
+    "usb_c_end_cap": {
+      "valid_single_solid": true,
+      "step_round_trip": true,
+      "stl_closed_manifold": true,
+      "stl_on_bed": true,
+      "dimensions_mm": [
+        18.157000000000004,
+        29.5,
+        17.1
+      ]
+    },
+    "usb_a_end_cap": {
+      "valid_single_solid": true,
+      "step_round_trip": true,
+      "stl_closed_manifold": true,
+      "stl_on_bed": true,
+      "dimensions_mm": [
+        22.150000000000006,
+        33.9,
+        17.1
+      ]
+    },
+    "back_button_coupon": {
+      "valid_single_solid": true,
+      "step_round_trip": true,
+      "stl_closed_manifold": true,
+      "stl_on_bed": true,
+      "dimensions_mm": [
+        9.0,
+        16.5,
+        2.549999999999999
+      ]
+    }
+  },
+  "collisions": [],
+  "intended_grip_interference": [
+    {
+      "end": "c",
+      "case_part": "base",
+      "volume_mm3": 0.21607466940864414,
+      "intended_TPU_interference_mm": 0.1
+    },
+    {
+      "end": "a",
+      "case_part": "base",
+      "volume_mm3": 0.1260435571550476,
+      "intended_TPU_interference_mm": 0.1
+    }
+  ],
+  "sampled_lid_closure": [
+    {
+      "angle_degrees": 0,
+      "base_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 2,
+      "base_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 5,
+      "base_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 10,
+      "base_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0
+    },
+    {
+      "angle_degrees": 15,
+      "base_intersection_mm3": 0.0,
+      "collar_intersection_mm3": 0.0,
+      "reference_intersection_mm3": 0.0
+    }
+  ],
+  "collar_change_volume_mm3": 0.0,
+  "socket_change_volume_mm3": 0.0,
+  "cap_proud_mm": 3.4,
+  "back_rest_gap_mm": 0.25,
+  "back_stop_gap_mm": 0.55,
+  "limitations": [
+    "Actual V2 board tried in previous case; assembly obstructions reported. Prototype C physical fit pending.",
+    "Flexure stiffness/fatigue, TPU grip force and actual SW4 actuation not established.",
+    "Sampled movement is not a continuous kinematic or tolerance proof.",
+    "Joystick remains exposed; wider cap is not a protective guard.",
+    "Soft caps are protective covers, not crush-proof or sealed."
+  ]
+}

@@ -4,6 +4,7 @@
 #endif
 #if FV_DEVICE_UI
 #include "device_ui_adapter.h"
+#include "vault_filesystem.h"
 #endif
 #include "fuse_vault/vault.h"
 #include "fuse_vault/development_policy.h"
@@ -299,6 +300,14 @@ void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *respo
         .blocks=usb_session.unlocked?(uint32_t)usb_session.config.volume.logical_blocks:0};
 }
 #if FV_DEVICE_UI
+static int initialize_new_vault(fv_vault *vault,void *context){
+    (void)context;
+    if(fv_vault_format_fat32(vault,buffer,sizeof(buffer)))return -1;
+#if FV_USB_FIDO
+    if(fv_fido_prepare_new(vault))return -1;
+#endif
+    return 0;
+}
 void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     int r=0,opened;fv_device_state state={0};
 #if FV_USB_FIDO
@@ -374,8 +383,10 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         if(!r && state.status==FV_ENROLLMENT_DESTROYED)r=fv_enrollment_provision(&persistent_device,fv_random_generate,&random_source);
         else if(!r && state.status!=FV_ENROLLMENT_EMPTY)r=FV_VAULT_STATE;
     }
+    persistent_platform.initialize_contents=initialize_new_vault;
     if(!r)r=fv_vault_create(&persistent_platform,blocks,job->algorithms,job->count,job->profile,
         FV_ENROLLMENT_ITERATIONS,policy,job->secret,job->length);
+    persistent_platform.initialize_contents=NULL;
  done:
     memset(out,0,sizeof(*out));out->result=r;
     opened=fv_enrollment_open(&persistent_device);

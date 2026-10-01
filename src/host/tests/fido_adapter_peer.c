@@ -13,6 +13,7 @@ atomic_bool fv_ui_maintenance;
 static uint32_t clock_ms=100;
 static bool command_queued,approval=true,cancel_prompt,wrong_secret,reset_queued,late_cancel;
 static unsigned approvals,verifications;
+static unsigned wake_events;
 static uint8_t wire[8192];static unsigned wire_size;
 uint64_t time_us_64(void){return (uint64_t)clock_ms*1000;}
 void tight_loop_contents(void){clock_ms++;}
@@ -33,7 +34,10 @@ int fv_fido_verify_secret(const uint8_t *secret,size_t n){
     if(r)fv_fido_close();return r;
 }
 void fv_fido_pump(void){
+    bool opening_prompt=atomic_load(&prompt_state)==1;
+    unsigned before_wake=wake_events;
     fv_fido_ui_poll(&ui);
+    if(opening_prompt)assert(wake_events==before_wake+1);
     if(atomic_load(&prompt_state)==2 && !ui.fido_done){
         if(cancel_prompt){atomic_store(&cancel,true);return;}
         if(reset_queued){fv_fido_disconnect();reset_queued=false;return;}
@@ -45,6 +49,7 @@ void fv_fido_pump(void){
 fv_usb_response fv_usb_rpc(fv_usb_request request){assert(request.op==FV_USB_LOCK);fv_fido_close();fv_vault_lock(&fixture.vault);return (fv_usb_response){0};}
 void fv_usb_storage_clear_transport(void){}
 void fv_device_ui_media_changed(bool unlocked){(void)unlocked;}
+void fv_device_ui_wake(void){wake_events++;}
 static void receive(uint32_t cid,uint8_t command,const uint8_t *data,size_t n){
     uint8_t p[64]={cid>>24,cid>>16,cid>>8,cid,command,n>>8,n};size_t copied=n<57?n:57;
     if(copied)memcpy(p+7,data,copied);tud_hid_set_report_cb(0,0,HID_REPORT_TYPE_OUTPUT,p,64);
@@ -52,8 +57,10 @@ static void receive(uint32_t cid,uint8_t command,const uint8_t *data,size_t n){
     while(copied<n){memset(p+4,0,60);p[4]=seq++;size_t take=n-copied;if(take>59)take=59;memcpy(p+5,data+copied,take);copied+=take;tud_hid_set_report_cb(0,0,HID_REPORT_TYPE_OUTPUT,p,64);}
 }
 static void connect_device(void){
+    unsigned before_wake=wake_events;
     fv_fido_disconnect();fv_fido_close();fv_vault_lock(&fixture.vault);fv_fido_poll();tud_mount_cb();wire_size=0;
     receive(UINT32_MAX,0x86,(const uint8_t *)"nonce123",8);fv_fido_poll();assert(wire_size==64 && wire[18]==1);wire_size=0;
+    assert(wake_events==before_wake); /* HID discovery must not light the screen. */
 }
 int main(void){
     const uint16_t alg[4]={1,2};fv_fido_fixture_init(&fixture,alg,2);fv_ui_init(&ui);
@@ -91,7 +98,9 @@ int main(void){
         else {
             size_t len=strcspn(line,"\n");assert(!(len%2) && len/2<=4096);uint8_t request[4096];
             for(size_t i=0;i<len/2;i++){unsigned b;assert(sscanf(line+2*i,"%2x",&b)==1);request[i]=b;}
+            unsigned before_wake=wake_events;
             receive(1,0x90,request,len/2);fv_fido_poll();assert(command_queued);command_queued=false;
+            assert(wake_events==before_wake+(len && request[0]!=4?1u:0u));
             fv_fido_execute();if(late_cancel){receive(1,0x91,NULL,0);late_cancel=false;}fv_fido_poll();while(hid.transmitting)fv_fido_poll();assert(wire_size>=64 && wire[4]==0x90);
             unsigned total=((unsigned)wire[5]<<8)|wire[6],written=0;
             for(unsigned off=0;off<wire_size && written<total;off+=64){unsigned start=off?5:7,take=64-start;if(take>total-written)take=total-written;

@@ -1,0 +1,11 @@
+{
+  "cap_radius": 7.6,
+  "cap_bottom": 8.8,
+  "cap_top": 11.6,
+  "tab_thickness": 0.8,
+  "back_rest_gap": 0.25,
+  "back_stop_gap": 0.55,
+  "end_cap_clearance": 0.25,
+  "end_cap_wall": 1.4,
+  "grip_interference": 0.1
+}

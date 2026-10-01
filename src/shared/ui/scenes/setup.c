@@ -115,7 +115,8 @@ static void render_review(fv_ui *u) {
         snprintf(b, sizeof(b), "%u ENCRYPTION LAYERS", u->job.count);
         ui_draw_text_at(u, 4, 36, b, 1, UI_COLOUR_TEXT);
     }
-    ui_draw_confirm_choices(u, "CONFIRM");
+    if (u->flow == UI_FLOW_SETUP) ui_draw_danger_choices(u, "CREATE VAULT");
+    else ui_draw_confirm_choices(u, "SAVE");
 }
 
 const ui_scene ui_stack_scene = {.key = stack_key, .render = render_stack};

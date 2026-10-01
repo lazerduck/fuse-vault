@@ -22,6 +22,7 @@ void ui_clear_input(fv_ui *u) {
 
 void ui_submit(fv_ui *u, fv_ui_operation operation) {
     u->format_done = u->format_total = u->format_milliseconds = 0;
+    u->busy_frame = 0;
     u->job.op = operation;
     u->pending = true;
     ui_scene_show(u, UI_WAIT);
@@ -29,7 +30,7 @@ void ui_submit(fv_ui *u, fv_ui_operation operation) {
 
 void ui_go_home(fv_ui *u) {
     ui_clear_input(u);
-    ui_scene_show(u, UI_HOME);
+    ui_scene_show(u, u->device.unlocked ? UI_DASHBOARD : UI_HOME);
 }
 
 void fv_ui_init(fv_ui *u) {
@@ -50,6 +51,13 @@ void fv_ui_cancel(fv_ui *u) {
 void fv_ui_complete(fv_ui *u, fv_ui_result result) {
     ui_clear_input(u);
     u->pending = false;
+    if (!result.unlocked || !u->device.unlocked) {
+        memset(u->read_history, 0, sizeof(u->read_history));
+        memset(u->write_history, 0, sizeof(u->write_history));
+        u->history_next = u->history_count = 0;
+        u->read_kib_tenths = u->write_kib_tenths = 0;
+        u->read_active = u->write_active = false;
+    }
     u->device = result;
     u->error = result.result;
     if (result.result) {
@@ -60,7 +68,7 @@ void fv_ui_complete(fv_ui *u, fv_ui_result result) {
         memcpy(u->job.passkey_id, result.passkey_id, sizeof(u->job.passkey_id));
         ui_scene_show(u, UI_PASSKEYS);
     } else {
-        ui_scene_show(u, UI_HOME);
+        ui_scene_show(u, result.unlocked ? UI_DASHBOARD : UI_HOME);
     }
     fv_ui_render(u);
 }
@@ -124,4 +132,27 @@ void fv_ui_render(fv_ui *u) {
             u->framebuffer[opposite] = first;
         }
     }
+}
+
+void fv_ui_activity(fv_ui *u, uint32_t reads, uint32_t writes, uint64_t elapsed_us) {
+    if (!u->device.unlocked || !elapsed_us) return;
+    /* Divide before the KiB conversion to avoid elapsed_us * 1024 overflow. */
+    uint64_t read_rate = ((uint64_t)reads * 10000000 / elapsed_us) / 1024;
+    uint64_t write_rate = ((uint64_t)writes * 10000000 / elapsed_us) / 1024;
+    u->read_kib_tenths = read_rate > UINT32_MAX ? UINT32_MAX : (uint32_t)read_rate;
+    u->write_kib_tenths = write_rate > UINT32_MAX ? UINT32_MAX : (uint32_t)write_rate;
+    u->read_active = reads != 0;
+    u->write_active = writes != 0;
+    u->read_history[u->history_next] = u->read_kib_tenths;
+    u->write_history[u->history_next] = u->write_kib_tenths;
+    u->history_next = (u->history_next + 1) % FV_UI_HISTORY_SAMPLES;
+    if (u->history_count < FV_UI_HISTORY_SAMPLES) ++u->history_count;
+    if (u->screen == UI_DASHBOARD || u->screen == UI_HOME) fv_ui_render(u);
+}
+
+void fv_ui_animate(fv_ui *u, uint32_t milliseconds) {
+    unsigned frame = (milliseconds / 100) % 12;
+    if (u->screen != UI_WAIT || frame == u->busy_frame) return;
+    u->busy_frame = frame;
+    fv_ui_render(u);
 }

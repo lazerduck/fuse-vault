@@ -44,7 +44,7 @@ static void home_key(fv_ui *u, fv_ui_key key) {
         u->flipped = !u->flipped;
     } else if (key == UI_BACK) {
         if (u->device.unlocked)
-            lock_vault(u);
+            ui_scene_show(u, UI_DASHBOARD);
         else
             ui_go_home(u);
     } else if (u->device.unlocked) {
@@ -58,7 +58,8 @@ static void home_key(fv_ui *u, fv_ui_key key) {
 static void render_home(fv_ui *u) {
     char b[40];
     ui_draw_text_at(u, 4, 2, "FUSE VAULT", 1, UI_COLOUR_TEXT);
-    ui_draw_text_at(u, 112, 2, u->device.unlocked ? "OPEN" : "LOCKED", 1,
+    ui_draw_text_at(u, 112, 2, u->device.unlocked ? "OPEN" : u->device.status == 2 ? "LOCKED" :
+                    (u->device.status == 3 || u->device.status == 4) ? "DENIED" : "SETUP", 1,
                     u->device.unlocked ? UI_COLOUR_SUCCESS : UI_COLOUR_WARNING);
     ui_draw_rule(u, 12);
     if (u->device.unlocked) {
@@ -73,18 +74,19 @@ static void render_home(fv_ui *u) {
         ui_draw_rule(u, 36);
         ui_menu_render(u, &home_menu);
     } else {
+        ui_draw_vault(u, 68, 17, u->device.status == 2 ? UI_COLOUR_ACCENT : UI_COLOUR_WARNING);
         const char *title = u->device.status == 2                              ? "VAULT LOCKED"
                             : (u->device.status == 3 || u->device.status == 4) ? "ACCESS DISABLED"
                                                                                : "WELCOME";
-        ui_draw_text_at(u, (160 - (unsigned)strlen(title) * 6) / 2, 29, title, 1, UI_COLOUR_TEXT);
+        ui_draw_text_at(u, (160 - (unsigned)strlen(title) * 6) / 2, 46, title, 1, UI_COLOUR_TEXT);
         const char *action = u->device.status == 2 ? "\006 UNLOCK"
                              : (u->device.status == 3 || u->device.status == 4)
                                  ? "ATTEMPT LIMIT REACHED"
                                  : "\006 SET UP VAULT";
-        ui_draw_text_at(u, (160 - (unsigned)strlen(action) * 6) / 2, 48, action, 1, UI_COLOUR_TEXT);
+        ui_draw_text_at(u, (160 - (unsigned)strlen(action) * 6) / 2, 57, action, 1, UI_COLOUR_TEXT);
     }
     ui_draw_rule(u, 67);
-    ui_draw_text_at(u, 4, 71, u->device.unlocked ? "\005 LOCK" : "\003\001 FLIP", 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 4, 71, u->device.unlocked ? "\005 BACK" : "\003\001 FLIP", 1, UI_COLOUR_TEXT);
     if (u->device.unlocked)
         ui_draw_text_at(u, 76, 71, "EJECT FIRST", 1, UI_COLOUR_TEXT);
 }

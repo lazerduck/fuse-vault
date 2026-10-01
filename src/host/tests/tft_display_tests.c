@@ -4,6 +4,8 @@
 #include "hardware/spi.h"
 #include "fuse_vault/tft_display.h"
 static bool dc, cs=true, lit;
+static bool inversion_off;
+static bool colour_order_set;
 static unsigned cmd, writes, y, x0, x1;
 static uint64_t now;
 static uint8_t panel[80][320];
@@ -21,15 +23,22 @@ unsigned spi_init(void *s,unsigned b){(void)s;assert(b==8000000);return b;}
 void spi_set_format(void *s,unsigned b,unsigned p,unsigned h,unsigned o){(void)s;assert(b==8 && !p && !h && !o);}
 int spi_write_blocking(void *s,const uint8_t *d,size_t n){
     (void)s;assert(!cs);
-    if(!dc){assert(n==1);cmd=d[0];}
-    else if(cmd==0x2a){assert(n==4);x0=d[1];x1=d[3];}
-    else if(cmd==0x2b){assert(n==4 && d[1]==d[3]);y=d[1]-26;assert(y<80);}
-    else if(cmd==0x2c){assert(n==320 && x0==1 && x1==160);memcpy(panel[y],d,n);writes++;}
+    if(!dc){
+        assert(n==1);cmd=d[0];
+        if(cmd==0x01){inversion_off=false;colour_order_set=false;}
+        if(cmd==0x20)inversion_off=true;
+        assert(cmd!=0x21); /* This panel shows inverted colours in INVON mode. */
+        if(cmd==0x29)assert(inversion_off && colour_order_set);
+    }
+    else if(cmd==0x36){assert(n==1 && d[0]==0x68);colour_order_set=true;}
+    else if(cmd==0x2a){assert(n==4 && d[0]==0 && d[2]==0);x0=d[1];x1=d[3];}
+    else if(cmd==0x2b){assert(n==4 && d[0]==0 && d[2]==0 && d[1]==d[3]);y=d[1]-24;assert(y<80);}
+    else if(cmd==0x2c){assert(n==320 && x0==0 && x1==159);memcpy(panel[y],d,n);writes++;}
     return (int)n;
 }
 int main(void){
     uint8_t fb[12800]={0};fb[0]=255;fb[7]=255;fb[12799]=255;
-    fv_tft_init();assert(!lit && cs);
+    fv_tft_init();assert(!lit && cs && inversion_off);
     for(unsigned i=0;i<80;i++){unsigned before=writes;fv_tft_poll(fb);assert(writes==before+1 && cs);if(i<79)assert(!lit);}
     assert(lit && writes==80);
     assert(panel[0][0]==255 && panel[0][1]==255 && panel[0][2]==0 && panel[0][14]==255);
@@ -73,5 +82,27 @@ int main(void){
     for(unsigned i=0;i<80;i++)fv_tft_poll(fb);
     for(unsigned y=0;y<80;y++)
         for(unsigned x=0;x<320;x++)assert(panel[y][x]==255);
+    /* Inactivity blanks the LED and stops SPI despite changing live pixels. */
+    assert(!fv_tft_activity());
+    now+=FV_TFT_IDLE_US-1;fv_tft_poll(fb);assert(lit);
+    now++;before=writes;fv_tft_poll(fb);assert(!lit && writes==before);
+    memset(fb,0,sizeof(fb));
+    now+=1000000;
+    for(unsigned i=0;i<160;i++)fv_tft_poll(fb);
+    assert(!lit && writes==before);
+    /* Wake is reported once, and stale pixels stay dark until a full refresh. */
+    assert(fv_tft_activity());assert(!lit);
+    assert(!fv_tft_activity());
+    for(unsigned i=0;i<79;i++){fv_tft_poll(fb);assert(!lit);}
+    fv_tft_poll(fb);assert(lit && writes==before+80);
+    for(unsigned y=0;y<80;y++)for(unsigned x=0;x<320;x++)assert(panel[y][x]==0);
+    /* Input at the deadline is wake-only even before poll notices the timeout. */
+    now+=FV_TFT_IDLE_US;
+    assert(fv_tft_activity());assert(!lit);
+    for(unsigned i=0;i<80;i++)fv_tft_poll(fb);
+    assert(lit);
+    now+=FV_TFT_IDLE_US/2;assert(!fv_tft_activity());
+    now+=FV_TFT_IDLE_US/2;fv_tft_poll(fb);assert(lit);
+    now+=FV_TFT_IDLE_US/2;fv_tft_poll(fb);assert(!lit);
     return 0;
 }

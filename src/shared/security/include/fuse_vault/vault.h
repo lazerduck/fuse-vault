@@ -27,6 +27,7 @@ typedef struct {
      * Missing callback/failure leaves destruction pending and access denied. */
     int (*destroy)(void *,uint32_t token_slot);
 } fv_device_authority;
+struct fv_vault;
 typedef struct {
     fv_block_device_t *sd;
     fv_device_authority authority;
@@ -38,13 +39,18 @@ typedef struct {
     uint32_t format_sectors;
     fv_format_progress format_progress;
     void *format_context;
+    /* Optional trusted first-creation callback, while authority is still EMPTY.
+     * The temporary session is private and must not escape. Failure prevents
+     * activation; retry recreates the volume with fresh keys. Never on unlock. */
+    int (*initialize_contents)(struct fv_vault *, void *);
+    void *initialize_context;
 } fv_vault_platform;
 typedef enum {FV_VAULT_OK=0,FV_VAULT_INVALID=-1,FV_VAULT_STATE=-2,
     FV_VAULT_IO=-3,FV_VAULT_AUTH=-4,FV_VAULT_DENIED=-5,
     FV_VAULT_CHANGED_NEEDS_MIRROR=1} fv_vault_result;
 /* Zero initialize; fields private. Single owner, no concurrent/reentrant calls.
  * Platform and session must outlive I/O; buffers must not alias either object. */
-typedef struct {
+typedef struct fv_vault {
     fv_pipeline pipeline;
     fv_auth_store store;
     fv_envelope_config config;

@@ -5,6 +5,45 @@
 
 # V2 device setup and USB screen
 
+## Automatic first-time setup (2026-09-29)
+
+New device-UI vaults now create a FAT32 filesystem and a partition table during
+setup. Unlock after setup and the host receives a formatted drive; no host-side
+partitioning or formatting step is required. FAT32 retains its 4 GiB per-file
+limit. The bundled FatFs formatter selects partition layout and cluster size;
+all filesystem and partition sectors pass through the encrypted vault I/O path.
+
+With `FV_USB_FIDO=ON`, setup also initializes the private FIDO store automatically.
+Settings **Reset FIDO** is an explicit destructive reset of passkeys and FIDO
+settings, not a required onboarding step. Individual passkey requests still
+require their normal approval/verification.
+
+Both steps run before the final ACTIVE authority commit. Failure leaves the new
+enrollment EMPTY so setup can be retried; a successful setup returns locked.
+Flashing, booting and unlocking an existing vault do not format it or reset its
+FIDO store. Older vaults without FIDO storage can use the explicit reset action.
+Small media that cannot hold FAT32 fail setup rather than silently choosing a
+different filesystem. Physical power-cut acceptance remains to be tested.
+
+The migration instructions below are historical: newly created vaults no longer
+need their host partition-manager step. Full-feature test firmware is built in
+`build-board-full/`, with UI, TFT, MSC and FIDO on and all `FV_DEBUG_*` flags off.
+
+## Backlight inactivity
+
+The physical screen switches its LED backlight off after 60 seconds without
+button interaction or a FIDO operation. TFT transfers also pause while dark;
+USB storage and FIDO continue normally, and this does not lock the vault.
+The first physical button press wakes the screen only. A subsequent press
+operates the UI. Wake refreshes the full current frame before lighting the LED.
+
+Accepted FIDO operations and newly displayed approval/verification prompts wake
+the display and restart its timer. HID initialization and GetInfo discovery do
+not, nor do disk traffic, dashboard updates or debug screen polling. Accepted
+debug key injection wakes the display and delivers the key normally, since the
+desktop viewer is already visible. The timeout is `FV_TFT_IDLE_US` in the TFT
+header. This controls the backlight; it does not put the LCD controller to sleep.
+
 ## Debug RAM readout
 
 With `FV_DEBUG_SCREEN=ON`, `SCREEN` includes a `ram` object and the desktop
@@ -35,9 +74,19 @@ Panel source: `CaseDesign/datasheets/N096-1608TBBIG09-C08.pdf` (from repo root):
 Wisevision 0.96-inch 80x160 ST7735S, four-wire SPI. Board GPIO18 controls the
 active-low backlight; GPIO19/20/21/22/23 are reset/DC/CS/SCK/MOSI.
 The module datasheet does not provide a controller initialization recipe or RAM
-offsets. The driver retains V1's candidate landscape MADCTL=0x60, X=1, Y=26,
-inversion-on profile; hardware validation is still pending. On arrival check
-all four screen edges, black/white polarity, navigation and Settings flip.
+offsets. Hardware testing confirmed landscape orientation, X=0, Y=24 with
+clean edges and inversion disabled (INVOFF, 0x20) for the correct black background.
+Hardware testing also confirmed MADCTL=0x68 (BGR panel order) restores the
+correct cyan accent.
+The unlocked dashboard opens Settings directly with Select; Back from Settings
+returns to the dashboard, where Back locks the vault. Transfer history uses
+shaded traces and subtle time guides, with cyan upload and amber download accents.
+Destructive confirmations default to Cancel and use red only when the destructive
+action is selected. Errors show a plain-language reason before the diagnostic
+code. Passkey approvals separate the operation from the website and preserve
+the full stored request label on screen.
+Waiting screens use a vault emblem and a 10 Hz travelling-light activity animation;
+this does not estimate completion. Storage preparation retains measured progress.
 There is no display readback, so successful builds/transfers cannot prove the
 panel is connected or displaying correctly.
 
@@ -184,7 +233,7 @@ be updated live; let it finish before installing the new firmware.
 
 ### Flip display and controls
 
-On the home screen (locked before credential entry, unlocked, or initial setup),
+On the locked/setup home screen or the unlocked dashboard,
 press Left or Right to flip the screen 180 degrees. The on-screen hint names this
 shortcut. Up/Down and Left/Right physical inputs rotate together with the pixels;
 Select and Back keep their roles. Credential direction values remain relative to
@@ -217,8 +266,8 @@ Existing volumes automatically show the method stored in their flash-anchored
 header. Reading that method does not attempt unlock or decrement the attempt
 budget. Unsupported/corrupt headers fail without silently selecting another method.
 
-On the unlocked home screen, unmount the filesystem and choose **Change unlock
-method**. Enter the current credential, select a method (the same method can be
+From the unlocked dashboard, unmount the filesystem, press Select for Settings,
+and choose **Unlock method**. Enter the current credential, select a method (the same method can be
 chosen to change its credential), enter the new credential twice, then confirm.
 Final confirmation verifies the old credential under the normal attempt budget
 and rewraps the same VMK. Files, encryption stack, failure policy and OTP token slot
@@ -229,3 +278,16 @@ Only erase/recreate or final-attempt destruction followed by setup advances the
 OTP token slot. Retry from an existing EMPTY enrollment reuses its slot. An
 interrupted OTP provisioning write can strand a partially programmed slot.
 There are eight token slots in the current fixed development allocation.
+
+## Headless colour and startup preview
+
+For the existing board without the V2 TFT, build with `FV_TFT_DISPLAY=OFF`,
+`FV_DEBUG_SCREEN=ON`, `FV_DEVICE_UI=ON`, `FV_USB_MSC=ON`, and `FV_USB_FIDO=ON`
+(with `FV_DEBUG_SESSION=OFF`). Use the updated `src/host/tools/device_ui.py`
+viewer for RGB332 colour. **Replay startup animation** fetches all ten actual
+flash frames before playing them at 50 ms each, then returns to the live UI.
+This works after USB connection and does not reboot, modify vault state, or
+require the physical display.
+
+The debug-only `STARTUP 0` through `STARTUP 9` commands return the same RGB332
+JSON envelope as `SCREEN`, with the requested animation frame as pixels.

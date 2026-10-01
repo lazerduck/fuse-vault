@@ -9,6 +9,7 @@
 #endif
 #if FV_DEBUG_SCREEN
 #include "ram_debug.h"
+#include "startup.h"
 #endif
 #include "pico/stdlib.h"
 #include <stdio.h>
@@ -22,6 +23,11 @@ static uint64_t startup_until;
 static atomic_uint format_done, format_total;
 static atomic_uint format_started_ms;
 static uint64_t format_redraw;
+void fv_device_ui_wake(void) {
+#if FV_TFT_DISPLAY
+    (void)fv_tft_activity();
+#endif
+}
 void fv_device_ui_format_progress(void *context, uint64_t done, uint64_t total) {
     (void)context;
     if (!done)
@@ -74,6 +80,10 @@ void fv_device_ui_poll(void) {
         refresh = false;
     }
     fv_ui_key key = fv_pico_buttons_poll(ui.fido_generation);
+#if FV_TFT_DISPLAY
+    if (key && fv_tft_activity())
+        key = 0; /* A dark-screen press wakes only; never submits a secret or approval. */
+#endif
     if (key && time_us_64() >= startup_until)
         fv_ui_keypress(&ui, key);
     if (ui.screen == UI_WAIT && ui.job.op == UI_CREATE) {
@@ -87,6 +97,7 @@ void fv_device_ui_poll(void) {
             format_redraw = now;
         }
     }
+    fv_ui_animate(&ui, (uint32_t)(time_us_64() / 1000));
     /* USB callbacks and UI polling run on core 0; no cross-core counters. */
     static uint64_t activity_sample;
     uint64_t activity_now = time_us_64();
@@ -95,14 +106,7 @@ void fv_device_ui_poll(void) {
         fv_usb_storage_take_activity(&reads, &writes);
         uint64_t elapsed = activity_now - activity_sample;
         activity_sample = activity_now;
-        ui.read_active = ui.device.unlocked && reads != 0;
-        ui.write_active = ui.device.unlocked && writes != 0;
-        ui.read_kib_tenths =
-            ui.read_active ? (uint32_t)((uint64_t)reads * 10000000 / (elapsed * 1024)) : 0;
-        ui.write_kib_tenths =
-            ui.write_active ? (uint32_t)((uint64_t)writes * 10000000 / (elapsed * 1024)) : 0;
-        if (ui.screen == UI_HOME && ui.device.unlocked)
-            fv_ui_render(&ui);
+        fv_ui_activity(&ui, reads, writes, elapsed);
     }
     if (ui.pending
 #if FV_USB_FIDO
@@ -135,7 +139,17 @@ void fv_device_ui_poll(void) {
 }
 bool fv_device_ui_command(const char *command, char *out, size_t size) {
 #if FV_DEBUG_SCREEN
-    if (!strcmp(command, "SCREEN")) {
+    bool startup = !strncmp(command, "STARTUP ", 8);
+    unsigned startup_frame = 0;
+    if (startup) {
+        /* Exact single-digit frame index; this command never changes UI state. */
+        if (strlen(command) != 9 || command[8] < '0' || command[8] > '9') {
+            snprintf(out, size, "{\"command\":\"screen\",\"ok\":false,\"error\":\"invalid startup frame\"}\n");
+            return true;
+        }
+        startup_frame = (unsigned)(command[8] - '0');
+    }
+    if (!strcmp(command, "SCREEN") || startup) {
         fv_ram_debug ram = fv_ram_debug_read();
         int n = snprintf(
             out, size,
@@ -150,8 +164,9 @@ bool fv_device_ui_command(const char *command, char *out, size_t size) {
             return false;
         const char hex[] = "0123456789abcdef";
         for (unsigned i = 0; i < FV_SCREEN_BYTES; i++) {
-            out[n++] = hex[ui.framebuffer[i] >> 4];
-            out[n++] = hex[ui.framebuffer[i] & 15];
+            uint8_t pixel = startup ? fv_startup_pixel(startup_frame, i) : ui.framebuffer[i];
+            out[n++] = hex[pixel >> 4];
+            out[n++] = hex[pixel & 15];
         }
         memcpy(out + n, "\"}\n", 4);
         return true;
@@ -169,8 +184,10 @@ bool fv_device_ui_command(const char *command, char *out, size_t size) {
                 break;
         bool accepted = time_us_64() >= startup_until && i < 6 && ui.screen != UI_WAIT && !ui.fido_done &&
                         (!offset || generation == ui.fido_generation) && (!ui.fido_modal || offset);
-        if (accepted)
+        if (accepted) {
+            fv_device_ui_wake();
             fv_ui_keypress(&ui, (fv_ui_key)(i + 1));
+        }
         snprintf(out, size, "{\"command\":\"key\",\"ok\":true,\"accepted\":%s}\n",
                  accepted ? "true" : "false");
         return true;

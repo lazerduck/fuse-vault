@@ -7,6 +7,7 @@ typedef enum {
     UI_SETTING_FIDO_INIT,
     UI_SETTING_FIDO_POLICY,
     UI_SETTING_PASSKEYS,
+    UI_SETTING_DASHBOARD,
     UI_SETTING_COUNT
 } ui_setting;
 #endif

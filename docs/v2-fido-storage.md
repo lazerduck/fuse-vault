@@ -27,8 +27,14 @@ with a live engine. Hot media mutation is unsupported.
 - `fv_fido_store_initialize`: explicitly destructive trusted-setup operation,
   requiring an unlocked vault and `confirmed=true`. Invalidates both banks and
   commits an all-FF initial engine image. This boolean is an internal caller
-  contract, not proof of user authorization; only the future trusted UI can supply
-  it. Never call automatically after open failure. Can erase existing passkeys.
+  contract, not proof of user authorization; the trusted UI supplies it for
+  **Reset FIDO**. Never call automatically after open failure. Can erase existing passkeys.
+- `fv_fido_store_prepare_new`: creation-only automatic initialization. Requires
+  EMPTY authority and the private generation-one creation session; writes the
+  initial image before the vault becomes ACTIVE, then wipes its workspace.
+  New device-UI vaults invoke this after creating their encrypted FAT32 filesystem.
+  Failure leaves setup retryable. Existing vaults are rejected, even when their
+  FIDO data is missing or corrupt.
 - `fv_fido_store_engine_key`: derives the engine wrapping key after successful
   open/initialization. Wipe the temporary key after `fv_fido_engine_open`.
 - `fv_fido_store_commit`: persist the complete engine image without modifying its

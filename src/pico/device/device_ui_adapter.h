@@ -4,6 +4,7 @@
 #include <stdatomic.h>
 extern atomic_bool fv_ui_maintenance;
 void fv_device_ui_init(void);
+void fv_device_ui_wake(void);
 void fv_device_ui_format_progress(void *,uint64_t,uint64_t);
 void fv_device_ui_poll(void);
 void fv_device_ui_refresh(void);

@@ -14,8 +14,8 @@ typedef enum {
 /* Zero initialize. One serialized owner, no aliases/reentrant callbacks. Fields
  * private. No persistent derived secrets. Vault/platform must outlive this object.
  * Close before lock, credential changes, media replacement or another store owner.
- * Every operation checks the unlocked vault, active internal authority and
- * original credential generation.
+ * Store operations check the unlocked vault, active internal authority and
+ * original credential generation. prepare_new is a separate creation-only API.
  * These checks are not a substitute for firmware session invalidation (F3). */
 typedef struct {
     const fv_vault *vault;
@@ -37,6 +37,11 @@ fv_fido_store_result fv_fido_store_open(fv_fido_store *, const fv_vault *,
  * Never call as automatic recovery from open failure. */
 fv_fido_store_result fv_fido_store_initialize(fv_fido_store *, const fv_vault *,
     bool confirmed, uint8_t image[FV_FIDO_STORE_BYTES]);
+/* Trusted vault-creation callback only: initialize while authority is EMPTY,
+ * before activation. Rejects existing vaults, never repairs an open failure.
+ * Workspace is wiped on return; does not leave an open store. */
+fv_fido_store_result fv_fido_store_prepare_new(const fv_vault *,
+    uint8_t workspace[FV_FIDO_STORE_BYTES]);
 /* Input is unchanged. Success means data/tags/manifest synchronized and verified.
  * Any failure faults the store; close/reopen before retry. An uncertain failed
  * commit can have persisted: reopening may recover the old OR new complete image. */

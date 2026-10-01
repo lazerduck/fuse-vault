@@ -17,10 +17,10 @@ static void erase_key(fv_ui *u, fv_ui_key key) {
 
 static void render_erase_confirm(fv_ui *u) {
     ui_draw_header(u, "DESTROY VAULT?", NULL);
-    ui_draw_text_at(u, 4, 16, "LOSES FILES AND PASSKEYS", 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 4, 16, "LOSES FILES AND PASSKEYS", 1, UI_COLOUR_WARNING);
     ui_draw_text_at(u, 4, 26, "UNMOUNT DRIVE FIRST", 1, UI_COLOUR_TEXT);
     ui_draw_text_at(u, 4, 36, "USES A SETUP SLOT", 1, UI_COLOUR_TEXT);
-    ui_draw_confirm_choices(u, "DESTROY");
+    ui_draw_danger_choices(u, "DESTROY");
 }
 
 const ui_scene ui_erase_scene = {.key = erase_key, .render = render_erase_confirm};

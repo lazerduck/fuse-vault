@@ -197,11 +197,7 @@ static fv_fido_store_result write_snapshot(const fv_vault *v,snapshot *snap,cons
 done:
     mbedtls_sha256_free(&sha);bank_close(&c);return r;
 }
-fv_fido_store_result fv_fido_store_initialize(fv_fido_store *s,const fv_vault *v,bool confirmed,uint8_t image[FV_FIDO_STORE_BYTES]){
-    if(!s || !image)return FV_FIDO_STORE_INVALID;
-    fv_fido_store_close(s);memset(image,0,FV_FIDO_STORE_BYTES);
-    if(!confirmed)return FV_FIDO_STORE_INVALID;
-    if(!vault_valid(v))return FV_FIDO_STORE_LOCKED;
+static fv_fido_store_result initialize_image(fv_fido_store *s,const fv_vault *v,uint8_t image[FV_FIDO_STORE_BYTES]){
     alignas(4) uint8_t empty[512]={0};snapshot snap={.generation=1,.bank=0,.image_bytes=FV_FIDO_STORE_BYTES};
     fv_block_device_t *sd=v->platform->sd;fv_fido_store_result r=FV_FIDO_STORE_IO;
     for(unsigned bank=0;bank<2;bank++)
@@ -209,10 +205,39 @@ fv_fido_store_result fv_fido_store_initialize(fv_fido_store *s,const fv_vault *v
     if(sd->ops->sync(sd)!=FV_BLOCK_OK)goto done;
     memset(image,0xff,FV_FIDO_STORE_BYTES);
     r=write_snapshot(v,&snap,image);
-    if(!r)bind(s,v,&snap);
+    if(!r && s)bind(s,v,&snap);
 done:
     if(r)mbedtls_platform_zeroize(image,FV_FIDO_STORE_BYTES);
     return r;
+}
+fv_fido_store_result fv_fido_store_initialize(fv_fido_store *s,const fv_vault *v,bool confirmed,uint8_t image[FV_FIDO_STORE_BYTES]){
+    if(!s || !image)return FV_FIDO_STORE_INVALID;
+    fv_fido_store_close(s);memset(image,0,FV_FIDO_STORE_BYTES);
+    if(!confirmed)return FV_FIDO_STORE_INVALID;
+    if(!vault_valid(v))return FV_FIDO_STORE_LOCKED;
+    return initialize_image(s,v,image);
+}
+fv_fido_store_result fv_fido_store_prepare_new(const fv_vault *v,uint8_t image[FV_FIDO_STORE_BYTES]){
+    if(!image)return FV_FIDO_STORE_INVALID;
+    memset(image,0,FV_FIDO_STORE_BYTES);
+    fv_device_state state;
+    /* Only the private creation session, before the ACTIVE commit. In
+     * particular, a missing/corrupt store on an existing vault is not blank. */
+    if(!v || !v->unlocked || !v->platform || !v->platform->authority.load ||
+       !v->platform->sd || !v->platform->sd->ops ||
+       !v->platform->sd->ops->read || !v->platform->sd->ops->write ||
+       !v->platform->sd->ops->sync || !v->platform->sd->ops->block_count ||
+       !v->platform->sd->ops->is_present ||
+       !v->platform->sd->ops->is_present(v->platform->sd) ||
+       v->platform->sd->ops->block_count(v->platform->sd)<FV_VOLUME_METADATA_BASE ||
+       v->platform->authority.load(v->platform->authority.context,&state) ||
+       state.status!=FV_ENROLLMENT_EMPTY || state.attempt_pending || state.attempts ||
+       state.credential_generation || v->config.credential_generation!=1 ||
+       state.token_slot!=v->config.token_slot || memcmp(state.device_id,v->config.device_id,16))
+        return FV_FIDO_STORE_LOCKED;
+    fv_fido_store_result result=initialize_image(NULL,v,image);
+    mbedtls_platform_zeroize(image,FV_FIDO_STORE_BYTES);
+    return result;
 }
 fv_fido_store_result fv_fido_store_commit(fv_fido_store *s,const uint8_t image[FV_FIDO_STORE_BYTES]){
     if(!s || !image){fv_fido_store_close(s);return FV_FIDO_STORE_INVALID;}

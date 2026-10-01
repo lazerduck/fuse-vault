@@ -38,18 +38,25 @@ static void begin_passkeys(fv_ui *u) {
     ui_submit(u, UI_PASSKEY_LIST);
 }
 
+static void dashboard_setting(fv_ui *u) { ui_scene_show(u, UI_DASHBOARD_SETTING); }
+
 static const ui_menu_item settings_items[] = {
     [UI_SETTING_POLICY] = {"FAILURE POLICY", begin_policy},
     [UI_SETTING_ERASE] = {"ERASE AND SET UP", begin_erase},
     [UI_SETTING_METHOD] = {"UNLOCK METHOD", begin_change},
-    [UI_SETTING_FIDO_INIT] = {"INITIALIZE FIDO", begin_fido_init},
+    [UI_SETTING_FIDO_INIT] = {"RESET FIDO", begin_fido_init},
     [UI_SETTING_FIDO_POLICY] = {"FIDO VERIFICATION", begin_fido_policy},
     [UI_SETTING_PASSKEYS] = {"PASSKEYS", begin_passkeys},
+    [UI_SETTING_DASHBOARD] = {"DEFAULT DASHBOARD", dashboard_setting},
 };
 
 static ui_menu settings_menu(const fv_ui *u) {
-    return (ui_menu){settings_items,
-                     u->fido_enabled ? UI_SETTING_COUNT : UI_SETTING_FIDO_INIT,
+    static const ui_menu_item basic_items[] = {
+        {"FAILURE POLICY", begin_policy}, {"ERASE AND SET UP", begin_erase},
+        {"UNLOCK METHOD", begin_change}, {"DEFAULT DASHBOARD", dashboard_setting},
+    };
+    return (ui_menu){u->fido_enabled ? settings_items : basic_items,
+                     u->fido_enabled ? UI_SETTING_COUNT : 4,
                      15,
                      12,
                      11,

@@ -115,6 +115,9 @@ def main():
         except queue.Full:
             status.set_text('Input queue full; wait for the device.')
 
+    replay = Gtk.Button(label='Replay startup animation')
+    replay.connect('clicked', lambda *_: send('__STARTUP'))
+    box.pack_start(replay, False, False, 0)
     row = Gtk.Box(spacing=8)
     for name in ('UP', 'DOWN', 'LEFT', 'RIGHT', 'SELECT', 'BACK'):
         button = Gtk.Button(label=name.title())
@@ -177,6 +180,19 @@ def main():
                         try:
                             key = keys.get(timeout=0.15)
                         except queue.Empty:
+                            continue
+                        if key == '__STARTUP':
+                            # Fetch before playback so USB latency cannot stretch the animation.
+                            frames = [probe.transact(f'STARTUP {i}', 'screen') for i in range(10)]
+                            for startup_frame in frames:
+                                pixels(startup_frame)
+                            started = time.monotonic()
+                            for i, startup_frame in enumerate(frames):
+                                if stopped.is_set():
+                                    break
+                                GLib.idle_add(update, startup_frame)
+                                stopped.wait(max(0, started + (i + 1) * 0.05 - time.monotonic()))
+                            clear_keys()
                             continue
                         probe.transact(f'KEY {input_id} {key}', 'key')  # Never retry uncertain key presses.
                     stopped.wait(0.1)

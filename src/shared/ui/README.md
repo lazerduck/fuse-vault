@@ -123,3 +123,19 @@ scan after the deadline displays the latest live UI; physical and debug key
 presses are discarded during startup. The offline gallery includes the settled
 emblem as `00-startup.png`. This is a startup-only animation, not a lock-state
 indicator.
+
+## Transfer dashboards
+
+Successful unlocked status/operation responses land on `UI_DASHBOARD`. Left or
+Right flips screen orientation. Settings > Default Dashboard selects scrolling
+history or live bars, with explicit Save/Cancel; the choice survives lock/unlock
+until reboot. Select opens Settings directly; Back there returns
+to the dashboard. Back on the dashboard submits the usual lock operation.
+
+Core 0 supplies actual host read/write byte counters every 500 ms through
+`fv_ui_activity()`. Upload is host-to-vault writes; download is vault-to-host reads.
+A 60-sample ring retains approximately 30 seconds and continues sampling in menus.
+Both views share an automatic scale based on the largest retained rate, with a
+minimum of 1 KiB/s; the numbers are current rates, not percentages. Idle samples
+are zero. Locking clears transfer history and rates. The ring consumes 480 bytes
+per UI instance and requires no allocation.

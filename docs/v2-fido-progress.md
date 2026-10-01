@@ -5,6 +5,20 @@ before resuming FIDO work after compaction or in another task. Update the curren
 step, evidence, and next action when work stops; do not infer completion from a
 previous conversation summary. V1 is a reference archive, not the V2 runtime.
 
+## First-time setup update (2026-09-29)
+
+New device-UI vaults create their partition table and FAT32 filesystem and, with
+FIDO enabled, prepare the FIDO store automatically before the ACTIVE authority
+commit. Settings now calls the destructive manual action **Reset FIDO**. Boot,
+unlock and firmware updates never initialize an existing store automatically.
+
+Validation: 41 host tests pass, including a new encrypted filesystem mount/file
+round-trip, FIDO initialization/preservation, failed-sync setup retries,
+pre-activation interruption and too-small FAT32 media. The exported filesystem
+passes `fsck.fat -vn`. Full UI/TFT/MSC/FIDO firmware builds with all debug flags
+off. Next: flash the new image and test first-time setup, host mounting/file copy,
+passkey registration and physical power interruption on the new board.
+
 ## Agreed requirements (2026-09-20)
 
 - Composite USB: encrypted disk and FIDO available together; development CDC.

@@ -163,6 +163,16 @@ void ui_draw_confirm_choices(fv_ui *u, const char *action) {
     ui_draw_footer(u, "\005 BACK", "\006 SELECT");
 }
 
+/* Destructive confirmations retain Cancel as the initial selection. */
+void ui_draw_danger_choices(fv_ui *u, const char *action) {
+    ui_draw_choice(u, 47, "CANCEL", !u->cursor);
+    if (u->cursor)
+        for (unsigned y = 57; y < 66; ++y)
+            for (unsigned x = 3; x < 157; ++x) ui_draw_pixel(u, x, y, UI_COLOUR_ERROR);
+    ui_draw_text_at(u, 7, 58, action, 1, u->cursor ? UI_COLOUR_TEXT : UI_COLOUR_WARNING);
+    ui_draw_footer(u, "\005 BACK", u->cursor ? "\006 CONFIRM" : "\006 CANCEL");
+}
+
 /* Ten 50 ms frames: connections converge, fuse, then lock into a vault. */
 void ui_draw_splash(fv_ui *u, unsigned frame) {
     if (frame > 9) frame = 9;
@@ -208,4 +218,22 @@ void ui_draw_splash(fv_ui *u, unsigned frame) {
     }
     ui_draw_text_at(u,21,47,"FUSE VAULT",2,UI_COLOUR_TEXT);
     ui_draw_text_at(u,29,68,"PRIVATE BY DESIGN",1,blue);
+}
+
+/* Small vault door: bevelled enclosure, four bolts, and a central dial. */
+void ui_draw_vault(fv_ui *u, unsigned x, unsigned y, fv_ui_colour colour) {
+    for (unsigned dy = 0; dy < 25; ++dy)
+        for (unsigned dx = 0; dx < 25; ++dx) {
+            unsigned inset = dy < 3 ? 3-dy : dy > 21 ? dy-21 : 0;
+            if (dx < inset || dx > 24-inset) continue;
+            fv_ui_colour ink = 0x05;
+            if (dx == inset || dx == 24-inset || dy == 0 || dy == 24) ink = colour;
+            int a = (int)dx-12, b = (int)dy-12;
+            int d = a*a+b*b;
+            if (d >= 13 && d <= 25) ink = colour;
+            if ((!a && b >= -2 && b <= 2) || (!b && a >= -2 && a <= 2)) ink = UI_COLOUR_TEXT;
+            if ((dx == 12 && (dy == 4 || dy == 20)) ||
+                (dy == 12 && (dx == 4 || dx == 20))) ink = UI_COLOUR_TEXT;
+            ui_draw_pixel(u, x+dx, y+dy, ink);
+        }
 }

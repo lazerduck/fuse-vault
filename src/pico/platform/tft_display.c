@@ -3,13 +3,17 @@
 #include "hardware/spi.h"
 #include "pico/stdlib.h"
 #include <string.h>
-#include "startup_frames.inc"
+#include "startup.h"
 
 /* N096-1608TBBIG09-C08: ST7735S, four-wire SPI, 80x160.
- * Datasheet supplies no register recipe. Retain V1's candidate landscape
- * mapping until a physical panel confirms offsets and inversion. */
+ * Datasheet supplies no register recipe. Landscape offsets are being
+ * confirmed on hardware. Physical testing showed
+ * inverted colours with inversion enabled, so use normal polarity. */
 #define WIDTH 160u
 #define HEIGHT 80u
+/* Physical testing confirmed clean edges at X=0, Y=24. */
+#define X_OFFSET 0u
+#define Y_OFFSET 24u
 _Static_assert(FV_SCREEN_BYTES == WIDTH * HEIGHT, "TFT framebuffer size");
 static uint8_t sent[FV_SCREEN_BYTES];
 static unsigned row;
@@ -19,6 +23,22 @@ static uint64_t next_frame;
 static uint64_t startup_started;
 static bool startup_active;
 static unsigned startup_frame;
+static uint64_t last_activity;
+static bool sleeping;
+
+bool fv_tft_activity(void) {
+    uint64_t now = time_us_64();
+    bool waking = sleeping || now - last_activity >= FV_TFT_IDLE_US;
+    last_activity = now;
+    sleeping = false;
+    if (waking) {
+        /* Refresh the whole current screen before lighting it again. */
+        gpio_put(FUSE_VAULT_TFT_BACKLIGHT_PIN, !FUSE_VAULT_TFT_BACKLIGHT_ENABLE_LEVEL);
+        backlight = false;
+        row = 0; first = true; next_frame = 0;
+    }
+    return waking;
+}
 
 static void command(uint8_t cmd, const uint8_t *data, size_t size) {
     gpio_put(FUSE_VAULT_TFT_CHIP_SELECT_PIN, 0);
@@ -53,10 +73,11 @@ void fv_tft_init(void) {
     sleep_ms(150);
     command(0x11, NULL, 0); /* sleep out */
     sleep_ms(120);
-    const uint8_t rgb565 = 0x05, landscape = 0x60;
+    /* BGR panel order: RGB mode made the cyan accent appear yellow. */
+    const uint8_t rgb565 = 0x05, landscape = 0x68;
     command(0x3a, &rgb565, 1);
     command(0x36, &landscape, 1);
-    command(0x21, NULL, 0); /* inversion on */
+    command(0x20, NULL, 0); /* inversion off: black UI background */
     command(0x13, NULL, 0); /* normal mode */
     sleep_ms(10);
     command(0x29, NULL, 0); /* display on */
@@ -64,9 +85,18 @@ void fv_tft_init(void) {
     memset(sent, 0, sizeof(sent));
     startup_active = false;
     row = 0; first = true; backlight = false; next_frame = 0;
+    sleeping = false; last_activity = time_us_64();
 }
 
 void fv_tft_poll(const uint8_t *framebuffer) {
+    if (time_us_64() - last_activity >= FV_TFT_IDLE_US) {
+        sleeping = true;
+        if (backlight) {
+            gpio_put(FUSE_VAULT_TFT_BACKLIGHT_PIN, !FUSE_VAULT_TFT_BACKLIGHT_ENABLE_LEVEL);
+            backlight = false;
+        }
+    }
+    if (sleeping) return;
     if (time_us_64() < next_frame) return;
     if (startup_active && row == 0) {
         uint64_t elapsed = time_us_64() - startup_started;
@@ -77,8 +107,7 @@ void fv_tft_poll(const uint8_t *framebuffer) {
     const uint8_t *source;
     if (startup_active) {
         for (unsigned x = 0; x < WIDTH; ++x) {
-            uint8_t packed = startup_frames[startup_frame][row * WIDTH / 2 + x / 2];
-            decoded[x] = startup_palette[(x & 1) ? packed & 15 : packed >> 4];
+            decoded[x] = fv_startup_pixel(startup_frame, row * WIDTH + x);
         }
         source = decoded;
     } else source = framebuffer + row * WIDTH;
@@ -95,8 +124,8 @@ void fv_tft_poll(const uint8_t *framebuffer) {
                                        ((g << 3 | g) << 5) | (b << 3 | b << 1 | b >> 1));
             pixels[2*x] = (uint8_t)(value >> 8); pixels[2*x+1] = (uint8_t)value;
         }
-        const uint8_t columns[] = {0, 1, 0, WIDTH};
-        const uint8_t rows[] = {0, (uint8_t)(26+row), 0, (uint8_t)(26+row)};
+        const uint8_t columns[] = {0, X_OFFSET, 0, X_OFFSET + WIDTH - 1};
+        const uint8_t rows[] = {0, (uint8_t)(Y_OFFSET+row), 0, (uint8_t)(Y_OFFSET+row)};
         command(0x2a, columns, sizeof(columns));
         command(0x2b, rows, sizeof(rows));
         command(0x2c, pixels, sizeof(pixels));

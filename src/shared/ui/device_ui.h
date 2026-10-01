@@ -17,6 +17,7 @@ typedef uint8_t fv_ui_colour;
 #define UI_COLOUR_WARNING 0xf0u
 #define UI_COLOUR_ERROR 0xe0u
 #define FV_UI_SECRET_MAX 64
+#define FV_UI_HISTORY_SAMPLES 60u
 /* Stable profile-2 mapping: up=1, down=2, left=3, right=4. Select submits. */
 typedef enum { UI_UP = 1, UI_DOWN, UI_LEFT, UI_RIGHT, UI_SELECT, UI_BACK } fv_ui_key;
 typedef enum {
@@ -70,6 +71,8 @@ typedef enum {
     UI_FIDO_POLICY_SCREEN,
     UI_PASSKEYS,
     UI_PASSKEY_DELETE_CONFIRM,
+    UI_DASHBOARD,
+    UI_DASHBOARD_SETTING,
     UI_SCREEN_COUNT
 } fv_ui_screen;
 /* A credential screen can participate in exactly one vault workflow. FIDO's
@@ -95,6 +98,11 @@ typedef struct {
     int error;
     uint32_t read_kib_tenths, write_kib_tenths;
     bool read_active, write_active;
+    /* Half-second samples; volatile dashboard choice survives lock/unlock. */
+    uint32_t read_history[FV_UI_HISTORY_SAMPLES], write_history[FV_UI_HISTORY_SAMPLES];
+    unsigned history_next, history_count;
+    bool dashboard_bars;
+    unsigned busy_frame;
     uint32_t format_done, format_total, format_milliseconds;
     uint8_t framebuffer[FV_SCREEN_BYTES];
 } fv_ui;
@@ -107,6 +115,10 @@ void fv_ui_keypress(fv_ui *, fv_ui_key);
 void fv_ui_complete(fv_ui *, fv_ui_result);
 void fv_ui_cancel(fv_ui *);
 void fv_ui_render(fv_ui *);
+/* Call from the UI thread; redraw waiting scenes at most every 100 ms. */
+void fv_ui_animate(fv_ui *, uint32_t milliseconds);
+/* Host reads are downloads; host writes are uploads into the vault. */
+void fv_ui_activity(fv_ui *, uint32_t read_bytes, uint32_t write_bytes, uint64_t elapsed_us);
 /* Volatile wipe for credentials in UI objects and inter-core messages. */
 void fv_ui_wipe(void *, size_t);
 #endif

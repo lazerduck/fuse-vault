@@ -110,35 +110,50 @@ static void credential_key(fv_ui *u, fv_ui_key key) {
         credential_submitted(u, input, *length);
 }
 
+static void credential_tile(fv_ui *u, unsigned x, unsigned y, unsigned width,
+                            unsigned height, fv_ui_colour colour) {
+    for (unsigned dy = 0; dy < height; ++dy)
+        for (unsigned dx = 0; dx < width; ++dx)
+            ui_draw_pixel(u, x + dx, y + dy, colour);
+}
+
 static void credential_controls(fv_ui *u) {
     const fv_credential_entry *e = &u->entry;
     char label[27];
-    ui_draw_rule(u, 10);
-    ui_draw_rule(u, 67);
-    ui_draw_text_at(u, 4, 71, u->fido_modal ? "\005 CANCEL" : "\005 BACK", 1, UI_COLOUR_TEXT);
-    if (e->profile == 3 || e->count == 4)
-        ui_draw_text_at(u, 118, 71, "\006 DONE", 1, UI_COLOUR_TEXT);
+    if (u->error == 1)
+        snprintf(label, sizeof(label), "MISMATCH - TRY AGAIN");
+    else if (e->profile == 3)
+        snprintf(label, sizeof(label), "CODE %u/4", e->selected + 1);
+    else if (e->count == 4)
+        snprintf(label, sizeof(label), "REVIEW / ARROWS TO EDIT");
+    else
+        snprintf(label, sizeof(label), "WORD %u/4  STEP %u/3", e->count + 1, e->depth + 1);
+    ui_draw_text_at(u, 4, 16, label, 1,
+                    u->error == 1 ? UI_COLOUR_WARNING : UI_COLOUR_MUTED);
     if (e->profile == 3) {
-        for (unsigned i = 0; i < 4; i++) {
-            unsigned x = 5 + i * 39;
+        for (unsigned i = 0; i < 4; ++i) {
+            unsigned x = 4 + i * 39;
+            bool selected = i == e->selected;
+            credential_tile(u, x, 26, 35, 38, 0x05);
             snprintf(label, sizeof(label), "%02u", (e->values[i] + 1) % 100);
-            ui_draw_text_at(u, x + 11, 18, label, 1, UI_COLOUR_TEXT);
-            if (i == e->selected)
-                for (unsigned y = 30; y < 50; y++)
-                    for (unsigned dx = 0; dx < 34; dx++)
-                        ui_draw_pixel(u, x + dx, y, UI_COLOUR_ACCENT);
+            ui_draw_text_at(u, x + 12, 27, label, 1, UI_COLOUR_MUTED);
+            if (selected)
+                credential_tile(u, x, 36, 35, 18, UI_COLOUR_ACCENT);
             snprintf(label, sizeof(label), "%02u", e->values[i]);
-            ui_draw_text_at(u, x + 6, 33, label, 2, i == e->selected ? UI_COLOUR_BACKGROUND : UI_COLOUR_TEXT);
+            ui_draw_text_at(u, x + 6, 38, label, 2,
+                            selected ? UI_COLOUR_BACKGROUND : UI_COLOUR_TEXT);
             snprintf(label, sizeof(label), "%02u", (e->values[i] + 99) % 100);
-            ui_draw_text_at(u, x + 11, 55, label, 1, UI_COLOUR_TEXT);
+            ui_draw_text_at(u, x + 12, 56, label, 1, UI_COLOUR_MUTED);
         }
     } else {
-        if (e->count == 4)
-            snprintf(label, sizeof(label), "REVIEW WORDS");
-        else
-            snprintf(label, sizeof(label), "WORD %u/4", e->count + 1);
-        ui_draw_text_at(u, (160 - (unsigned)strlen(label) * 6) / 2, 14, label, 1, UI_COLOUR_TEXT);
-        for (unsigned i = 0; i < 4; i++) {
+        /* Explicit arrows preserve the directional mapping in both entry and review. */
+        const unsigned xs[] = {4, 83, 83, 4}, ys[] = {27, 27, 46, 46};
+        const char arrows[] = {4, 1, 2, 3};
+        for (unsigned i = 0; i < 4; ++i) {
+            unsigned x = xs[i], y = ys[i];
+            credential_tile(u, x, y, 73, 17, 0x05);
+            char arrow[] = {arrows[i], 0};
+            ui_draw_text_at(u, x + 4, y + 5, arrow, 1, UI_COLOUR_ACCENT);
             if (e->count == 4)
                 snprintf(label, sizeof(label), "%u %s", i + 1, fv_entry_word(e->values[i]));
             else {
@@ -149,19 +164,12 @@ static void credential_controls(fv_ui *u) {
                     snprintf(label, sizeof(label), "%.3s-%.3s", fv_entry_word(start),
                              fv_entry_word(start + size - 1));
             }
-            unsigned width = (unsigned)strlen(label) * 6 - 1;
-            unsigned x = i == 3 ? 4 : i == 1 ? 156 - width : (160 - width) / 2;
-            unsigned y = i == 0 ? 27 : i == 2 ? 55 : 41;
-            ui_draw_text_at(u, x, y, label, 1, UI_COLOUR_TEXT);
+            ui_draw_text_at(u, x + 17, y + 5, label, 1, UI_COLOUR_TEXT);
         }
-        ui_draw_text_at(u, 77, 41, "+", 1, UI_COLOUR_TEXT);
     }
-    if (u->error == 1) {
-        for (unsigned y = 11; y < 25; y++)
-            for (unsigned x = 0; x < 160; x++)
-                ui_draw_pixel(u, x, y, UI_COLOUR_BACKGROUND);
-        ui_draw_text_at(u, 14, 15, "MISMATCH - TRY AGAIN", 1, UI_COLOUR_WARNING);
-    }
+    bool cancel = u->fido_modal || e->profile == 3 || (!e->count && !e->depth);
+    ui_draw_footer(u, cancel ? "\005 CANCEL" : "\005 BACK",
+                   e->profile == 3 || e->count == 4 ? "\006 DONE" : NULL);
 }
 
 static const char *credential_title(const fv_ui *u) {
@@ -176,36 +184,54 @@ static const char *credential_title(const fv_ui *u) {
     return "NEW CREDENTIAL";
 }
 
+static void direction_controls(fv_ui *u) {
+    unsigned n = u->screen == UI_CONFIRM ? u->confirmation_length : u->job.length;
+    const uint8_t *input = u->screen == UI_CONFIRM ? u->confirmation : u->job.secret;
+    const char arrows[] = {0, 4, 2, 3, 1};
+    unsigned first = n > 16 ? n - 16 : 0;
+    char label[27];
+    ui_draw_header(u, credential_title(u), NULL);
+    if (u->error == 1)
+        snprintf(label, sizeof(label), "MISMATCH - TRY AGAIN");
+    else if (u->error == 2)
+        snprintf(label, sizeof(label), "USE AT LEAST 8 INPUTS");
+    else if (!n)
+        snprintf(label, sizeof(label), "ENTER DIRECTIONS");
+    else if (first)
+        snprintf(label, sizeof(label), "%u-%u OF %u INPUTS", first + 1, n, n);
+    else
+        snprintf(label, sizeof(label), "%u INPUT%s", n, n == 1 ? "" : "S");
+    ui_draw_text_at(u, 4, 16, label, 1,
+                    u->error ? UI_COLOUR_WARNING : UI_COLOUR_MUTED);
+    for (unsigned slot = 0; slot < 16; ++slot) {
+        unsigned index = first + slot;
+        unsigned x = 4 + (slot % 8) * 19, y = 27 + (slot / 8) * 19;
+        bool filled = index < n, latest = filled && index + 1 == n;
+        fv_ui_colour fill = latest ? UI_COLOUR_ACCENT : 0x05;
+        for (unsigned dy = 0; dy < 17; ++dy)
+            for (unsigned dx = 0; dx < 17; ++dx) {
+                bool edge = !dx || dx == 16 || !dy || dy == 16;
+                ui_draw_pixel(u, x + dx, y + dy,
+                              !filled && index == n && edge ? UI_COLOUR_MUTED : fill);
+            }
+        if (filled) {
+            char glyph[] = {input[index] >= 1 && input[index] <= 4 ? arrows[input[index]] : '?', 0};
+            ui_draw_text_at(u, x + 4, y + 2, glyph, 2,
+                            latest ? UI_COLOUR_BACKGROUND : UI_COLOUR_TEXT);
+        } else {
+            ui_draw_pixel(u, x + 8, y + 8, UI_COLOUR_MUTED);
+        }
+    }
+    ui_draw_footer(u, u->fido_modal || !n ? "\005 CANCEL" : "\005 DELETE",
+                   n ? "\006 DONE" : NULL);
+}
+
 static void render_secret(fv_ui *u) {
-    char b[40];
-    ui_draw_line(u, 0, credential_title(u));
     if (u->job.profile == 3 || u->job.profile == 4) {
+        ui_draw_header(u, credential_title(u), NULL);
         credential_controls(u);
     } else {
-        if (u->error == 1)
-            ui_draw_line(u, 1, "MISMATCH - START AGAIN");
-        if (u->error == 2)
-            ui_draw_line(u, 1, "USE AT LEAST 8 INPUTS");
-        unsigned n = u->screen == UI_CONFIRM ? u->confirmation_length : u->job.length;
-        const uint8_t *p = u->screen == UI_CONFIRM ? u->confirmation : u->job.secret;
-        const char arrows[] = {0, 4, 2, 3, 1};
-        snprintf(b, sizeof(b), "%u INPUTS", n);
-        ui_draw_line(u, 2, b);
-        for (unsigned row = 0; row < 3; row++) {
-            unsigned j = 0;
-            while (row * 22 + j < n && j < 22) {
-                b[j] = p[row * 22 + j] <= 4 ? arrows[p[row * 22 + j]] : '?';
-                j++;
-            }
-            b[j] = 0;
-            ui_draw_line(u, row + 3, b);
-        }
-        ui_draw_line(u, 6,
-                     u->fido_modal ? "SELECT: DONE BACK: CANCEL" : "SELECT: DONE BACK: DELETE");
-        ui_draw_line(u, 7,
-                     u->fido_modal ? "DIRECTIONS: ENTER PATTERN"
-                     : n           ? "BACK AT EMPTY: CANCEL"
-                                   : "BACK: CANCEL");
+        direction_controls(u);
     }
 }
 

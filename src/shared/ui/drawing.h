@@ -11,6 +11,8 @@ void ui_draw_rule(fv_ui *, unsigned y);
 void ui_draw_header(fv_ui *, const char *title, const char *detail);
 void ui_draw_footer(fv_ui *, const char *back, const char *action);
 void ui_draw_choice(fv_ui *, unsigned y, const char *label, bool selected);
+void ui_draw_danger_choices(fv_ui *, const char *action);
 void ui_draw_confirm_choices(fv_ui *, const char *action);
+void ui_draw_vault(fv_ui *, unsigned x, unsigned y, fv_ui_colour);
 void ui_draw_splash(fv_ui *, unsigned frame);
 #endif

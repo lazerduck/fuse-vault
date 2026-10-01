@@ -34,11 +34,11 @@ static void approve_key(fv_ui *u, fv_ui_key key) {
 }
 
 static void render_fido_init_confirm(fv_ui *u) {
-    ui_draw_header(u, "INITIALIZE FIDO?", NULL);
-    ui_draw_text_at(u, 4, 16, "ERASES ALL PASSKEYS", 1, UI_COLOUR_TEXT);
+    ui_draw_header(u, "RESET FIDO?", NULL);
+    ui_draw_text_at(u, 4, 16, "ERASES ALL PASSKEYS", 1, UI_COLOUR_WARNING);
     ui_draw_text_at(u, 4, 26, "KEEPS USB FILES", 1, UI_COLOUR_TEXT);
     ui_draw_text_at(u, 4, 36, "RESETS FIDO SETTINGS", 1, UI_COLOUR_TEXT);
-    ui_draw_confirm_choices(u, "INITIALIZE");
+    ui_draw_danger_choices(u, "RESET");
 }
 
 static void render_fido_policy_screen(fv_ui *u) {
@@ -52,14 +52,19 @@ static void render_fido_policy_screen(fv_ui *u) {
 }
 
 static void render_fido_approve(fv_ui *u) {
-    ui_draw_header(u, "PASSKEY REQUEST", NULL);
-    for (unsigned i = 0; i < 5; i++) {
-        char part[26] = {0};
-        size_t offset = i * 25;
-        if (strlen(u->fido_label) > offset) {
-            strncpy(part, u->fido_label + offset, 25);
-            ui_draw_text_at(u, 4, 16 + i * 10, part, 1, UI_COLOUR_TEXT);
-        }
+    const char *site = u->fido_label;
+    const char *title = "PASSKEY REQUEST";
+    if (!strncmp(site, "SIGN IN ", 8)) { title = "APPROVE SIGN IN?"; site += 8; }
+    else if (!strncmp(site, "REGISTER ", 9)) { title = "CREATE PASSKEY?"; site += 9; }
+    ui_draw_header(u, title, NULL);
+    size_t length = strlen(site);
+    /* Short requests get a quiet instruction; long sites keep all five rows. */
+    unsigned top = length <= 78 ? 30 : 16;
+    if (length <= 78) ui_draw_text_at(u, 4, 16, "CHECK WEBSITE", 1, UI_COLOUR_MUTED);
+    for (unsigned i = 0; i < 5 && i*26 < length; i++) {
+        char part[27] = {0};
+        strncpy(part, site + i*26, 26);
+        ui_draw_text_at(u, 4, top + i*10, part, 1, UI_COLOUR_TEXT);
     }
     ui_draw_footer(u, "\005 REJECT", "\006 APPROVE");
 }

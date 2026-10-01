@@ -1,0 +1,127 @@
+{
+  "C": {
+    "revision": "C",
+    "pcb_xy_clearance": 0.6,
+    "entry_extra_clearance": 0.3,
+    "usb_a_body_extension": 1.2,
+    "sd_room": [
+      50.7,
+      64.1,
+      -14.8,
+      2.5,
+      -2.7,
+      12
+    ],
+    "nut_pocket_af": 4.6,
+    "nut_floor_z": 6.4,
+    "nut_nominal_af": 4,
+    "nut_nominal_height": 1.6,
+    "screw_clearance_diameter": 2.6,
+    "head_clearance_diameter": 4.4,
+    "head_seat_z": -2.0,
+    "screw_nominal_length": 10.0
+  },
+  "B_controls": {
+    "cap_radius": 7.6,
+    "cap_bottom": 8.8,
+    "cap_top": 11.6,
+    "tab_thickness": 0.8,
+    "back_rest_gap": 0.25,
+    "back_stop_gap": 0.55,
+    "end_cap_clearance": 0.25,
+    "end_cap_wall": 1.4,
+    "grip_interference": 0.1
+  },
+  "base_parameters": {
+    "revision": "V2 fit prototype A",
+    "base_bottom": -5.6,
+    "floor_top": -4.0,
+    "seam_z": 4.4,
+    "lid_ceiling": 6.6,
+    "lid_top": 8.2,
+    "outline_xy": [
+      [
+        -2.5,
+        -23.7
+      ],
+      [
+        74.8,
+        -23.7
+      ],
+      [
+        74.8,
+        6.9
+      ],
+      [
+        63,
+        6.9
+      ],
+      [
+        43,
+        2.5
+      ],
+      [
+        -2.5,
+        2.5
+      ]
+    ],
+    "outline_corner_radius": 2.0,
+    "outer_edge_chamfer": 0.35,
+    "screw_xy": [
+      68,
+      3.4
+    ],
+    "screw_post_diameter": 6.4,
+    "screw_clearance": 2.4,
+    "screw_head_diameter": 4.2,
+    "screw_head_seat_z": -2.8,
+    "nut_pocket_across_flats": 4.35,
+    "nut_pocket_roof_z": 7.2,
+    "collar_front_x": -4.5,
+    "collar_rear_x": -0.6,
+    "collar_flange_front_x": -1.4,
+    "collar_bore_clearance_per_side": 0.2,
+    "collar_capture_clearance": 0.25,
+    "joystick_travel_xy_assumed": 1.0,
+    "joystick_socket_shape": "square",
+    "joystick_socket_size": 2.6,
+    "joystick_cap_bottom": 8.8,
+    "joystick_cap_top": 12.6,
+    "back_button_rest_gap": 0.25,
+    "back_button_max_plunger_travel": 0.55,
+    "support_xy": [
+      [
+        12,
+        -0.15
+      ],
+      [
+        45,
+        -0.15
+      ],
+      [
+        68,
+        -0.15
+      ],
+      [
+        18,
+        -21.05
+      ],
+      [
+        41,
+        -21.05
+      ],
+      [
+        67,
+        -21.05
+      ]
+    ],
+    "notes": "Millimetres. PLA FDM fit assumptions; TPU cap. M2 x 10 screw and nominal 4 mm AF x 1.6 mm nut are provisional hardware. Square shaft 2.5 mm, joystick height 9 +/-0.1 verified from supplied drawing. 1 mm shaft movement envelope remains a conservative design allowance, not datasheet stroke. Original reference revision 1 is preserved.",
+    "materials": {
+      "base": "PLA",
+      "lid": "PLA",
+      "usb_c_collar": "PLA",
+      "back_plunger": "PLA",
+      "joystick_cap": "TPU; 2.6 mm socket is a trial fit"
+    }
+  }
+}

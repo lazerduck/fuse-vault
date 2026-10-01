@@ -126,7 +126,9 @@ fv_vault_result fv_vault_create(const fv_vault_platform *p,uint64_t blocks,const
     fv_block_result_t formatted=p->format_scratch?
         fv_auth_format_buffered(&temporary.store,p->format_scratch,p->format_sectors,p->format_progress,p->format_context):
         fv_auth_format(&temporary.store);
-    if(formatted!=FV_BLOCK_OK || save_header(p,0,header) || save_header(p,1,header))goto done;
+    if(formatted!=FV_BLOCK_OK)goto done;
+    if(p->initialize_contents && p->initialize_contents(&temporary,p->initialize_context))goto done;
+    if(save_header(p,0,header) || save_header(p,1,header))goto done;
     s.status=FV_ENROLLMENT_ACTIVE;s.credential_generation=1;s.policy=policy;
     memcpy(s.volume_id,c.volume.volume_id,16);
     r=FV_VAULT_STATE;

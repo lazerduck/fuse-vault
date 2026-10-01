@@ -18,7 +18,7 @@ void ui_clear_input(fv_ui *);
 void ui_go_home(fv_ui *);
 void ui_settings_return(fv_ui *, unsigned item);
 
-extern const ui_scene ui_home_scene, ui_settings_scene;
+extern const ui_scene ui_home_scene, ui_settings_scene, ui_dashboard_scene, ui_dashboard_setting_scene;
 extern const ui_scene ui_method_scene, ui_credential_scene;
 extern const ui_scene ui_stack_scene, ui_options_scene, ui_review_scene;
 extern const ui_scene ui_erase_scene, ui_fido_init_scene, ui_fido_policy_scene;

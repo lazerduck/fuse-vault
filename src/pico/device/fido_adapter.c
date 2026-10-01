@@ -46,7 +46,7 @@ void fv_fido_close(void){
 void fv_fido_unlocked(void){fv_fido_verification_begin(&verification,now(NULL));}
 void fv_fido_ui_poll(fv_ui *ui){
     unsigned state=atomic_load(&prompt_state);
-    if(state==1){fv_ui_fido_begin(ui,prompt.secret,prompt.profile,prompt.label);atomic_store(&prompt_state,2);}
+    if(state==1){fv_ui_fido_begin(ui,prompt.secret,prompt.profile,prompt.label);fv_device_ui_wake();atomic_store(&prompt_state,2);}
     else if(state==2 && (ui->fido_done || atomic_load(&prompt_abort))){
         prompt.approved=ui->fido_approved && !atomic_load(&prompt_abort);prompt.length=ui->job.length;
         memcpy(prompt.value,ui->job.secret,sizeof(prompt.value));
@@ -152,6 +152,10 @@ int fv_fido_initialize(void){
     fv_fido_close();int r=fv_fido_store_initialize(&store,fv_fido_vault(),true,image);
     fv_fido_store_close(&store);fv_ui_wipe(image,sizeof(image));return r;
 }
+int fv_fido_prepare_new(const fv_vault *vault){
+    fv_fido_close();
+    return fv_fido_store_prepare_new(vault,image);
+}
 void fv_fido_execute(void){
     size_t n=1;response[0]=0x7f;invalidated=false;executing=true;
     if(fv_fido_cancelled(NULL))goto finish;
@@ -194,7 +198,11 @@ void fv_fido_poll(void){
     if(hid.pending && !fv_fido_busy() && !atomic_load(&fv_ui_maintenance) && fv_usb_worker_idle()){
         fv_command c={0};c.fido=true;
         atomic_store(&cancel,hid.cancelled);atomic_store(&busy,true);
-        if(queue_try_add(&commands,&c)){hid.pending=false;keepalive_at=now(NULL);}
+        if(queue_try_add(&commands,&c)){
+            /* GetInfo is background discovery, not user interaction. */
+            if(hid.rx_size && hid.rx[0]!=4)fv_device_ui_wake();
+            hid.pending=false;keepalive_at=now(NULL);
+        }
         else atomic_store(&busy,false);
     }
     if(!tud_hid_ready())return;

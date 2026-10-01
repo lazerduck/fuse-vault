@@ -1,0 +1,162 @@
+{
+  "checks": [
+    {
+      "check": "populated_board_and_collar_drop_z_0",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_0.25",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_0.5",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_1",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_1.5",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_2",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_3",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_4",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_5",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_6",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_8",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "populated_board_and_collar_drop_z_12",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "continuous_PCB_outline_sweep_12mm",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "continuous_collar_body_sweep_12mm",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "continuous_collar_flange_sweep_12mm",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "continuous_SD_clearance_sweep_12mm",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "SD_clearance_drop_z_0",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "SD_clearance_drop_z_1",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "SD_clearance_drop_z_2",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "SD_clearance_drop_z_3",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "SD_clearance_drop_z_4",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "SD_clearance_drop_z_6",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "SD_clearance_drop_z_8",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "collar_preinstallation_x_-15",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "collar_preinstallation_x_-10",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "collar_preinstallation_x_-5",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "collar_preinstallation_x_-2",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "collar_preinstallation_x_-1",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "collar_preinstallation_x_0",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "nut_from_above_z_0",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "nut_from_above_z_1",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "nut_from_above_z_3",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "nut_from_above_z_8",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "screw_from_below_z_0",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "screw_from_below_z_-2",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "screw_from_below_z_-5",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "screw_from_below_z_-10",
+      "intersection_mm3": 0.0
+    },
+    {
+      "check": "screw_from_below_z_-15",
+      "intersection_mm3": 0.0
+    }
+  ],
+  "failures": [],
+  "limitations": [
+    "Continuous conservative sweeps checked for PCB outline, collar exteriors and SD clearance. Other components and hardware use discrete samples; this is not a print-tolerance proof.",
+    "Reference card extension and package heights are provisional; actual C fit must be tested.",
+    "Board is inserted with SD card latched and collar fitted, before fitting lid or D-pad cap."
+  ]
+}
