@@ -11,4 +11,6 @@ The core of Fuse Vault is the RP2354, a Raspberry Pi RP2350-family microcontroll
 The software is written in C with the Pico SDK and controls and coordinates the rest of the functionality of the device. The software is highly user configurable and designed to be secure over fast with observed speeds around 400 KiB/s on the device display. Throughput depends on the selected cipher stack and workload; this is not a guaranteed rate. One KiB is 1,024 bytes.
 
 ### Subsections
-[Key handling](docs/KeyHandling.md)
+
+- [Key handling](docs/KeyHandling.md)
+- [File storage](docs/FileStorage.md)
