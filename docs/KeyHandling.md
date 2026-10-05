@@ -30,9 +30,30 @@ The permanent device root has a second role: deriving the key that authenticates
 Both the device secret and enrollment token are stored in OTP. OTP is one time programmable storage, starting as all 0s and allowing the system to update bits to be 1s. Unlike ordinary flash, OTP cannot be erased and rewritten: programmed bits cannot be unset. That is why it holds the enrollment token and irreversible revocation markers. After its secret rows have been programmed to all ones, the old token cannot be restored by rewriting those rows. Additional zero-to-one changes are still possible while programming access is allowed, so OTP access controls are needed to prevent unauthorized changes. This does not revoke a copy of a token extracted before destruction. Additionally the OTP can also have access controls and debug restrictions. The device root is stored in OTP page 16 with ECC. Pages 17 to 24 are used for enrollment tokens (8 slots).
 
 ### Proposed improvements (not implemented)
-The device root is stored at page 16 but there does not seem to be a reason for this. We should leave 0-1 reserved, page 2 for the secure boot and then put the device root into page 3. Page 4 would hold token status, and pages 5 to 60 would hold enrollment tokens. Existing devices already using page 16 for the root require an explicit compatibility or migration plan; their OTP cannot simply be relocated or cleared.
 
-Currently each token uses one page, which is inefficient. Each page has 64 rows; each ECC enrollment token uses 16 rows, so four token secrets could fit in one page if their status is stored separately. The proposed page-4 raw status mask would hold three bits per token:
+Remove the permanent device root. Each enrollment will have one independently random 32-byte OTP token. Destroying an enrollment abandons its vault, attempt count, failure policy and header reference; no journal continuity is required between enrollments. The descriptions above reflect the existing implementation, which still uses a permanent root.
+
+The enrollment token will support two separate purposes:
+
+- **Vault protection:** combine token-derived binding material with the user credential to derive the VMK wrapping keys. Preserve the existing intent of credential hardening, separate wrapping keys and envelope authentication, without a permanent root as an additional input.
+- **Journal authentication:** derive an HMAC key from the token using a distinct purpose label and enrollment context. This key authenticates the internal flash journal before the user unlocks. It must be separate from vault-binding and wrapping keys.
+
+The OTP mask, rather than the journal, identifies the current token and irreversible revocation state. The journal stores changing state for that enrollment, including attempts, policy and the accepted vault-header reference. A new token gets a fresh journal; an old enrollment's records must not authenticate under the new token. Exact derivation labels, context encoding and format identifiers must be defined and tested before implementation.
+
+#### OTP allocation and status mask
+
+With no root page required, the proposed allocation is:
+
+| Pages | Purpose |
+| --- | --- |
+| 0–2 | Reserved for chip and boot configuration |
+| 3 | One raw enrollment-status mask |
+| 4–60 | Enrollment-token secrets |
+| 61–63 | Reserved for hardware access keys and page-lock configuration |
+
+Each page has 64 rows. A 32-byte token uses 16 ECC rows, so four token secrets fit per page when status is stored separately. Pages 4–60 provide 57 × 4 = **228 token slots**, including the initial enrollment. The mask uses three bits per token, or **684 of the 1,536 raw bits** in page 3.
+
+Use a single mask, with writes read back and verified. Two copies introduce conflicting sources and interrupted-copy updates without identifying which copy is correct. Redundant copies are not part of this proposal.
 
 | Bits | Meaning |
 | --- | --- |
@@ -41,16 +62,28 @@ Currently each token uses one page, which is inefficient. Each page has 64 rows;
 | `110` | Token written, verified and ready for use |
 | `111` | Revoked; finish overwriting its secret rows with ones if necessary |
 
-This gives 224 token slots: 56 pages (5–60 inclusive), with four tokens per page. The mask requires 672 of the 1,536 raw bits in page 4. Two copies would fit, but duplication only detects disagreement; it does not by itself tell us which copy is correct. Whether to use redundancy, and how to handle interrupted updates to it, remains undecided.
-
-The proposed rule is that a token must reach `110`, with that marker read back and verified, before it is used to create a vault. A slot left at `100` after interruption is abandoned even if its secret might have been fully written. We accept consuming that slot rather than trying to recover it.
+A token must reach `110`, with that marker read back and verified, before it is used to create a vault. A slot left at `100` after interruption is abandoned even if its secret might have been fully written. Consuming that slot is preferable to trying to recover an uncertain token.
 
 When scanning for the current enrollment:
 
-- `111`: never select it. Check that its secret rows are fully burned and finish destruction before allowing a new enrollment.
+- `111`: never select it. Check that its secret rows are fully burned and finish destruction before allowing a new enrollment. Cleanup must not require the revoked token's journal to authenticate, because the token may already be partly destroyed.
 - `000`: a candidate for a fresh enrollment only after confirming there is no existing current enrollment or unfinished destruction. Verify the corresponding secret rows are blank before claiming it.
-- `110`: a candidate for the current enrollment; reconcile it with the authenticated journal, which also distinguishes a prepared token from a completed vault.
+- `110`: identifies a completed token, not necessarily a completed vault. Authenticate its journal with the token-derived journal key and determine the vault's setup state.
 - `100`: an interrupted enrollment. Mark it revoked, finish destroying its secret rows and then advance to a fresh slot.
 - Unexpected bit patterns, unreadable status or conflicting current slots: report a fault rather than guess or reset attempts.
 
-This proposal needs a defined ordering between OTP status updates and journal commits. The current implementation has separate completion and activation markers and commits an EMPTY enrollment record before setting activation. Replacing that sequence must handle any journal reference to an abandoned slot without resetting attempts or discarding an existing active vault. An interruption after `110` but before vault setup completes also needs defined recovery. The three-bit proposal and its recovery rules have not yet been implemented or tested.
+#### Journal initialization and interrupted setup
+
+Only explicit new-enrollment setup may initialize a fresh journal. A missing or damaged journal for an existing active vault must deny access; it must never silently become a new record with zero attempts.
+
+The ordering between mask updates, journal initialization and vault creation still needs to be specified. In particular, interruption after `110` but before journal initialization must be distinguishable from loss of an active vault's journal, or handled conservatively without resetting attempts. The three-bit mask alone does not distinguish those cases. This is a remaining recovery-design question, not a reason to retain a permanent root.
+
+Destruction makes the OTP revocation marker authoritative before burning the token. After burning starts, the old journal may no longer be verifiable. Complete destruction using OTP state, then initialize a new journal only as part of explicitly setting up the next enrollment.
+
+#### Compatibility and protection scope
+
+Accept an incompatible format change for the two existing development units; preserving their vault contents is not a requirement for this proposal. A general user migration system is not required. Previously programmed OTP rows cannot be cleared or treated as unused: reusing those boards will require identifying and excluding occupied slots, or using fresh hardware for the clean allocation. The 228-slot capacity assumes a fresh token area.
+
+Attempt limits must survive normal resets and SD replacement or rollback. Protection against an attacker restoring the device's internal flash is outside scope. HMAC detects forged journal contents but does not independently prevent replay of an older valid journal from the same enrollment. OTP access restrictions, trusted firmware and debug protections remain necessary to protect the token.
+
+These changes are documentation of the intended design only. Root removal, new derivations, the mask layout and recovery behavior have not yet been implemented or tested.
