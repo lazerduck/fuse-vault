@@ -221,7 +221,7 @@ The immutable descriptor binds keys to the selected configuration. Do not derive
 future FIDO/signing private keys from these labels; private objects are deferred.
 
 XTS tweak remains `LE64(logical_LBA) || eight zero bytes`. Sector HMAC and metadata
-remain exactly as [implemented](../src/shared/storage/README.md): domain bytes
+remain exactly as [implemented](../../src/shared/storage/README.md): domain bytes
 `46 56 2d 53 45 43 54 4f 52 2d 4d 41 43 00 00 01`, volume ID, LE64 logical LBA,
 then the final 512-byte ciphertext. Authenticate written data before decryption;
 unset sectors return zeros without payload reads. No per-sector KDF or RNG.
@@ -415,7 +415,7 @@ these platform dependencies are implemented and tested.
   final-attempt success, interrupted attempts/destruction retries, and injected
   SD/atomic-state commit failures. Software and mocked Pico SHA paths are covered.
 
-See [the security module README](../src/shared/security/README.md) for APIs, buffer
+See [the security module README](../../src/shared/security/README.md) for APIs, buffer
 ownership, validation and remaining limits. The benchmark firmware still uses
 public test keys: ARM compilation of this library does not activate production
 unlock, persistent flash state, Secure RAM isolation or OTP programming.

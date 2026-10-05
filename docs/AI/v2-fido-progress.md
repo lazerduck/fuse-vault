@@ -107,7 +107,7 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   capacity is 103–112 records across the tested account profiles (104–107 for
   distinct sites with email/display names), versus 44–48 previously. Firmware
   fixed RAM is about 427.6 KiB; runtime board checks remain pending. See
-  [expansion evidence](../results/fido-128k-20260921.md).
+  [expansion evidence](../../results/fido-128k-20260921.md).
 
 - Priority update (user, 2026-09-21): physical endurance testing moves to the
   forthcoming V2 board with working screen and printed enclosure, through daily
@@ -127,7 +127,7 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   release security review/hardening remain separate production gates.
 - User confirmed configurable verification works across several board scenarios.
 - **Current implementation stage: F4 implemented; initial user browser/board tests passed.**
-  Runbook `docs/v2-fido-browser-testing.md`; evidence `results/fido-f4-build-20260921.md`.
+  Runbook `docs/AI/v2-fido-browser-testing.md`; evidence `results/fido-f4-build-20260921.md`.
   Latest UF2 adds Settings → Passkeys, local stable-ID deletion and browsing. Harness:
   `python3 src/host/tools/fido_web/server.py`, then http://localhost:8000. Preserve existing
   credentials/settings; do not initialize FIDO again. Agent's temporary UI test
@@ -146,7 +146,7 @@ substitute a browser virtual authenticator for tests of the actual engine/device
   reconnect remain unconfirmed.
   F5 remains broader acceptance/hardening; F4 software tests do not complete it.
 - **F3 status: F3, board discovery/registration/login/reconnect passed; load stability acceptance pending.**
-  Build/runbook: `docs/v2-fido-testing.md`; evidence:
+  Build/runbook: `docs/AI/v2-fido-testing.md`; evidence:
   `results/fido-integration-build-20260921.md`. Development UF2 is
   `build-pico-fido/fuse_vault_security.uf2`. User flashed the corrected image and
   reported successful real-board registration and login; the agent has not flashed it.

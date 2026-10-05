@@ -1,0 +1,17 @@
+{
+  "usb_c_end_cap": {
+    "shape_change_mm3": 0.0
+  },
+  "usb_a_end_cap": {
+    "shape_change_mm3": 0.0
+  },
+  "usb_c_collar": {
+    "shape_change_mm3": 0.0
+  },
+  "base_USB_C_capture_region": {
+    "shape_change_mm3": 0.0
+  },
+  "lid_USB_C_capture_region": {
+    "shape_change_mm3": 0.0
+  }
+}

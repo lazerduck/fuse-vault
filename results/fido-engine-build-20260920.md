@@ -1,7 +1,7 @@
 # V2 portable FIDO engine validation — 2026-09-20
 
 F1 portable baseline passed. This does not enable FIDO on the board. The formal
-remaining stages and constraints are in [the ledger](../docs/v2-fido-progress.md).
+remaining stages and constraints are in [the ledger](../docs/AI/v2-fido-progress.md).
 
 ## Delivered
 

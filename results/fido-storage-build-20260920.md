@@ -2,8 +2,8 @@
 
 F2 portable store implementation and test integration. No board was flashed and
 no physical SD or OTP was changed. Format/API documentation is in
-[the storage design](../docs/v2-fido-storage.md); staged progress is in
-[the delivery ledger](../docs/v2-fido-progress.md).
+[the storage design](../docs/AI/v2-fido-storage.md); staged progress is in
+[the delivery ledger](../docs/AI/v2-fido-progress.md).
 
 ## Changes
 

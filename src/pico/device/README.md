@@ -20,7 +20,7 @@ crypto, entropy, SD and device authority. USB identity is `cafe:4022`, product
 
 The persistent path stores root/token in fixed application OTP pages and attempts/
 header authority in an authenticated flash journal. See the
-[allocation, record format and debug workflow](../../../docs/v2-persistent-authority.md).
+[allocation, record format and debug workflow](../../../docs/AI/v2-persistent-authority.md).
 These operations are implemented and host-tested; physical OTP programming and
 power-cycle verification remain pending. No automatic initial provisioning occurs.
 
@@ -78,7 +78,7 @@ self-test now use the agreed **60,000 iterations**; persistent header acceptance
 bounds are exactly 60,000. Previous hardware timing measured about 1.40 seconds.
 
 For persistent provision/create/power-cycle/check/rotation, follow the
-[persistent workflow](../../../docs/v2-persistent-authority.md#debug-workflow).
+[persistent workflow](../../../docs/AI/v2-persistent-authority.md#debug-workflow).
 Capture a new snapshot after provisioning or advancement:
 
 ```sh
@@ -120,7 +120,7 @@ The current allocation is root page 16, token pages 17–24, with flash offsets
 contents/permissions and verify writes. Permanent access locks are deliberately
 unchanged during development. Hardware interruption testing, Secure access/debug
 policy and protected RAM isolation are tracked in the
-[production checklist](../../../docs/production-checklist.md).
+[production checklist](../../../docs/AI/production-checklist.md).
 
 More passing RNG smoke tests show reliable integration, not entropy quality. We
 rely on vendor source design and focus remaining checks on failure handling and

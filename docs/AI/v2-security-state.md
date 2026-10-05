@@ -35,7 +35,7 @@ four-bit SD and laptop-controlled USB transfers using public test keys.
 Implemented: HMAC-SHA-256, packed sector metadata, explicit unset handling, bounded clean
 metadata caching, and protocol-4 benchmark instrumentation. Desktop corruption
 and interrupted-write tests pass. The authenticated hardware smoke test and
-[paired 20-configuration benchmark](../results/v4-authenticated-baseline.md)
+[paired 20-configuration benchmark](../../results/v4-authenticated-baseline.md)
 passed on 2026-09-16; hardware fault injection remains untested.
 
 The portable volume/envelope/session implementation is described below. The
@@ -48,7 +48,7 @@ The protocol-5 benchmark adds a Pico SHA-256 backend with a mandatory on-board
 HMAC self-check and backend identification in results. Desktop adapter, storage
 and integration tests pass. The board self-check and all ten accelerated
 authenticated configurations also passed on 2026-09-16; see the
-[hardware comparison](../results/v5-sha-comparison.md). HMAC time fell about 84%,
+[hardware comparison](../../results/v5-sha-comparison.md). HMAC time fell about 84%,
 although slower AES encryption in this build limits write gains. This changes
 implementation/performance, not tag format or policy.
 
@@ -56,7 +56,7 @@ implementation/performance, not tag format or policy.
 Both cipher hot paths and Camellia lookup tables are now configured for SRAM
 in the board build (`FV_CIPHERS_RAM=ON`), adding 3,760 initialized RAM bytes.
 The combined UF2 passes desktop tests and all 30 cases in the
-[three-pass board benchmark](../results/v5-ciphers-ram-benchmark.md), with stable
+[three-pass board benchmark](../../results/v5-ciphers-ram-benchmark.md), with stable
 cipher timings. Hardware fault injection remains untested.
 This completes the assembled benchmark data path (USB, cipher pipeline,
 HMAC/metadata, SD), not the production volume/key/unlock lifecycle listed above.
@@ -67,7 +67,7 @@ The [volume design](v2-volume-and-key-design.md) and
 [VMK envelope](v2-vmk-envelope-proposal.md) now have a portable implementation:
 one to four fixed slots, XOR shares, AES/Camellia KW, outer HMAC, binding/KDFs,
 create/unlock/read/write/lock, credential change, header repair and charged attempts.
-The [security module README](../src/shared/security/README.md) documents ownership and APIs.
+The [security module README](../../src/shared/security/README.md) documents ownership and APIs.
 
 Fourteen release and fourteen ASan/UBSan tests pass, including independent fixed
 vectors and file-backed lifecycle/failure injection; ARM library compilation passes.
@@ -84,14 +84,14 @@ authentication. No whole-object-store freshness mechanism is added.
 
 ## First Pico integration image
 
-[Security bring-up](../src/pico/device/README.md) links the complete portable
+[Security bring-up](../../src/pico/device/README.md) links the complete portable
 lifecycle to SD/SHA/cipher backends and a candidate TRNG/CTR-DRBG adapter. It adds
 compile-time removable read-only OTP inspection and a laptop snapshot/diff tool.
 Its test enrollment is deliberately volatile: no permanent OTP slots are assumed,
 no OTP/security-flash writes occur, and no power-cycle durability is claimed.
 Capture the physical inventory and measure entropy/KDF operation before committing
 the permanent enrollment layout. Seventeen host/sanitizer tests and both ARM build
-variants pass. The [first board run](../results/security-bringup-20260917.md) now
+variants pass. The [first board run](../../results/security-bringup-20260917.md) now
 passes RNG, 60,000-iteration KDF timing and three complete SD lifecycle tests.
 Median envelope unlock is 1.40151 seconds. OTP baseline/after snapshots match in
 all reported fields; no OTP writes were performed. Persistent authority and

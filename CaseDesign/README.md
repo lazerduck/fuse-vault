@@ -1,6 +1,12 @@
 # Fuse Vault PCB reference
 
-**Latest: prototype D — slimmer snap-fit case.** [Print and assembly instructions](prototype-d/README.md)
+**Latest: prototype E — four supported shell snaps.** [Print instructions](prototype-e/README.md)
+replace D's failed thin latch with ramped alignment posts and recesses. Print the
+standard snap sample first, then E base and lid. Reuse the working D end caps and
+USB-C collar. Closure must hold the collar securely without help from the end caps;
+physical holding force still needs testing. Intended for occasional service access.
+
+**Previous prototype D — slimmer case; latch failed physical test.** [Print and assembly instructions](prototype-d/README.md)
 cover the 12.1 mm body, tighter PCB locators, hook-and-snap closure, TPU covers
 with detents, bare joystick and tactile back-button dimple. Start with the latch
 test pair. The existing USB-C collar is reusable; D needs new base, lid and covers.

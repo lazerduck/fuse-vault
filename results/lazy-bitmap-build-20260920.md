@@ -18,4 +18,4 @@ credential-change compatibility. ARM UI firmware build passed. UF2 bounds checke
 
 No firmware flashed and no attached-board storage/OTP operations performed.
 Existing volumes stay at layout 1; new creates use layout 2. For setup instructions
-and wire-format details see docs/v2-lazy-metadata.md.
+and wire-format details see docs/AI/v2-lazy-metadata.md.

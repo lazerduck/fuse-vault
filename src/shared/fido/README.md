@@ -2,7 +2,7 @@
 
 Opt-in development engine and encrypted snapshot-store libraries, with no board
 USB/UI attachment yet. Progress
-and remaining gates are in [the delivery ledger](../../../docs/v2-fido-progress.md).
+and remaining gates are in [the delivery ledger](../../../docs/AI/v2-fido-progress.md).
 The imported pico-fido/Pico Keys sources are AGPLv3: see the
 [provenance and changes](../../../third_party/pico_fido/README.fuse-vault.md).
 
@@ -66,7 +66,7 @@ restart the host reset window. Reset must use a distinct destructive UI prompt.
 
 `fv_fido_store` connects the engine's commit callback to the existing V2 vault
 pipeline in private sectors 16–2063. It uses separate FIDO keys and two snapshot
-banks. See [format, API and recovery policy](../../../docs/v2-fido-storage.md).
+banks. See [format, API and recovery policy](../../../docs/AI/v2-fido-storage.md).
 The encrypted engine test target runs the same independent-client suite against
 file-backed encrypted media, including signatures after changing the vault secret.
 
@@ -80,9 +80,9 @@ F3/F5 acceptance items.
 ## Firmware integration
 
 F3 opt-in composite firmware and real USB test instructions are in
-[`docs/v2-fido-testing.md`](../../../docs/v2-fido-testing.md). The persistent
-[delivery ledger](../../../docs/v2-fido-progress.md) separates implemented software
+[`docs/AI/v2-fido-testing.md`](../../../docs/AI/v2-fido-testing.md). The persistent
+[delivery ledger](../../../docs/AI/v2-fido-progress.md) separates implemented software
 from pending board acceptance.
 
 The snapshot reader expands authenticated legacy 64 KiB images in RAM; see
-[forward migration and downgrade restriction](../../../docs/v2-fido-storage.md#expansion-from-the-64-kib-format).
+[forward migration and downgrade restriction](../../../docs/AI/v2-fido-storage.md#expansion-from-the-64-kib-format).

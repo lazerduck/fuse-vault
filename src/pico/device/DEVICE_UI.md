@@ -1,4 +1,4 @@
-> **Current format:** new volumes use the [lazy metadata bitmap](../../../docs/v2-lazy-metadata.md).
+> **Current format:** new volumes use the [lazy metadata bitmap](../../../docs/AI/v2-lazy-metadata.md).
 > Setup clears about 938 KiB on the current card instead of 3.66 GiB. The eager
 > initialization formula/timings below describe the earlier layout. Existing
 > volumes remain supported; flashing alone does not convert them.
@@ -206,7 +206,7 @@ During a UI operation, MSC returns not-ready without waiting behind a long metad
 format, while CDC screen/button handling remains responsive. USB invalidation is
 retained until the worker is available. Screen updates use no shared worker reply
 buffer while a diagnostic CDC command is outstanding. MSC now uses a
-[two-buffer 32 KiB pipeline](../../../docs/v2-usb-pipeline.md), overlapping USB with
+[two-buffer 32 KiB pipeline](../../../docs/AI/v2-usb-pipeline.md), overlapping USB with
 worker encryption/authentication and SD work.
 
 ## Release boundary

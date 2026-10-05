@@ -32,7 +32,7 @@ Validation:
   both compile/link successfully. The smoke client help and Python compilation
   checks pass. UF2 packaging succeeded without flashing.
 
-Build command: see `docs/v2-fido-testing.md`. The current composite ELF reports
+Build command: see `docs/AI/v2-fido-testing.md`. The current composite ELF reports
 413,764 bytes text, 346,424 bytes BSS, zero separate data in `arm-none-eabi-size`.
 This is not a peak heap/stack measurement. The worker stack reservation is 65,536
 bytes; compiler frames include re-verification at 7,624 bytes and FIDO dispatch

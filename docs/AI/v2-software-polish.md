@@ -38,7 +38,7 @@ work, even after UI polish is complete.
   destructive confirmations, setup menus and error screens now use shared headers,
   separators, highlight bars and compact icon footers. The first pass primarily
   improved behavior; this follow-up addresses the visual inconsistency the user
-  identified. Latest preview/evidence: [unified UI](../results/ui-style-20260921.md).
+  identified. Latest preview/evidence: [unified UI](../../results/ui-style-20260921.md).
 - Button convention: Up/Down moves through choices; Left/Right changes the
   selected value or pages long text; Select enters/accepts; Back exits a menu and
   locks at unlocked home. FIDO Back still rejects/cancels. Credential entry keeps
@@ -52,7 +52,7 @@ work, even after UI polish is complete.
   the actual C renderer: nested Back/cancel behavior, bounded passkey label paging,
   settings position, operation-specific busy text, readable confirmations and
   accurate FIDO cancellation hints. Credentials and persistent formats unchanged.
-- Evidence and preview: [UI polish results](../results/ui-polish-20260921.md).
+- Evidence and preview: [UI polish results](../../results/ui-polish-20260921.md).
 - Next action: P2 status/feedback review. Generic error codes still need a deliberate
   worker-to-UI error classification before offering more specific recovery advice;
   do not infer a failure cause from overlapping subsystem integer codes.

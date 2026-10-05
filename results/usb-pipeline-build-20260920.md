@@ -25,4 +25,4 @@ Validation:
 
 Not flashed by this task. Real-device copy/checksum, reconnect, error handling and
 throughput comparison remain the next hardware step. No speed gain claimed from
-host timing. See `docs/v2-usb-pipeline.md` for implementation and test procedure.
+host timing. See `docs/AI/v2-usb-pipeline.md` for implementation and test procedure.

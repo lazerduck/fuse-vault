@@ -35,7 +35,7 @@ it is finished when preparing a production image. FIDO is outside this milestone
 - [x] On sample 317741A1459A6F94: initialize reserved flash, provision root/token,
   verify expected OTP occupancy/unchanged locks, create/write/unlock/read 1 MiB
   using OTP/flash authority at 60,000 iterations. See
-  [hardware record](../results/security-persistence-20260918.md).
+  [hardware record](../../results/security-persistence-20260918.md).
 - [x] Saved attempt count and all 1 MiB of payload survived a full power cycle and
   diagnostic reflash; delayed worker launch recovered/unlocked/read successfully.
 - [ ] Resolve normal automatic startup: USB fails in the normal image but works

@@ -210,7 +210,7 @@ The authenticated hardware smoke test and all 20 paired protocol-4 configuration
 passed on 2026-09-16. See the [paired comparison](../../../results/v4-authenticated-baseline.md).
 Historical V3 results remain an unauthenticated baseline.
 See [layout and cache details](../../shared/storage/README.md) and
-[device-state placement](../../../docs/v2-security-state.md).
+[device-state placement](../../../docs/AI/v2-security-state.md).
 
 
 ## SHA accelerator comparison

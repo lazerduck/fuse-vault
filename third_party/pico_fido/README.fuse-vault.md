@@ -43,7 +43,7 @@ notes remain in `v1/firmware/third_party/pico_fido/README.fuse-vault.md`.
 
 ## Verification and review boundaries
 
-See `src/fido/README.md` and `docs/v2-fido-progress.md` for actual V2 evidence.
+See `src/shared/fido/README.md` and `docs/AI/v2-fido-progress.md` for actual V2 evidence.
 V1's encrypted store, USB and hardware claims do not describe this library.
 The independent client uses test-only simulated UV/presence and RAM snapshots.
 Built-in device-secret verification, encrypted FIDO persistence and browser USB

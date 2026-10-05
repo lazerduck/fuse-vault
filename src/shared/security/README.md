@@ -1,7 +1,7 @@
 # Portable vault and security module
 
-Implements the [volume/key design](../../../docs/v2-volume-and-key-design.md) and
-[four-slot VMK envelope](../../../docs/v2-vmk-envelope-proposal.md). The format is
+Implements the [volume/key design](../../../docs/AI/v2-volume-and-key-design.md) and
+[four-slot VMK envelope](../../../docs/AI/v2-vmk-envelope-proposal.md). The format is
 implemented for development/testing, not frozen for production use.
 
 ## Available now
@@ -97,10 +97,10 @@ stacks must not be assumed sufficient. ARM compilation alone isn't a runtime tes
 
 The TRNG/CTR-DRBG adapter, 60,000-iteration enrollment profile, authenticated flash
 journal and fixed OTP root/token lifecycle are implemented. See
-[persistent authority](../../../docs/v2-persistent-authority.md) for encoding,
+[persistent authority](../../../docs/AI/v2-persistent-authority.md) for encoding,
 allocation, recovery limits and pending physical tests. Production access/debug
 protections, Secure RAM isolation, on-device credential UI and USB MSC remain on
-the [release checklist](../../../docs/production-checklist.md). The separate benchmark
+the [release checklist](../../../docs/AI/production-checklist.md). The separate benchmark
 firmware still uses public test keys.
 
 Run `cmake --build build -j4` then `ctest --test-dir build --output-on-failure`.
@@ -120,4 +120,4 @@ verification remain pending; the earlier successful board tests used RAM authori
 
 SM4 algorithm ID 3 uses a 128-bit wrapping key and two 128-bit XTS keys.
 It participates in the same n-of-n VMK share scheme as AES/Camellia; see
-[SM4 format and key conventions](../../../docs/sm4-integration.md).
+[SM4 format and key conventions](../../../docs/AI/sm4-integration.md).
