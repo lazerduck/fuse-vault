@@ -14,3 +14,8 @@ The software is written in C with the Pico SDK and controls and coordinates the 
 
 - [Key handling](docs/KeyHandling.md)
 - [File storage](docs/FileStorage.md)
+- [Setup, unlock and enrollment](docs/Setup.md)
+- [FIDO2 and passkeys](docs/FIDO2.md)
+- [The unlocked session](docs/Session.md)
+- [Randomness](docs/Randomness.md)
+- [Planned improvements](docs/Improvements.md)
