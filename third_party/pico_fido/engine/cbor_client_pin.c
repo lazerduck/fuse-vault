@@ -47,8 +47,9 @@ static bool hkey_init = false;
 #define PIN_RETRY_COMMIT_TIMEOUT_MS 500
 
 static bool load_pin_data(const file_t *ef, uint8_t pin_data[PIN_DATA_LEN], uint16_t *pin_data_len) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     uint32_t stored_len = file_get_size(ef);
-    const uint8_t *data = file_get_data(ef);
+    const uint8_t *data = file_view_data(&fv_view, ef);
 
     if (!data || (stored_len != PIN_LEGACY_DATA_LEN && stored_len != PIN_DATA_LEN)) {
         return false;
@@ -62,18 +63,20 @@ static bool load_pin_data(const file_t *ef, uint8_t pin_data[PIN_DATA_LEN], uint
 }
 
 static bool persist_pin_retry_counter(file_t *ef, const uint8_t *pin_data, uint16_t pin_data_len) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     if (file_put_data(ef, CONST_BYTE_ARRAY(pin_data, pin_data_len)) != PICOKEYS_OK) {
         return false;
     }
     // Do not trust the decremented RAM copy until core0 has drained the flash queue.
-    if (!flash_commit_sync(PIN_RETRY_COMMIT_TIMEOUT_MS) || file_get_size(ef) != pin_data_len || !file_get_data(ef)) {
+    if (!flash_commit_sync(PIN_RETRY_COMMIT_TIMEOUT_MS) || file_get_size(ef) != pin_data_len || !file_view_data(&fv_view, ef)) {
         return false;
     }
-    return file_get_data(ef)[0] == pin_data[0];
+    return file_view_data(&fv_view, ef)[0] == pin_data[0];
 }
 
 static bool pin_power_cycle_locked(void) {
-    return needs_power_cycle || (ef_pin && file_has_data(ef_pin) && (*file_get_data(ef_pin) & PIN_RETRY_POWER_CYCLE) != 0);
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
+    return needs_power_cycle || (ef_pin && file_has_data(ef_pin) && (*file_view_data(&fv_view, ef_pin) & PIN_RETRY_POWER_CYCLE) != 0);
 }
 
 static int beginUsingPinUvAuthToken(bool userIsPresent) {
@@ -210,7 +213,7 @@ static void resetAuthToken(bool persistent) {
 int resetPinUvAuthToken(void) {
     resetAuthToken(false);
     paut.permissions = 0;
-    paut.data = file_get_data(ef_authtoken);
+    paut.data = fv_pico_token_data(ef_authtoken,false);
     paut.len = file_get_size(ef_authtoken);
     fido_object_authorization_session_invalidate();
     return 0;
@@ -220,7 +223,7 @@ int resetPersistentPinUvAuthToken(void) {
     resetAuthToken(true);
     file_t *ef_pauthtoken = file_search_by_fid(EF_PAUTHTOKEN, NULL, SPECIFY_EF);
     ppaut.permissions = 0;
-    ppaut.data = file_get_data(ef_pauthtoken);
+    ppaut.data = fv_pico_token_data(ef_pauthtoken,true);
     ppaut.len = file_get_size(ef_pauthtoken);
     fido_object_authorization_session_invalidate();
     return 0;
@@ -312,10 +315,11 @@ void pin_uv_auth_token_tick(void) {
 }
 
 static int check_keydev_encrypted(const uint8_t pin_token[32]) {
-    if (file_get_data(ef_keydev) && *file_get_data(ef_keydev) == 0x01) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
+    if (file_view_data(&fv_view, ef_keydev) && *file_view_data(&fv_view, ef_keydev) == 0x01) {
         uint8_t tmp_keydev[61];
         tmp_keydev[0] = 0x03; // Change format to encrypted
-        int ret = encrypt_with_aad(pin_token, CONST_BYTE_ARRAY(file_get_data(ef_keydev) + 1, 32), 2, tmp_keydev + 1);
+        int ret = encrypt_with_aad(pin_token, CONST_BYTE_ARRAY(file_view_data(&fv_view, ef_keydev) + 1, 32), 2, tmp_keydev + 1);
         if (ret != PICOKEYS_OK) {
             mbedtls_platform_zeroize(tmp_keydev, sizeof(tmp_keydev));
             return ret;
@@ -329,11 +333,12 @@ static int check_keydev_encrypted(const uint8_t pin_token[32]) {
 }
 
 static bool pin_policy_pass(const uint8_t *pin, size_t pin_len) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     file_t *ef_pin_complexity_policy = file_search_by_fid(EF_PIN_COMPLEXITY_POLICY, NULL, SPECIFY_EF);
     if (!file_has_data(ef_pin_complexity_policy)) {
         return true;
     }
-    uint16_t policy = get_uint16_be(file_get_data(ef_pin_complexity_policy));
+    uint16_t policy = get_uint16_be(file_view_data(&fv_view, ef_pin_complexity_policy));
     if (policy == 0) {
         return true;
     }
@@ -381,6 +386,7 @@ static uint16_t pin_codepoint_len(const uint8_t *pin, size_t pin_len) {
 uint8_t new_pin_mismatches = 0;
 
 int cbor_client_pin(const uint8_t *data, size_t len) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     size_t resp_size = 0;
     uint64_t subcommand = 0x0, pinUvAuthProtocol = 0, permissions = 0;
     int64_t kty = 0, alg = 0, crv = 0;
@@ -447,7 +453,7 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
     }
     else if (subcommand == 0x1) { //getPINRetries
         bool power_cycle_locked = pin_power_cycle_locked();
-        uint8_t retries = file_has_data(ef_pin) ? *file_get_data(ef_pin) & PIN_RETRY_COUNT_MASK : MAX_PIN_RETRIES;
+        uint8_t retries = file_has_data(ef_pin) ? *file_view_data(&fv_view, ef_pin) & PIN_RETRY_COUNT_MASK : MAX_PIN_RETRIES;
         CBOR_CHECK(cbor_encoder_create_map(&encoder, &mapEncoder, power_cycle_locked ? 2 : 1));
         CBOR_CHECK(cbor_encode_uint(&mapEncoder, 0x03));
         CBOR_CHECK(cbor_encode_uint(&mapEncoder, retries));
@@ -565,7 +571,7 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
         uint8_t minPin = 4;
         file_t *ef_minpin = file_search_by_fid(EF_MINPINLEN, NULL, SPECIFY_EF);
         if (file_has_data(ef_minpin)) {
-            minPin = *file_get_data(ef_minpin);
+            minPin = *file_view_data(&fv_view, ef_minpin);
         }
         if (pin_codepoints < minPin) {
             CBOR_ERROR(CTAP2_ERR_PIN_POLICY_VIOLATION);
@@ -607,7 +613,7 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
         if (!file_has_data(ef_pin)) {
             CBOR_ERROR(CTAP2_ERR_PIN_NOT_SET);
         }
-        if ((*file_get_data(ef_pin) & PIN_RETRY_COUNT_MASK) == 0) {
+        if ((*file_view_data(&fv_view, ef_pin) & PIN_RETRY_COUNT_MASK) == 0) {
             CBOR_ERROR(CTAP2_ERR_PIN_BLOCKED);
         }
         if (needs_power_cycle) {
@@ -743,7 +749,7 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
         uint8_t minPin = 4;
         file_t *ef_minpin = file_search_by_fid(EF_MINPINLEN, NULL, SPECIFY_EF);
         if (file_has_data(ef_minpin)) {
-            minPin = *file_get_data(ef_minpin);
+            minPin = *file_view_data(&fv_view, ef_minpin);
         }
         if (pin_codepoints < minPin) {
             CBOR_ERROR(CTAP2_ERR_PIN_POLICY_VIOLATION);
@@ -772,16 +778,16 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
         pin_data[2] = 1; // New format indicator
         pin_derive_verifier(CONST_BYTE_ARRAY(dhash, 16), pin_data + 3);
 
-        if (file_has_data(ef_minpin) && file_get_data(ef_minpin)[1] == 1 && mbedtls_ct_memcmp(pin_data + 3, file_get_data(ef_pin) + 3, 32) == 0) {
+        if (file_has_data(ef_minpin) && file_view_data(&fv_view, ef_minpin)[1] == 1 && mbedtls_ct_memcmp(pin_data + 3, file_view_data(&fv_view, ef_pin) + 3, 32) == 0) {
             CBOR_ERROR(CTAP2_ERR_PIN_POLICY_VIOLATION);
         }
         file_put_data(ef_pin, CONST_BYTE_ARRAY(pin_data, sizeof(pin_data)));
 
         mbedtls_platform_zeroize(pin_data, sizeof(pin_data));
         mbedtls_platform_zeroize(dhash, sizeof(dhash));
-        if (file_has_data(ef_minpin) && file_get_data(ef_minpin)[1] == 1) {
+        if (file_has_data(ef_minpin) && file_view_data(&fv_view, ef_minpin)[1] == 1) {
             uint8_t *tmpf = (uint8_t *) calloc(1, file_get_size(ef_minpin));
-            memcpy(tmpf, file_get_data(ef_minpin), file_get_size(ef_minpin));
+            memcpy(tmpf, file_view_data(&fv_view, ef_minpin), file_get_size(ef_minpin));
             tmpf[1] = 0;
             file_put_data(ef_minpin, CONST_BYTE_ARRAY(tmpf, file_get_size(ef_minpin)));
             free(tmpf);
@@ -817,7 +823,7 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
         if (!file_has_data(ef_pin)) {
             CBOR_ERROR(CTAP2_ERR_PIN_NOT_SET);
         }
-        if ((*file_get_data(ef_pin) & PIN_RETRY_COUNT_MASK) == 0) {
+        if ((*file_view_data(&fv_view, ef_pin) & PIN_RETRY_COUNT_MASK) == 0) {
             CBOR_ERROR(CTAP2_ERR_PIN_BLOCKED);
         }
         if (mbedtls_mpi_read_binary(&hkey.ctx.mbed_ecdh.Qp.X, kax.data, kax.len) != 0) {
@@ -919,7 +925,7 @@ int cbor_client_pin(const uint8_t *data, size_t len) {
 
         flash_commit();
         file_t *ef_minpin = file_search_by_fid(EF_MINPINLEN, NULL, SPECIFY_EF);
-        if (file_has_data(ef_minpin) && file_get_data(ef_minpin)[1] == 1) {
+        if (file_has_data(ef_minpin) && file_view_data(&fv_view, ef_minpin)[1] == 1) {
             if (subcommand == 0x09 && permissions == CTAP_PERMISSION_ACFG && rpId.present == false) {
                 CBOR_ERROR(CTAP2_ERR_PIN_POLICY_VIOLATION);
             }

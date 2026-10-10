@@ -33,6 +33,7 @@
 char *rp_id = NULL, *user_name = NULL, *display_name = NULL;
 
 static bool minpin_contains_rp(const uint8_t *rp_id_hash) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     file_t *ef_minpin = file_search_by_fid(EF_MINPINLEN, NULL, SPECIFY_EF);
     if (!file_has_data(ef_minpin)) {
         return false;
@@ -43,7 +44,7 @@ static bool minpin_contains_rp(const uint8_t *rp_id_hash) {
         return false;
     }
 
-    uint8_t *minpin_data = file_get_data(ef_minpin);
+    uint8_t *minpin_data = file_view_data(&fv_view, ef_minpin);
     for (uint32_t offset = 2; offset <= minpin_size - RP_ID_HASH_LEN; offset += RP_ID_HASH_LEN) {
         if (memcmp(minpin_data + offset, rp_id_hash, RP_ID_HASH_LEN) == 0) {
             return true;
@@ -54,6 +55,7 @@ static bool minpin_contains_rp(const uint8_t *rp_id_hash) {
 }
 
 int cbor_make_credential(const uint8_t *data, size_t len) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     CborParser parser;
     CborValue map;
     CborError error = CborNoError;
@@ -448,7 +450,7 @@ int cbor_make_credential(const uint8_t *data, size_t len) {
         Credential ecred = {0};
         if (credential_is_resident(excludeList[e].id.data, excludeList[e].id.len)) {
             for (int i = 0; i < MAX_RESIDENT_CREDENTIALS; i++) {
-                file_t *ef_cred = file_search((uint16_t)(EF_CRED + i));
+                file_t *ef_cred = file_search(fido_credential_fid(i));
                 if (!file_has_data(ef_cred) || !credential_resident_matches_rp(ef_cred, rp_id_hash)) {
                     continue;
                 }
@@ -554,8 +556,8 @@ int cbor_make_credential(const uint8_t *data, size_t len) {
         }
         if (extensions.minPinLength == ptrue) {
             file_t *ef_minpin = file_search_by_fid(EF_MINPINLEN, NULL, SPECIFY_EF);
-            if (file_has_data(ef_minpin) && file_get_data(ef_minpin)[0] > 0 && minpin_contains_rp(rp_id_hash)) {
-                minPinLen = file_get_data(ef_minpin)[0];
+            if (file_has_data(ef_minpin) && file_view_data(&fv_view, ef_minpin)[0] > 0 && minpin_contains_rp(rp_id_hash)) {
+                minPinLen = file_view_data(&fv_view, ef_minpin)[0];
                 l++;
             }
         }
@@ -802,7 +804,7 @@ int cbor_make_credential(const uint8_t *data, size_t len) {
         }
         CBOR_CHECK(cbor_encode_text_stringz(&mapEncoder2, "x5c"));
         CBOR_CHECK(cbor_encoder_create_array(&mapEncoder2, &arrEncoder, 1));
-        CBOR_CHECK(cbor_encode_byte_string(&arrEncoder, file_get_data(ef_cert), file_get_size(ef_cert)));
+        CBOR_CHECK(cbor_encode_byte_string(&arrEncoder, file_view_data(&fv_view, ef_cert), file_get_size(ef_cert)));
         CBOR_CHECK(cbor_encoder_close_container(&mapEncoder2, &arrEncoder));
     }
     CBOR_CHECK(cbor_encoder_close_container(&mapEncoder, &mapEncoder2));

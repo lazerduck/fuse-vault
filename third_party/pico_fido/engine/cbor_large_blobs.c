@@ -41,6 +41,7 @@ void cbor_large_blobs_tick(void) {
 }
 
 int cbor_large_blobs(const uint8_t *data, size_t len) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     CborParser parser;
     CborValue map;
     CborEncoder encoder, mapEncoder;
@@ -114,7 +115,7 @@ int cbor_large_blobs(const uint8_t *data, size_t len) {
         CBOR_CHECK(cbor_encoder_create_map(&encoder, &mapEncoder, 1));
         CBOR_CHECK(cbor_encode_uint(&mapEncoder, 0x01));
         size_t fragment_len = MIN(get, file_get_size(ef_largeblob) - offset);
-        CBOR_CHECK(cbor_encode_byte_string(&mapEncoder, fragment_len > 0 ? file_get_data(ef_largeblob) + offset : NULL, fragment_len));
+        CBOR_CHECK(cbor_encode_byte_string(&mapEncoder, fragment_len > 0 ? file_view_data(&fv_view, ef_largeblob) + offset : NULL, fragment_len));
     }
     else {
         if (set.len > MAX_FRAGMENT_LENGTH) {

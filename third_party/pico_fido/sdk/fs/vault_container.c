@@ -27,11 +27,11 @@ static bool vault_record_valid(const uint8_t *record, size_t record_len) {
     return record && record_len == PICOKEYS_VAULT_RECORD_SIZE && record[0] == PICOKEYS_VAULT_RECORD_FORMAT;
 }
 
-static const uint8_t *vault_legacy_record(const file_t *file) {
+static const uint8_t *vault_legacy_record(const file_t *file, file_view_t *view) {
     if (!file || !file_has_data(file) || file_get_size(file) != PICOKEYS_VAULT_RECORD_SIZE) {
         return NULL;
     }
-    const uint8_t *record = file_get_data(file);
+    const uint8_t *record = file_view_data(view, file);
     return vault_record_valid(record, PICOKEYS_VAULT_RECORD_SIZE) ? record : NULL;
 }
 
@@ -67,6 +67,7 @@ static int vault_unwrap(const uint8_t wrapping_key[PICOKEYS_VAULT_KEY_SIZE], con
 }
 
 static int vault_clear_legacy_record(file_t *file) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     if (!file) {
         return PICOKEYS_OK;
     }
@@ -75,7 +76,7 @@ static int vault_clear_legacy_record(file_t *file) {
         return PICOKEYS_OK;
     }
 
-    if (!vault_legacy_record(file)) {
+    if (!vault_legacy_record(file, &fv_view)) {
         log_errstr("vault legacy cleanup: invalid record file=%p size=%zu", (void *)file, file_get_size(file));
         return PICOKEYS_WRONG_DATA;
     }
@@ -414,6 +415,7 @@ static int vault_clear_file(file_t *file) {
 }
 
 static int vault_migrate_legacy(void) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     if (!vault_state_valid() || !vault_state.legacy_file) {
         log_errstr("vault legacy migration: invalid state initialized=%d legacy_file=%p", vault_state_valid(), (void *)vault_state.legacy_file);
         return PICOKEYS_ERR_NULL_PARAM;
@@ -427,7 +429,7 @@ static int vault_migrate_legacy(void) {
         mbedtls_platform_zeroize(record, sizeof(record));
         return ret;
     }
-    const uint8_t *legacy_record = vault_legacy_record(vault_state.legacy_file);
+    const uint8_t *legacy_record = vault_legacy_record(vault_state.legacy_file, &fv_view);
     if (!legacy_record) {
         log_errstr("vault legacy migration: legacy record unavailable file=%p", (void *)vault_state.legacy_file);
         mbedtls_platform_zeroize(record, sizeof(record));
@@ -445,7 +447,7 @@ static int vault_migrate_legacy(void) {
             mbedtls_platform_zeroize(record, sizeof(record));
             return PICOKEYS_WRONG_LENGTH;
         }
-        memcpy(label, file_get_data(vault_state.legacy_label_file), label_len);
+        memcpy(label, file_view_data(&fv_view, vault_state.legacy_label_file), label_len);
     }
     const file_object_container_write_t writes[] = {
         {
@@ -484,6 +486,7 @@ static int vault_migrate_legacy(void) {
 }
 
 int picokeys_vault_delete_kvault(uint8_t app_id) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     if (!vault_state_valid()) {
         log_errstr("vault container delete: invalid state initialized=%d app_id=%u", vault_state_valid(), app_id);
         return PICOKEYS_ERR_NULL_PARAM;
@@ -491,7 +494,7 @@ int picokeys_vault_delete_kvault(uint8_t app_id) {
     file_object_container_state_t state;
     int ret = file_object_container_load(vault_state.layout, PICOKEYS_VAULT_CONTAINER_ID, &vault_state.primary, vault_state.has_legacy ? &vault_state.legacy : NULL, &state);
     if (ret == PICOKEYS_ERR_FILE_NOT_FOUND) {
-        if (app_id == 0 && vault_state.legacy_file && vault_legacy_record(vault_state.legacy_file)) {
+        if (app_id == 0 && vault_state.legacy_file && vault_legacy_record(vault_state.legacy_file, &fv_view)) {
             ret = vault_clear_legacy_record(vault_state.legacy_file);
         }
         else {

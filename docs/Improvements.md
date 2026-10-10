@@ -29,15 +29,18 @@ Completion should include interruption tests through provisioning, activation an
 
 ## 2. Access FIDO credentials from the SD card on demand
 
-Replace the complete 128 KiB in-memory FIDO image with storage that reads and updates records on the SD card as needed. Credentials already persist encrypted on the card; the change is to keep only the working records and a bounded cache in RAM during use.
+Software implementation now uses an SD-backed 824 KiB filesystem, a bounded
+redo journal and eight cached sectors within the existing 1 MiB reservation.
+The 128 KiB RAM image is removed from firmware. The engine targets 512 resident
+slots, with startup migration from both existing snapshot sizes and restartable
+destructive reset. No per-sector fingerprint table is retained.
 
-The goals are to support substantially more resident passkeys and release RAM for other work. Capacity should primarily depend on the allocated SD space and record format. We should choose a capacity target after measuring record overhead and the indexing needed to find, list and delete credentials. The existing 1 MiB reservation may also need to grow.
-
-This requires changes to the engine's memory-based storage interface and the current whole-image snapshot format. Define how records are indexed, authenticated, updated and recovered after interruption. Keep indexes and caches bounded so their memory usage remains manageable as the credential count grows.
-
-Preserve VMK-derived protection, authentication before records are used, durable updates before reporting success, on-device verification and approval, and the existing delete and reset behaviour. Define the format transition for existing stores and retain the documented SD rollback protection scope.
-
-Validate capacity, registration, signing, listing, deletion and reset with a large store. Include corruption and interrupted-write cases, and measure both peak RAM use and response time on hardware. See [FIDO2](FIDO2.md).
+Desktop validation covers 512 credentials, independent signatures after migration
+and reopen, deletion/reuse, reset, corruption, journal overflow and interrupted
+writes/recovery. Remaining acceptance is hardware power interruption, peak RAM and
+response time under combined USB/FIDO workloads. The existing SD rollback scope
+remains explicit. See [FIDO2](FIDO2.md) and
+[storage format and recovery](AI/v2-fido-storage.md).
 
 ## 3. Review larger USB read and write buffers
 

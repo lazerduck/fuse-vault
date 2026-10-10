@@ -18,6 +18,7 @@
  */
 
 #include "picokeys.h"
+#include "mbedtls/platform_util.h"
 #include "file.h"
 #include "tlv.h"
 #include "apdu.h"
@@ -25,8 +26,8 @@
 
 #define MAX_DEPTH 4
 
-#define DYNAMIC_FILE_SLOTS 2309u
-#define MAX_DYNAMIC_FILES 2048u
+#define DYNAMIC_FILE_SLOTS 5003u
+#define MAX_DYNAMIC_FILES 4608u
 #define DYNAMIC_FID_EMPTY 0x0000u
 #define DYNAMIC_FID_DELETED 0xffffu
 
@@ -123,7 +124,8 @@ void file_process_fci(const file_t *pe, int fmd) {
     }
     memcpy(res_APDU + res_APDU_size, "\x8A\x01\x05", 3); //life-cycle (5 -> activated)
     res_APDU_size += 3;
-    byte_array_t metadata = meta_find(pe->fid);
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
+    byte_array_t metadata = meta_find(pe->fid, &fv_view);
     if (metadata.len > 0 && metadata.len <= UINT8_MAX && metadata.data != NULL) {
         uint16_t metadata_len = (uint16_t)metadata.len;
         res_APDU[res_APDU_size++] = 0xA5;
@@ -390,9 +392,6 @@ void file_scan_flash(void) {
     scan_region(false);
 }
 
-uint8_t *file_read(const uint8_t *addr) {
-    return flash_read((uintptr_t) addr);
-}
 uint16_t file_read_uint16(const uint8_t *addr) {
     return flash_read_uint16((uintptr_t) addr);
 }
@@ -410,22 +409,15 @@ uint8_t file_read_uint8(const file_t *ef) {
     return file_read_uint8_offset(ef, 0);
 }
 
-uint8_t *file_get_data(const file_t *tf) {
-    if (!tf || !tf->data) {
-        return NULL;
-    }
-
-    size_t length_size = file_read_uint16(tf->data) == FLASH_FILE_EXTENDED_LENGTH ? FLASH_FILE_EXTENDED_LENGTH_SIZE : FLASH_FILE_LEGACY_LENGTH_SIZE;
-    return file_read(tf->data + length_size);
-}
-
 uint32_t file_get_size(const file_t *tf) {
     if (!tf || !tf->data) {
         return 0;
     }
 
     uint16_t length = file_read_uint16(tf->data);
-    return length == FLASH_FILE_EXTENDED_LENGTH ? file_read_uint32(tf->data + sizeof(uint16_t)) : length;
+    uint32_t size = length == FLASH_FILE_EXTENDED_LENGTH ? file_read_uint32(tf->data + sizeof(uint16_t)) : length;
+    if(size>FV_FILE_VIEW_MAX){fv_pico_engine_fail();return 0;}
+    return size;
 }
 
 int file_read_at(const file_t *tf, uint32_t offset, byte_array_t data) {
@@ -488,7 +480,7 @@ file_t *file_new(uint16_t fid) {
     dynamic_files++;
     return f;
 }
-byte_array_t meta_find(uint16_t fid) {
+byte_array_t meta_find(uint16_t fid, file_view_t *view) {
     file_t *ef = file_search(EF_META);
     if (!ef) {
         return BYTE_ARRAY(NULL, 0);
@@ -496,7 +488,7 @@ byte_array_t meta_find(uint16_t fid) {
     uint8_t *p = NULL;
     tlv_item_t item;
     tlv_ctx_t ctxi;
-    tlv_ctx_init(BYTE_ARRAY(file_get_data(ef), file_get_size(ef)), &ctxi);
+    tlv_ctx_init(BYTE_ARRAY(file_view_data(view, ef), file_get_size(ef)), &ctxi);
     while (tlv_walk(&ctxi, &p, &item)) {
         uint16_t tag_len = (uint16_t)item.value.len;
         uint8_t *tag_data = (uint8_t *)item.value.data;
@@ -511,6 +503,7 @@ byte_array_t meta_find(uint16_t fid) {
     return BYTE_ARRAY(NULL, 0);
 }
 static int meta_delete_internal(uint16_t fid, bool commit) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     file_t *ef = file_search(EF_META);
     if (!ef) {
         return PICOKEYS_ERR_FILE_NOT_FOUND;
@@ -519,7 +512,7 @@ static int meta_delete_internal(uint16_t fid, bool commit) {
     tlv_item_t item;
     uint8_t *fdata = NULL;
     tlv_ctx_t ctxi;
-    tlv_ctx_init(BYTE_ARRAY(file_get_data(ef), file_get_size(ef)), &ctxi);
+    tlv_ctx_init(BYTE_ARRAY(file_view_data(&fv_view, ef), file_get_size(ef)), &ctxi);
     while (tlv_walk(&ctxi, &p, &item)) {
         uint16_t tag_len = (uint16_t)item.value.len;
         uint8_t *tag_data = (uint8_t *)item.value.data;
@@ -565,6 +558,7 @@ int meta_delete_no_commit(uint16_t fid) {
 }
 
 int meta_add(uint16_t fid, const_byte_array_t data) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     int r;
     uint16_t len = 0;
 
@@ -578,7 +572,7 @@ int meta_add(uint16_t fid, const_byte_array_t data) {
     }
     uint32_t ef_size = file_get_size(ef);
     uint8_t *fdata = (uint8_t *) calloc(1, ef_size);
-    memcpy(fdata, file_get_data(ef), ef_size);
+    memcpy(fdata, file_view_data(&fv_view, ef), ef_size);
     uint8_t *p = NULL;
     tlv_item_t item;
     tlv_ctx_t ctxi;
@@ -705,4 +699,17 @@ int flash_clear_file(file_t *file) {
     }
     //fv_pico_log("na %lx->%lx\n",prev_addr,flash_read_uintptr(prev_addr));
     return PICOKEYS_OK;
+}
+
+void file_view_clear(file_view_t *view){
+    if(view->data){mbedtls_platform_zeroize(view->data,FV_FILE_VIEW_MAX);free(view->data);view->data=NULL;}
+}
+uint8_t *file_view_data(file_view_t *view,const file_t *file){
+    static uint8_t invalid[FV_FILE_VIEW_MAX];
+    uint32_t n=file_get_size(file);
+    if(!view->data)view->data=calloc(1,FV_FILE_VIEW_MAX);
+    if(!view->data || n>FV_FILE_VIEW_MAX){fv_pico_engine_fail();return invalid;}
+    mbedtls_platform_zeroize(view->data,FV_FILE_VIEW_MAX);
+    if(n && file_read_at(file,0,BYTE_ARRAY(view->data,n))!=PICOKEYS_OK)fv_pico_engine_fail();
+    return view->data;
 }

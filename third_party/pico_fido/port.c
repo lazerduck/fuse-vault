@@ -29,6 +29,8 @@ const known_app_t *find_app_by_rp_id_hash(const uint8_t *hash) { (void)hash; ret
 
 static fv_fido_engine_ops_t platform;
 static uint8_t *image;
+static uint8_t uv_tokens[2][32];
+static size_t storage_bytes;
 static bool failed, dirty, opened, staging, local_management;
 static uint32_t session_started;
 void fv_pico_engine_fail(void) { failed = true; }
@@ -82,12 +84,19 @@ const uint8_t *random_bytes_get(size_t n) {
 }
 /* Stable integer file offsets, never memory-mapped device flash addresses. */
 #define STORE_BASE 4096u
+static bool valid_address(uintptr_t a,size_t n) {
+    if(a<STORE_BASE || n>storage_bytes || a-STORE_BASE>storage_bytes-n){failed=true;return false;}return true;
+}
 static uint8_t *address(uintptr_t a, size_t n) {
     if (!image || a < STORE_BASE || n > FV_FIDO_STORE_BYTES ||
         a - STORE_BASE > FV_FIDO_STORE_BYTES - n) { failed = true; return NULL; }
     return image + a - STORE_BASE;
 }
 int flash_program_block(uintptr_t a, const_byte_array_t b) {
+    if(platform.storage_write){
+        if(!valid_address(a,b.len) || !platform.storage_write(platform.storage_context,a-STORE_BASE,b.data,b.len)){failed=true;return PICOKEYS_EXEC_ERROR;}
+        dirty=true;return 0;
+    }
     uint8_t *p = address(a,b.len);
     if (!p || (!b.data && b.len)) return PICOKEYS_EXEC_ERROR;
     if (b.len) memmove(p,b.data,b.len); dirty = true; return 0;
@@ -98,11 +107,10 @@ int flash_program_uintptr(uintptr_t a,uintptr_t v) {
     if (v > UINT32_MAX) { failed=true; return PICOKEYS_EXEC_ERROR; }
     return flash_program_word(a,(uint32_t)v);
 }
-uint8_t *flash_read(uintptr_t a) {
-    static uint8_t invalid[4096];
-    uint8_t *p=address(a,1); return p ? p : invalid;
-}
 int flash_read_block(uintptr_t a,byte_array_t b) {
+    if(platform.storage_read){
+        if(!valid_address(a,b.len) || !platform.storage_read(platform.storage_context,a-STORE_BASE,b.data,b.len)){failed=true;if(b.data)memset(b.data,0,b.len);return PICOKEYS_EXEC_ERROR;}return 0;
+    }
     uint8_t *p=address(a,b.len); if (!p) return PICOKEYS_EXEC_ERROR;
     memcpy(b.data,p,b.len); return 0;
 }
@@ -111,6 +119,7 @@ uint16_t flash_read_uint16(uintptr_t a) { uint16_t v=0; (void)flash_read_block(a
 uint32_t flash_read_uint32(uintptr_t a) { uint32_t v=0; (void)flash_read_block(a,BYTE_ARRAY((uint8_t*)&v,4)); return v; }
 uintptr_t flash_read_uintptr(uintptr_t a) { return flash_read_uint32(a); }
 int flash_erase_page(uintptr_t a,size_t n) {
+    if(platform.storage_write){uint8_t p[512];memset(p,255,sizeof(p));while(n){size_t k=n<512?n:512;if(flash_program_block(a,CONST_BYTE_ARRAY(p,k)))return PICOKEYS_EXEC_ERROR;a+=k;n-=k;}return 0;}
     uint8_t *p=address(a,n); if (!p) return PICOKEYS_EXEC_ERROR;
     memset(p,0xff,n); dirty=true; return 0;
 }
@@ -123,7 +132,7 @@ bool low_flash_commit_sync(uint32_t timeout) {
     if (failed) return false;
     if (staging) return true;
     if (dirty) {
-        if (!platform.commit || !platform.commit(platform.context,image,FV_FIDO_STORE_BYTES)) { failed=true; return false; }
+        if (platform.storage_commit ? !platform.storage_commit(platform.storage_context) : (!platform.commit || !platform.commit(platform.context,image,FV_FIDO_STORE_BYTES))) { failed=true; return false; }
         dirty=false;
     }
     return true;
@@ -150,20 +159,24 @@ void fv_fido_engine_close(void) {
     mbedtls_platform_zeroize(random_buffer,sizeof(random_buffer));
     mbedtls_platform_zeroize(response_buffer,sizeof(response_buffer));
     if (image) mbedtls_platform_zeroize(image,FV_FIDO_STORE_BYTES);
+    mbedtls_platform_zeroize(uv_tokens,sizeof(uv_tokens));
     image=NULL; otp_key_1=otp_key_2=NULL; opened=false; local_management=false;
     memset(&platform,0,sizeof(platform));
 }
 bool fv_fido_engine_open(uint8_t store[FV_FIDO_STORE_BYTES], const uint8_t root[32],
                         const uint8_t device_id[16], const fv_fido_engine_ops_t *ops) {
-    if (opened || !store || !root || !device_id || !ops || !ops->random ||
-        !ops->commit || !ops->presence || !ops->millis ||
+    if (opened || !root || !device_id || !ops || (!store && !ops->storage_read) || !ops->random ||
+        (!ops->commit && !ops->storage_commit) || !ops->presence || !ops->millis ||
         !ops->verify_user || !ops->uv_retries) return false;
+    if(ops->storage_read && (!ops->storage_write || !ops->storage_commit || !ops->storage_reset ||
+       ops->storage_bytes<32768 || ops->storage_bytes>UINT32_MAX-STORE_BASE))return false;
     platform=*ops; image=store; failed=false; dirty=false;
+    storage_bytes=ops->storage_read?ops->storage_bytes:FV_FIDO_STORE_BYTES;
     session_started = board_millis();
     memcpy(root_key,root,32); otp_key_1=root_key; otp_key_2=NULL;
     memcpy(pico_serial.id,device_id,sizeof(pico_serial.id));
     mbedtls_sha256(device_id,16,pico_serial_hash,0);
-    flash_set_bounds(STORE_BASE,STORE_BASE+FV_FIDO_STORE_BYTES);
+    flash_set_bounds(STORE_BASE,STORE_BASE+storage_bytes);
     staging=true; init_fido(); staging=false;
     if (!low_flash_commit_sync(0)) failed=true;
     if (failed) { fv_fido_engine_close(); return false; }
@@ -274,12 +287,12 @@ static bool local_read(uint16_t *index, uint16_t *count, fv_passkey_t *entry) {
     memset(entry, 0, sizeof(*entry));
     *count = 0;
     for (unsigned i = 0; i < MAX_RESIDENT_CREDENTIALS; ++i)
-        if (file_has_data(file_search((uint16_t)(EF_CRED + i)))) ++*count;
+        if (file_has_data(file_search(fido_credential_fid(i)))) ++*count;
     if (!*count) { *index = 0; return !failed; }
     if (*index >= *count) *index = (uint16_t)(*count - 1u);
     unsigned position = 0;
     for (unsigned i = 0; i < MAX_RESIDENT_CREDENTIALS; ++i) {
-        file_t *ef = file_search((uint16_t)(EF_CRED + i));
+        file_t *ef = file_search(fido_credential_fid(i));
         if (!file_has_data(ef) || position++ != *index) continue;
         uint8_t hash[32];
         Credential cred = {0};
@@ -326,7 +339,7 @@ bool fv_fido_engine_manage(fv_passkey_action_t action, uint16_t *index,
     if (action == FV_PASSKEY_READ) return local_read(index, count, entry);
     if (action != FV_PASSKEY_DELETE) return false;
     for (unsigned i = 0; i < MAX_RESIDENT_CREDENTIALS; ++i) {
-        file_t *ef = file_search((uint16_t)(EF_CRED + i));
+        file_t *ef = file_search(fido_credential_fid(i));
         if (!file_has_data(ef) || !credential_resident_matches_id(ef, entry->id, sizeof(entry->id))) continue;
         uint8_t hash[32];
         if (credential_resident_rp_id_hash(ef, hash) != PICOKEYS_OK) return false;
@@ -347,12 +360,13 @@ bool fv_fido_engine_manage(fv_passkey_action_t action, uint16_t *index,
 }
 
 bool fv_fido_engine_uv_policy(bool write,uint8_t *mode){
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     if(!opened || failed || !mode || !platform.local_authorized || !platform.local_authorized(platform.context))return false;
     file_t *f=file_search(EF_FV_UV_POLICY);if(!f)return false;
     if(!write){
         if(!file_has_data(f)){*mode=0;return true;}
         if(file_get_size(f)!=2)return false;
-        const uint8_t *p=file_get_data(f);if(!p || p[0]!=1 || p[1]>1)return false;
+        const uint8_t *p=file_view_data(&fv_view, f);if(!p || p[0]!=1 || p[1]>1)return false;
         *mode=p[1];return true;
     }
     if(*mode>1)return false;
@@ -363,3 +377,20 @@ bool fv_fido_engine_uv_policy(bool write,uint8_t *mode){
     fv_pico_pin_session_clear();fv_pico_cred_session_clear();reset_gna_state();
     return !failed;
 }
+
+uint8_t *fv_pico_token_data(const file_t *file,bool persistent){
+    uint8_t *p=uv_tokens[persistent?1:0];
+    if(file_get_size(file)!=32 || file_read_at(file,0,BYTE_ARRAY(p,32))!=PICOKEYS_OK){failed=true;memset(p,0,32);}return p;
+}
+bool fv_pico_storage_reset(void){
+    if(!platform.storage_reset)return false;
+    uint8_t policy=0;
+    file_t *f=file_search(EF_FV_UV_POLICY);
+    if(file_has_data(f)){uint8_t p[2];if(file_get_size(f)!=2 || file_read_at(f,0,BYTE_ARRAY(p,2)) || p[0]!=1 || p[1]>1){failed=true;return false;}policy=p[1];}
+    if(!platform.storage_reset(platform.storage_context,policy)){failed=true;return false;}
+    fv_pico_pin_session_clear();fv_pico_cred_session_clear();reset_gna_state();fv_pico_credential_index_clear();
+    memset(&paut,0,sizeof(paut));memset(&ppaut,0,sizeof(ppaut));
+    mbedtls_platform_zeroize(uv_tokens,sizeof(uv_tokens));mbedtls_platform_zeroize(keydev_dec,sizeof(keydev_dec));
+    has_keydev_dec=false;keydev_unlocked=false;dirty=false;return true;
+}
+bool fv_pico_has_storage(void){return platform.storage_reset!=NULL;}

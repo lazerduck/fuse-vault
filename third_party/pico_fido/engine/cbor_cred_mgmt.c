@@ -182,9 +182,9 @@ int cbor_cred_mgmt(const uint8_t *data, size_t len) {
                 CBOR_ERROR(CTAP2_ERR_PIN_AUTH_INVALID);
             }
         }
-        uint8_t existing = 0;
+        uint16_t existing = 0;
         for (int i = 0; i < MAX_RESIDENT_CREDENTIALS; i++) {
-            if (file_has_data(file_search((uint16_t)(EF_CRED + i)))) {
+            if (file_has_data(file_search(fido_credential_fid(i)))) {
                 existing++;
             }
         }
@@ -286,7 +286,7 @@ int cbor_cred_mgmt(const uint8_t *data, size_t len) {
         file_t *cred_ef = NULL;
         uint16_t skip = 0;
         for (int i = 0; i < MAX_RESIDENT_CREDENTIALS; i++) {
-            file_t *tef = file_search((uint16_t)(EF_CRED + i));
+            file_t *tef = file_search(fido_credential_fid(i));
             if (file_has_data(tef) && credential_resident_matches_rp(tef, rpIdHash.data)) {
                 Credential candidate = { 0 };
                 int candidate_ret = credential_load_resident(tef, rpIdHash.data, &candidate);
@@ -453,7 +453,7 @@ int cbor_cred_mgmt(const uint8_t *data, size_t len) {
             CBOR_ERROR(CTAP2_ERR_PIN_AUTH_INVALID);
         }
         for (int i = 0; i < MAX_RESIDENT_CREDENTIALS; i++) {
-            file_t *ef = file_search((uint16_t)(EF_CRED + i));
+            file_t *ef = file_search(fido_credential_fid(i));
             if (file_has_data(ef) && credential_resident_matches_id(ef, credentialId.id.data, credentialId.id.len)) {
                 bool legacy_rp = !resident_container_is_marker(ef);
                 uint8_t rp_id_hash[RP_ID_HASH_LEN];
@@ -491,7 +491,7 @@ int cbor_cred_mgmt(const uint8_t *data, size_t len) {
             CBOR_ERROR(CTAP2_ERR_PIN_AUTH_INVALID);
         }
         for (int i = 0; i < MAX_RESIDENT_CREDENTIALS; i++) {
-            file_t *ef = file_search((uint16_t)(EF_CRED + i));
+            file_t *ef = file_search(fido_credential_fid(i));
             if (file_has_data(ef) && credential_resident_matches_id(ef, credentialId.id.data, credentialId.id.len)) {
                 Credential cred = { 0 };
                 uint8_t rp_id_hash[RP_ID_HASH_LEN];

@@ -37,7 +37,7 @@ static file_t *config_resident_credential(uint64_t slot) {
     if (slot > UINT8_MAX) {
         return NULL;
     }
-    file_t *ef = file_search((uint16_t)(EF_CRED + (uint8_t)slot));
+    file_t *ef = file_search(fido_credential_fid(slot));
     return resident_container_is_marker(ef) ? ef : NULL;
 }
 
@@ -46,7 +46,7 @@ static file_t *config_resident_credential_by_id(const uint8_t *credential_id, si
         return NULL;
     }
     for (uint16_t slot = 0; slot < MAX_RESIDENT_CREDENTIALS; slot++) {
-        file_t *ef = file_search((uint16_t)(EF_CRED + slot));
+        file_t *ef = file_search(fido_credential_fid(slot));
         if (resident_container_is_marker(ef) && credential_resident_matches_id(ef, credential_id, credential_id_len)) {
             return ef;
         }
@@ -55,6 +55,7 @@ static file_t *config_resident_credential_by_id(const uint8_t *credential_id, si
 }
 
 int cbor_config(const uint8_t *data, size_t len) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     CborParser parser;
     CborValue map;
     CborError error = CborNoError;
@@ -215,7 +216,7 @@ int cbor_config(const uint8_t *data, size_t len) {
             random_fill_buffer(BYTE_ARRAY(key_dev_enc, 12));
             mbedtls_chachapoly_init(&chatx);
             mbedtls_chachapoly_setkey(&chatx, vendorParamByteString.data);
-            ret = mbedtls_chachapoly_encrypt_and_tag(&chatx, file_get_size(ef_keydev), key_dev_enc, NULL, 0, file_get_data(ef_keydev), key_dev_enc + 12, key_dev_enc + 12 + file_get_size(ef_keydev));
+            ret = mbedtls_chachapoly_encrypt_and_tag(&chatx, file_get_size(ef_keydev), key_dev_enc, NULL, 0, file_view_data(&fv_view, ef_keydev), key_dev_enc + 12, key_dev_enc + 12 + file_get_size(ef_keydev));
             mbedtls_chachapoly_free(&chatx);
             if (ret != 0) {
                 CBOR_ERROR(CTAP1_ERR_INVALID_PARAMETER);
@@ -329,7 +330,7 @@ int cbor_config(const uint8_t *data, size_t len) {
         uint8_t currentMinPinLen = 4;
         file_t *ef_minpin = file_search_by_fid(EF_MINPINLEN, NULL, SPECIFY_EF);
         if (file_has_data(ef_minpin)) {
-            currentMinPinLen = *file_get_data(ef_minpin);
+            currentMinPinLen = *file_view_data(&fv_view, ef_minpin);
         }
         if (newMinPinLength == 0) {
             newMinPinLength = currentMinPinLen;
@@ -343,7 +344,7 @@ int cbor_config(const uint8_t *data, size_t len) {
         if (forceChangePin == ptrue && !file_has_data(ef_pin)) {
             CBOR_ERROR(CTAP2_ERR_PIN_NOT_SET);
         }
-        if (file_has_data(ef_pin) && file_get_data(ef_pin)[1] < newMinPinLength) {
+        if (file_has_data(ef_pin) && file_view_data(&fv_view, ef_pin)[1] < newMinPinLength) {
             forceChangePin = ptrue;
         }
         if (forceChangePin) {

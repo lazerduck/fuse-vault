@@ -108,7 +108,7 @@ extern uint8_t get_opts(void);
 extern void set_opts(uint8_t);
 #define MAX_CREDENTIAL_COUNT_IN_LIST 16
 #define MAX_CRED_ID_LENGTH        1024
-#define MAX_RESIDENT_CREDENTIALS  256
+#define MAX_RESIDENT_CREDENTIALS  512
 #define MAX_CREDBLOB_LENGTH       128
 #define MAX_MSG_SIZE              1024
 #define MAX_PIN_LENGTH            63

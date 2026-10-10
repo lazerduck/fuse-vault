@@ -48,13 +48,14 @@ static int file_object_container_replace_file(uint16_t fid, const_byte_array_t d
 }
 
 static int file_object_container_parse_slot(const file_object_container_layout_t *layout, uint32_t container_id, uint8_t slot, const file_object_authenticator_t *auth, file_object_container_candidate_t *candidate) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     memset(candidate, 0, sizeof(*candidate));
     uint16_t manifest_fid = layout->manifest_fid(layout->ctx, container_id, slot);
     file_t *file = file_search(manifest_fid);
     if (!file_has_data(file)) {
         return PICOKEYS_ERR_FILE_NOT_FOUND;
     }
-    int r = file_object_manifest_parse(CONST_BYTE_ARRAY(file_get_data(file), file_get_size(file)), auth, NULL, NULL, &candidate->manifest);
+    int r = file_object_manifest_parse(CONST_BYTE_ARRAY(file_view_data(&fv_view, file), file_get_size(file)), auth, NULL, NULL, &candidate->manifest);
     if (r != PICOKEYS_OK) {
         return r;
     }
@@ -73,7 +74,7 @@ static int file_object_container_parse_slot(const file_object_container_layout_t
         }
         file_t *record = file_search(record_fid);
         file_object_record_info_t info;
-        if (!file_has_data(record) || file_object_record_header_parse(CONST_BYTE_ARRAY(file_get_data(record), file_get_size(record)), object, &info) != PICOKEYS_OK) {
+        if (!file_has_data(record) || file_object_record_header_parse(CONST_BYTE_ARRAY(file_view_data(&fv_view, record), file_get_size(record)), object, &info) != PICOKEYS_OK) {
             return PICOKEYS_WRONG_DATA;
         }
     }
@@ -154,6 +155,7 @@ bool file_object_container_references(const file_object_manifest_t *manifest, ui
 }
 
 static int file_object_container_unseal(const file_object_container_layout_t *layout, uint32_t container_id, const file_object_manifest_t *manifest, const file_object_descriptor_t *object, const file_object_record_protector_t *protector, byte_buffer_t *data) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     file_object_manifest_t record_manifest = *manifest;
     record_manifest.object_count = 1;
     record_manifest.has_object = true;
@@ -173,7 +175,7 @@ static int file_object_container_unseal(const file_object_container_layout_t *la
     if (!file_has_data(record)) {
         return PICOKEYS_ERR_FILE_NOT_FOUND;
     }
-    r = file_object_record_unseal(&record_manifest, policy_hash, protector, CONST_BYTE_ARRAY(file_get_data(record), file_get_size(record)), data);
+    r = file_object_record_unseal(&record_manifest, policy_hash, protector, CONST_BYTE_ARRAY(file_view_data(&fv_view, record), file_get_size(record)), data);
     memset(policy_hash, 0, sizeof(policy_hash));
     return r;
 }

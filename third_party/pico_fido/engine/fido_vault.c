@@ -159,7 +159,7 @@ int vault_export_blob(const uint8_t *requested_id, size_t requested_id_len, uint
     uint8_t rp_id_hash[RP_ID_HASH_LEN] = {0};
     int ret = PICOKEYS_ERR_FILE_NOT_FOUND;
     for (uint16_t i = 0; i < MAX_RESIDENT_CREDENTIALS && !found; i++) {
-        file_t *ef = file_search((uint16_t)(EF_CRED + i));
+        file_t *ef = file_search(fido_credential_fid(i));
         if (!file_has_data(ef) || credential_resident_rp_id_hash(ef, rp_id_hash) != PICOKEYS_OK) {
             continue;
         }

@@ -54,6 +54,7 @@ const uint8_t *bogus_firefox = (const uint8_t *) "\x00\x00\x00\x00\x00\x00\x00\x
 const uint8_t *bogus_chrome = (const uint8_t *) "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 int cmd_register(void) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     CTAP_REGISTER_REQ *req = (CTAP_REGISTER_REQ *) apdu.data;
     CTAP_REGISTER_RESP *resp = (CTAP_REGISTER_RESP *) res_APDU;
     resp->registerId = CTAP_REGISTER_ID;
@@ -87,7 +88,7 @@ int cmd_register(void) {
         return SW_EXEC_ERROR();
     }
     uint16_t ef_certdev_size = (uint16_t)stored_certdev_size;
-    memcpy(resp->keyHandleCertSig + KEY_HANDLE_LEN, file_get_data(ef_certdev), ef_certdev_size);
+    memcpy(resp->keyHandleCertSig + KEY_HANDLE_LEN, file_view_data(&fv_view, ef_certdev), ef_certdev_size);
     uint8_t hash[32], sign_base[1 + CTAP_APPID_SIZE + CTAP_CHAL_SIZE + KEY_HANDLE_LEN + CTAP_EC_POINT_SIZE];
     sign_base[0] = CTAP_REGISTER_HASH_ID;
     memcpy(sign_base + 1, req->appId, CTAP_APPID_SIZE);

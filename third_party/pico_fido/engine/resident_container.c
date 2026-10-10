@@ -46,12 +46,14 @@ static const uint8_t resident_internal_policy[] = {
     0x1f, 0xff, 0x00, 0x00, 0x04, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00
 };
 
-static uint16_t resident_manifest_fid(uint8_t slot, uint8_t manifest_slot) {
+static uint16_t resident_manifest_fid(uint16_t slot, uint8_t manifest_slot) {
+    if(slot>=256 || slot==32)return (uint16_t)(0x2000+(slot==32?256:slot-256)*20+manifest_slot);
     uint8_t prefix = manifest_slot == 0 ? FIDO_RESIDENT_MANIFEST_SLOT_0_PREFIX : FIDO_RESIDENT_MANIFEST_SLOT_1_PREFIX;
     return (uint16_t)((prefix << 8) | slot);
 }
 
-static uint16_t resident_record_fid(uint8_t slot, uint8_t manifest_slot, uint16_t object_type) {
+static uint16_t resident_record_fid(uint16_t slot, uint8_t manifest_slot, uint16_t object_type) {
+    if(slot>=256 || slot==32)return (uint16_t)(0x2000+(slot==32?256:slot-256)*20+2+manifest_slot*8+object_type-1);
     uint8_t prefix;
     if (object_type == FIDO_RESIDENT_OBJECT_METADATA) {
         prefix = manifest_slot == 0 ? 0xdbu : 0xdcu;
@@ -71,7 +73,7 @@ static uint16_t resident_record_fid(uint8_t slot, uint8_t manifest_slot, uint16_
     return (uint16_t)(((prefix + object_type - 1u) << 8) | slot);
 }
 
-static uint16_t resident_record_fid_legacy(uint8_t slot, uint8_t manifest_slot, uint16_t object_type) {
+static uint16_t resident_record_fid_legacy(uint16_t slot, uint8_t manifest_slot, uint16_t object_type) {
     uint8_t prefix;
     if (object_type == FIDO_RESIDENT_OBJECT_METADATA) {
         prefix = manifest_slot == 0 ? 0xdbu : 0xdcu;
@@ -85,7 +87,7 @@ static bool resident_object_type_valid(uint16_t object_type) {
     return object_type >= FIDO_RESIDENT_OBJECT_RP_ID_HASH && object_type <= FIDO_RESIDENT_OBJECT_STATE;
 }
 
-static bool resident_record_id_valid(uint8_t slot, const file_object_descriptor_t *object) {
+static bool resident_record_id_valid(uint16_t slot, const file_object_descriptor_t *object) {
     if (!resident_object_type_valid(object->object_type) || object->record_id > UINT16_MAX) {
         return false;
     }
@@ -93,7 +95,7 @@ static bool resident_record_id_valid(uint8_t slot, const file_object_descriptor_
     if (record_fid == resident_record_fid(slot, 0, object->object_type) || record_fid == resident_record_fid(slot, 1, object->object_type)) {
         return true;
     }
-    if (object->object_type == FIDO_RESIDENT_OBJECT_PRIVATE_KEY || object->object_type == FIDO_RESIDENT_OBJECT_STATE) {
+    if (slot<256 && (object->object_type == FIDO_RESIDENT_OBJECT_PRIVATE_KEY || object->object_type == FIDO_RESIDENT_OBJECT_STATE)) {
         return record_fid == resident_record_fid_legacy(slot, 0, object->object_type) || record_fid == resident_record_fid_legacy(slot, 1, object->object_type);
     }
     return false;
@@ -112,14 +114,15 @@ static int resident_replace_file(uint16_t fid, const uint8_t *data, uint32_t dat
 }
 
 bool resident_container_is_marker(const file_t *file) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     if (!file_has_data(file) || file_get_size(file) != FIDO_RESIDENT_CONTAINER_MARKER_SIZE) {
         return false;
     }
-    const uint8_t *data = file_get_data(file);
+    const uint8_t *data = file_view_data(&fv_view, file);
     return memcmp(data, resident_container_marker_magic, sizeof(resident_container_marker_magic)) == 0 &&
-           data[FIDO_RESIDENT_CONTAINER_MARKER_VERSION_OFFSET] == FIDO_RESIDENT_CONTAINER_MARKER_VERSION &&
-           data[FIDO_RESIDENT_CONTAINER_MARKER_SLOT_OFFSET] == (uint8_t) file->fid &&
-           data[FIDO_RESIDENT_CONTAINER_MARKER_RESERVED_0_OFFSET] == FIDO_RESIDENT_CONTAINER_MARKER_RESERVED_VALUE &&
+           data[FIDO_RESIDENT_CONTAINER_MARKER_VERSION_OFFSET] == (fido_credential_slot(file->fid)>=256?2:1) &&
+           data[FIDO_RESIDENT_CONTAINER_MARKER_SLOT_OFFSET] == (uint8_t) fido_credential_slot(file->fid) &&
+           data[FIDO_RESIDENT_CONTAINER_MARKER_RESERVED_0_OFFSET] == (uint8_t)(fido_credential_slot(file->fid)>>8) &&
            data[FIDO_RESIDENT_CONTAINER_MARKER_RESERVED_1_OFFSET] == FIDO_RESIDENT_CONTAINER_MARKER_RESERVED_VALUE;
 }
 
@@ -133,12 +136,12 @@ static int resident_policy_hash(void *ctx, uint16_t policy_id, uint8_t hash[FILE
 
 static uint16_t resident_layout_manifest_fid(void *ctx, uint32_t container_id, uint8_t slot) {
     (void)ctx;
-    return resident_manifest_fid((uint8_t)container_id, slot);
+    return resident_manifest_fid((uint16_t)container_id, slot);
 }
 
 static int resident_layout_record_fid(void *ctx, uint32_t container_id, const file_object_descriptor_t *object, uint16_t *fid) {
     (void)ctx;
-    if (!object || !fid || container_id > UINT8_MAX || !resident_record_id_valid((uint8_t)container_id, object)) {
+    if (!object || !fid || container_id >= MAX_RESIDENT_CREDENTIALS || !resident_record_id_valid((uint16_t)container_id, object)) {
         return PICOKEYS_WRONG_DATA;
     }
     *fid = (uint16_t)object->record_id;
@@ -148,10 +151,10 @@ static int resident_layout_record_fid(void *ctx, uint32_t container_id, const fi
 static int resident_layout_record_allocate(void *ctx, uint32_t container_id, uint8_t target_slot, const file_object_container_write_t *write, const file_object_authenticator_t *auth, uint64_t *record_id, uint16_t *fid) {
     (void)ctx;
     (void)auth;
-    if (!write || !record_id || !fid || container_id > UINT8_MAX || !resident_object_type_valid(write->object_type)) {
+    if (!write || !record_id || !fid || container_id >= MAX_RESIDENT_CREDENTIALS || !resident_object_type_valid(write->object_type)) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
-    *fid = resident_record_fid((uint8_t)container_id, target_slot, write->object_type);
+    *fid = resident_record_fid((uint16_t)container_id, target_slot, write->object_type);
     *record_id = *fid;
     return PICOKEYS_OK;
 }
@@ -163,17 +166,18 @@ static bool resident_layout_write_valid(void *ctx, const file_object_container_w
 
 static bool resident_layout_descriptor_valid(void *ctx, uint32_t container_id, const file_object_descriptor_t *object) {
     (void)ctx;
-    return container_id <= UINT8_MAX && object->object_tag == 0 && resident_record_id_valid((uint8_t)container_id, object);
+    return container_id < MAX_RESIDENT_CREDENTIALS && object->object_tag == 0 && resident_record_id_valid((uint16_t)container_id, object);
 }
 
-static int resident_marker_write(uint8_t slot);
+static int resident_marker_write(uint16_t slot);
 
-static int resident_marker_write(uint8_t slot) {
+static int resident_marker_write(uint16_t slot) {
     uint8_t marker[FIDO_RESIDENT_CONTAINER_MARKER_SIZE] = { 0 };
     memcpy(marker, resident_container_marker_magic, sizeof(resident_container_marker_magic));
-    marker[FIDO_RESIDENT_CONTAINER_MARKER_VERSION_OFFSET] = FIDO_RESIDENT_CONTAINER_MARKER_VERSION;
+    marker[FIDO_RESIDENT_CONTAINER_MARKER_VERSION_OFFSET] = slot>=256?2:1;
+    marker[FIDO_RESIDENT_CONTAINER_MARKER_RESERVED_0_OFFSET] = (uint8_t)(slot>>8);
     marker[FIDO_RESIDENT_CONTAINER_MARKER_SLOT_OFFSET] = slot;
-    int r = resident_replace_file((uint16_t)(EF_CRED + slot), marker, sizeof(marker));
+    int r = resident_replace_file(fido_credential_fid(slot), marker, sizeof(marker));
     if (r != PICOKEYS_OK) {
         return r;
     }
@@ -182,8 +186,8 @@ static int resident_marker_write(uint8_t slot) {
 
 static int resident_layout_activate(void *ctx, uint32_t container_id) {
     (void)ctx;
-    uint8_t slot = (uint8_t)container_id;
-    if (resident_container_is_marker(file_search((uint16_t)(EF_CRED + slot)))) {
+    uint16_t slot = (uint16_t)container_id;
+    if (resident_container_is_marker(file_search(fido_credential_fid(slot)))) {
         return PICOKEYS_OK;
     }
     return resident_marker_write(slot);
@@ -193,7 +197,7 @@ static int resident_layout_retire(void *ctx, uint32_t container_id, const file_o
     (void)ctx;
     (void)state;
     (void)current_slot;
-    uint8_t slot = (uint8_t)container_id;
+    uint16_t slot = (uint16_t)container_id;
     for (uint8_t manifest_slot = 0; manifest_slot < 2; manifest_slot++) {
         if (manifest_slot != target_slot) {
             file_t *manifest = file_search(resident_manifest_fid(slot, manifest_slot));
@@ -217,7 +221,7 @@ static int resident_layout_retire(void *ctx, uint32_t container_id, const file_o
 
 static int resident_layout_deactivate(void *ctx, uint32_t container_id) {
     (void)ctx;
-    uint8_t slot = (uint8_t)container_id;
+    uint16_t slot = (uint16_t)container_id;
     for (uint8_t manifest_slot = 0; manifest_slot < 2; manifest_slot++) {
         for (uint16_t object_type = FIDO_RESIDENT_OBJECT_RP_ID_HASH; object_type <= FIDO_RESIDENT_OBJECT_STATE; object_type++) {
             file_t *record = file_search(resident_record_fid(slot, manifest_slot, object_type));
@@ -226,7 +230,7 @@ static int resident_layout_deactivate(void *ctx, uint32_t container_id) {
             }
         }
     }
-    file_t *marker = file_search((uint16_t)(EF_CRED + slot));
+    file_t *marker = file_search(fido_credential_fid(slot));
     if (marker) {
         return file_delete_no_commit(marker);
     }
@@ -276,7 +280,8 @@ static const file_object_container_crypto_t *resident_legacy_crypto(const file_o
     return legacy->auth && legacy->protector ? legacy : NULL;
 }
 
-bool resident_container_can_create(uint8_t slot) {
+bool resident_container_can_create(uint16_t slot) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     bool manifest_present = false;
     for (uint8_t manifest_slot = 0; manifest_slot < 2; manifest_slot++) {
         manifest_present |= file_search(resident_manifest_fid(slot, manifest_slot)) != NULL;
@@ -294,7 +299,7 @@ bool resident_container_can_create(uint8_t slot) {
     for (uint8_t manifest_slot = 0; manifest_slot < 2; manifest_slot++) {
         for (uint16_t object_type = FIDO_RESIDENT_OBJECT_RP_ID_HASH; object_type <= FIDO_RESIDENT_OBJECT_STATE; object_type++) {
             file_t *record = file_search(resident_record_fid(slot, manifest_slot, object_type));
-            if (record && (!file_has_data(record) || file_get_size(record) < sizeof(record_magic) || memcmp(file_get_data(record), record_magic, sizeof(record_magic)) != 0)) {
+            if (record && (!file_has_data(record) || file_get_size(record) < sizeof(record_magic) || memcmp(file_view_data(&fv_view, record), record_magic, sizeof(record_magic)) != 0)) {
                 return false;
             }
         }
@@ -302,7 +307,7 @@ bool resident_container_can_create(uint8_t slot) {
     return true;
 }
 
-static int resident_container_update(uint8_t slot, const file_object_container_write_t *writes, size_t write_count) {
+static int resident_container_update(uint16_t slot, const file_object_container_write_t *writes, size_t write_count) {
     file_object_container_crypto_t primary;
     file_object_container_crypto_t legacy;
     if (!resident_crypto(&primary, &legacy)) {
@@ -314,7 +319,7 @@ static int resident_container_update(uint8_t slot, const file_object_container_w
     return file_object_container_update(&resident_container_layout, slot, writes, write_count, &primary, resident_legacy_crypto(&legacy));
 }
 
-int resident_container_create(uint8_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size) {
+int resident_container_create(uint16_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size) {
     if (!rp_id_hash || !client_id || !credential || !public_key || client_id_size > UINT32_MAX || credential_size > UINT32_MAX || public_key_size > UINT32_MAX) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -363,7 +368,7 @@ int resident_container_create(uint8_t slot, const uint8_t rp_id_hash[RP_ID_HASH_
     return resident_container_update(slot, writes, sizeof(writes) / sizeof(writes[0]));
 }
 
-int resident_container_create_imported(uint8_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size, const uint8_t *private_key, size_t private_key_size, const uint8_t *metadata, size_t metadata_size) {
+int resident_container_create_imported(uint16_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size, const uint8_t *private_key, size_t private_key_size, const uint8_t *metadata, size_t metadata_size) {
     if (!rp_id_hash || !client_id || !credential || !public_key || !private_key || !metadata || client_id_size == 0 || credential_size == 0 || public_key_size == 0 || private_key_size == 0 || metadata_size == 0 || client_id_size > UINT32_MAX || credential_size > UINT32_MAX || public_key_size > UINT32_MAX || private_key_size > UINT32_MAX || metadata_size > UINT32_MAX) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -419,7 +424,7 @@ int resident_container_create_imported(uint8_t slot, const uint8_t rp_id_hash[RP
     return resident_container_update(slot, writes, sizeof(writes) / sizeof(writes[0]));
 }
 
-int resident_container_object_size(uint8_t slot, uint16_t object_type, uint32_t *object_size) {
+int resident_container_object_size(uint16_t slot, uint16_t object_type, uint32_t *object_size) {
     if (!object_size || !resident_object_type_valid(object_type)) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -431,7 +436,7 @@ int resident_container_object_size(uint8_t slot, uint16_t object_type, uint32_t 
     return file_object_container_object_size(&resident_container_layout, slot, object_type, 0, &primary, resident_legacy_crypto(&legacy), NULL, NULL, object_size);
 }
 
-int resident_container_read(uint8_t slot, uint16_t object_type, byte_buffer_t *data) {
+int resident_container_read(uint16_t slot, uint16_t object_type, byte_buffer_t *data) {
     if (!data || !resident_object_type_valid(object_type)) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -443,7 +448,7 @@ int resident_container_read(uint8_t slot, uint16_t object_type, byte_buffer_t *d
     return file_object_container_read(&resident_container_layout, slot, object_type, 0, &primary, resident_legacy_crypto(&legacy), NULL, NULL, data);
 }
 
-int resident_container_read_metadata(uint8_t slot, fido_resident_metadata_t *metadata) {
+int resident_container_read_metadata(uint16_t slot, fido_resident_metadata_t *metadata) {
     if (!metadata) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -465,7 +470,7 @@ int resident_container_read_metadata(uint8_t slot, fido_resident_metadata_t *met
     return resident_metadata_valid(metadata) ? PICOKEYS_OK : PICOKEYS_WRONG_DATA;
 }
 
-int resident_container_update_metadata(uint8_t slot, const fido_resident_metadata_t *metadata) {
+int resident_container_update_metadata(uint16_t slot, const fido_resident_metadata_t *metadata) {
     if (!resident_metadata_valid(metadata)) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -491,7 +496,7 @@ int resident_container_update_metadata(uint8_t slot, const fido_resident_metadat
     return resident_container_update(slot, &write, 1);
 }
 
-int resident_container_update_metadata_blob(uint8_t slot, const uint8_t *metadata, size_t metadata_size) {
+int resident_container_update_metadata_blob(uint16_t slot, const uint8_t *metadata, size_t metadata_size) {
     if ((!metadata && metadata_size > 0) || metadata_size == 0 || metadata_size > UINT32_MAX) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -505,7 +510,7 @@ int resident_container_update_metadata_blob(uint8_t slot, const uint8_t *metadat
     return resident_container_update(slot, &write, 1);
 }
 
-int resident_container_update_credential(uint8_t slot, const uint8_t *credential, size_t credential_size) {
+int resident_container_update_credential(uint16_t slot, const uint8_t *credential, size_t credential_size) {
     if ((!credential && credential_size > 0) || credential_size > UINT32_MAX) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -519,7 +524,7 @@ int resident_container_update_credential(uint8_t slot, const uint8_t *credential
     return resident_container_update(slot, &write, 1);
 }
 
-int resident_container_update_private_key(uint8_t slot, const uint8_t *private_key, size_t private_key_size) {
+int resident_container_update_private_key(uint16_t slot, const uint8_t *private_key, size_t private_key_size) {
     if ((!private_key && private_key_size > 0) || private_key_size > UINT32_MAX) {
         return PICOKEYS_ERR_NULL_PARAM;
     }
@@ -533,8 +538,8 @@ int resident_container_update_private_key(uint8_t slot, const uint8_t *private_k
     return resident_container_update(slot, &write, 1);
 }
 
-int resident_container_delete(uint8_t slot) {
-    file_t *marker = file_search((uint16_t)(EF_CRED + slot));
+int resident_container_delete(uint16_t slot) {
+    file_t *marker = file_search(fido_credential_fid(slot));
     if (!resident_container_is_marker(marker)) {
         return PICOKEYS_ERR_FILE_NOT_FOUND;
     }

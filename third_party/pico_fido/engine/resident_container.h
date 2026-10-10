@@ -48,16 +48,16 @@ typedef struct fido_resident_metadata {
 } fido_resident_metadata_t;
 
 bool resident_container_is_marker(const file_t *file);
-bool resident_container_can_create(uint8_t slot);
-int resident_container_create(uint8_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size);
-int resident_container_create_imported(uint8_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size, const uint8_t *private_key, size_t private_key_size, const uint8_t *metadata, size_t metadata_size);
-int resident_container_object_size(uint8_t slot, uint16_t object_type, uint32_t *object_size);
-int resident_container_read(uint8_t slot, uint16_t object_type, byte_buffer_t *data);
-int resident_container_read_metadata(uint8_t slot, fido_resident_metadata_t *metadata);
-int resident_container_update_metadata(uint8_t slot, const fido_resident_metadata_t *metadata);
-int resident_container_update_metadata_blob(uint8_t slot, const uint8_t *metadata, size_t metadata_size);
-int resident_container_update_credential(uint8_t slot, const uint8_t *credential, size_t credential_size);
-int resident_container_update_private_key(uint8_t slot, const uint8_t *private_key, size_t private_key_size);
-int resident_container_delete(uint8_t slot);
+bool resident_container_can_create(uint16_t slot);
+int resident_container_create(uint16_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size);
+int resident_container_create_imported(uint16_t slot, const uint8_t rp_id_hash[RP_ID_HASH_LEN], const uint8_t *client_id, size_t client_id_size, const uint8_t *credential, size_t credential_size, const uint8_t *public_key, size_t public_key_size, const uint8_t *private_key, size_t private_key_size, const uint8_t *metadata, size_t metadata_size);
+int resident_container_object_size(uint16_t slot, uint16_t object_type, uint32_t *object_size);
+int resident_container_read(uint16_t slot, uint16_t object_type, byte_buffer_t *data);
+int resident_container_read_metadata(uint16_t slot, fido_resident_metadata_t *metadata);
+int resident_container_update_metadata(uint16_t slot, const fido_resident_metadata_t *metadata);
+int resident_container_update_metadata_blob(uint16_t slot, const uint8_t *metadata, size_t metadata_size);
+int resident_container_update_credential(uint16_t slot, const uint8_t *credential, size_t credential_size);
+int resident_container_update_private_key(uint16_t slot, const uint8_t *private_key, size_t private_key_size);
+int resident_container_delete(uint16_t slot);
 
 #endif // _RESIDENT_CONTAINER_H_

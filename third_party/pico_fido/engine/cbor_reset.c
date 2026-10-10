@@ -57,7 +57,7 @@ static bool fido_reset_should_clear(uint16_t fid) {
     }
 
     // FIDO vault, credential, and resident-object records use these dynamic FID prefixes.
-    return (prefix >= 0xc4 && prefix <= 0xc9) || prefix == 0xcf || (prefix >= 0xd0 && prefix <= 0xdc) || (prefix >= 0xe0 && prefix <= 0xe3);
+    return (fid>=0x2000 && fid<0x3420) || (fid>=0xa000 && fid<0xa100) || (prefix >= 0xc4 && prefix <= 0xc9) || prefix == 0xcf || (prefix >= 0xd0 && prefix <= 0xdc) || (prefix >= 0xe0 && prefix <= 0xe3);
 }
 
 typedef struct fido_reset_context {
@@ -106,7 +106,7 @@ int cbor_reset(void) {
         return CTAP2_ERR_OPERATION_DENIED;
     }
 #endif
-    if (fido_reset_storage() != PICOKEYS_OK) {
+    if (fv_pico_has_storage() ? !fv_pico_storage_reset() : fido_reset_storage() != PICOKEYS_OK) {
         return CTAP2_ERR_PROCESSING;
     }
     init_fido();

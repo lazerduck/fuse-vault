@@ -145,6 +145,7 @@ int fido_load_key(int curve, const uint8_t *cred_id, mbedtls_ecp_keypair *key) {
 }
 
 int load_keydev(uint8_t key[32]) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     bool pin_wrapped = false;
 
     if (has_keydev_dec == false && !file_has_data(ef_keydev)) {
@@ -157,18 +158,18 @@ int load_keydev(uint8_t key[32]) {
     else {
         uint32_t fid_size = file_get_size(ef_keydev);
         if (fid_size == 32) {
-            memcpy(key, file_get_data(ef_keydev), 32);
+            memcpy(key, file_view_data(&fv_view, ef_keydev), 32);
             if (otp_key_1 && aes_decrypt(CONST_BYTE_ARRAY(otp_key_1, 32), NULL, PICOKEYS_AES_MODE_CBC, BYTE_ARRAY(key, 32)) != PICOKEYS_OK) {
                 return PICOKEYS_EXEC_ERROR;
             }
         }
         else if (fid_size == 33 || fid_size == 61) {
-            uint8_t format = *file_get_data(ef_keydev);
+            uint8_t format = *file_view_data(&fv_view, ef_keydev);
             if (format == 0x01 || format == 0x02 || format == 0x03) { // Format indicator
                 if (format == 0x02 || format == 0x03) {
                     pin_wrapped = true;
                     uint8_t tmp_key[61], version = format == 0x03 ? 2 : 1;
-                    memcpy(tmp_key, file_get_data(ef_keydev), sizeof(tmp_key));
+                    memcpy(tmp_key, file_view_data(&fv_view, ef_keydev), sizeof(tmp_key));
                     int ret = decrypt_with_aad(session_pin, CONST_BYTE_ARRAY(tmp_key + 1, 60), version, key);
                     if (ret != PICOKEYS_OK) {
                         return PICOKEYS_EXEC_ERROR;
@@ -186,7 +187,7 @@ int load_keydev(uint8_t key[32]) {
                     mbedtls_platform_zeroize(tmp_key, sizeof(tmp_key));
                 }
                 else {
-                    memcpy(key, file_get_data(ef_keydev) + 1, 32);
+                    memcpy(key, file_view_data(&fv_view, ef_keydev) + 1, 32);
                 }
                 uint8_t kbase[32];
                 derive_kbase(kbase);
@@ -364,7 +365,7 @@ int scan_files_fido(void) {
             random_fill_buffer(BYTE_ARRAY(t, sizeof(t)));
             file_put_data(ef_authtoken, CONST_BYTE_ARRAY(t, sizeof(t)));
         }
-        paut.data = file_get_data(ef_authtoken);
+        paut.data = fv_pico_token_data(ef_authtoken,false);
         paut.len = file_get_size(ef_authtoken);
     }
     else {
@@ -377,7 +378,7 @@ int scan_files_fido(void) {
             random_fill_buffer(BYTE_ARRAY(t, sizeof(t)));
             file_put_data(ef_pauthtoken, CONST_BYTE_ARRAY(t, sizeof(t)));
         }
-        ppaut.data = file_get_data(ef_pauthtoken);
+        ppaut.data = fv_pico_token_data(ef_pauthtoken,true);
         ppaut.len = file_get_size(ef_pauthtoken);
     }
     else {
@@ -452,9 +453,10 @@ uint32_t get_sign_counter(void) {
 }
 
 uint8_t get_opts(void) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     file_t *ef = file_search_by_fid(EF_OPTS, NULL, SPECIFY_EF);
     if (file_has_data(ef)) {
-        return *file_get_data(ef);
+        return *file_view_data(&fv_view, ef);
     }
     return 0;
 }
@@ -466,13 +468,14 @@ void set_opts(uint8_t opts) {
 }
 
 int dev_state_update(dev_state_t state) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     file_t *ef_dev_state = file_search_by_fid(EF_DEV_STATE, NULL, SPECIFY_EF);
     if (!ef_dev_state) {
         return PICOKEYS_ERR_FILE_NOT_FOUND;
     }
     if (file_get_size(ef_dev_state) == 32) {
         uint8_t dev_state[32] = {0};
-        memcpy(dev_state, file_get_data(ef_dev_state), 32);
+        memcpy(dev_state, file_view_data(&fv_view, ef_dev_state), 32);
         if (state & DEV_STATE_DEV_ID) {
             random_fill_buffer(BYTE_ARRAY(dev_state, 16));
         }

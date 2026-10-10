@@ -61,3 +61,19 @@ unlocked trusted UI owner, validates both modes, commits before success, and
 invalidates host tokens on save. No host CTAP setter is exposed. Missing records
 default to strict; invalid records deny engine dispatch. Ordinary FIDO reset
 preserves the preference, while local store initialization removes it.
+
+## SD journal and 512 slots (2026-10-10)
+
+The platform port now accepts bounded storage callbacks as an alternative to its
+legacy test image. Filesystem records and allocation stay compatible; pointer
+reads are replaced by function-scoped owned record views (4096-byte cap), and UV
+tokens use separately wiped session buffers. The SD backend uses an 824 KiB image
+and redo journal in the original 1 MiB region, with automatic snapshot migration.
+
+Resident slot APIs and management counts are widened to 512 slots. Existing IDs
+are retained except the previously unusable slot 32 object range (EF_PHY
+collision); extended object and marker ranges avoid legacy namespace collisions.
+The dynamic file table has 4608 entries of capacity and 5003 hash slots; the RP
+index is bounded by 512. Host reset uses the platform's restartable destructive
+initialization and retains the UV policy. RAM-backed compatibility tests retain
+the previous reset implementation. See the shared storage format documentation.

@@ -31,6 +31,7 @@
 #define DEV_STATE_SIZE (2 * CRED_STORE_STATE_SIZE)
 
 static int encrypt_dev_state_block(const file_t *ef_dev_state, dev_state_t state, uint8_t output[DEV_STATE_SIZE]) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     static const uint8_t salt[32] = { 0 };
     uint8_t key[CRED_STORE_STATE_SIZE] = { 0 };
     int ret = PICOKEYS_EXEC_ERROR;
@@ -62,7 +63,7 @@ static int encrypt_dev_state_block(const file_t *ef_dev_state, dev_state_t state
         goto cleanup;
     }
 
-    memcpy(output + CRED_STORE_STATE_SIZE, file_get_data(ef_dev_state) + dev_state_offset, CRED_STORE_STATE_SIZE);
+    memcpy(output + CRED_STORE_STATE_SIZE, file_view_data(&fv_view, ef_dev_state) + dev_state_offset, CRED_STORE_STATE_SIZE);
     ret = aes_encrypt(CONST_BYTE_ARRAY(key, sizeof(key)), output, PICOKEYS_AES_MODE_CBC, BYTE_ARRAY(output + CRED_STORE_STATE_SIZE, CRED_STORE_STATE_SIZE));
 
 cleanup:
@@ -71,6 +72,7 @@ cleanup:
 }
 
 int cbor_get_info(void) {
+    file_view_t fv_view __attribute__((cleanup(file_view_clear))) = {0};
     CborEncoder encoder, mapEncoder, arrayEncoder, mapEncoder2;
     CborError error = CborNoError;
     uint8_t enc_identifier[DEV_STATE_SIZE] = { 0 }, enc_cred_store_state[DEV_STATE_SIZE] = { 0 };
@@ -199,7 +201,7 @@ int cbor_get_info(void) {
 
     file_t *ef_minpin = file_search_by_fid(EF_MINPINLEN, NULL, SPECIFY_EF);
     CBOR_CHECK(cbor_encode_uint(&mapEncoder, 0x0C));
-    if (file_has_data(ef_minpin) && file_get_data(ef_minpin)[1] == 1) {
+    if (file_has_data(ef_minpin) && file_view_data(&fv_view, ef_minpin)[1] == 1) {
         CBOR_CHECK(cbor_encode_boolean(&mapEncoder, true));
     }
     else {
@@ -207,7 +209,7 @@ int cbor_get_info(void) {
     }
     CBOR_CHECK(cbor_encode_uint(&mapEncoder, 0x0D));
     if (file_has_data(ef_minpin)) {
-        CBOR_CHECK(cbor_encode_uint(&mapEncoder, *file_get_data(ef_minpin))); // minPINLength
+        CBOR_CHECK(cbor_encode_uint(&mapEncoder, *file_view_data(&fv_view, ef_minpin))); // minPINLength
     }
     else {
         CBOR_CHECK(cbor_encode_uint(&mapEncoder, 4)); // minPINLength
@@ -257,7 +259,7 @@ int cbor_get_info(void) {
     CBOR_CHECK(cbor_encode_boolean(&mapEncoder, file_has_data(ef_pin_policy)));
     if (file_get_size(ef_pin_policy) > 2) {
         CBOR_CHECK(cbor_encode_uint(&mapEncoder, 0x1C));
-        CBOR_CHECK(cbor_encode_byte_string(&mapEncoder, file_get_data(ef_pin_policy) + 2, file_get_size(ef_pin_policy) - 2));
+        CBOR_CHECK(cbor_encode_byte_string(&mapEncoder, file_view_data(&fv_view, ef_pin_policy) + 2, file_get_size(ef_pin_policy) - 2));
     }
 
     CBOR_CHECK(cbor_encode_uint(&mapEncoder, 0x1D));

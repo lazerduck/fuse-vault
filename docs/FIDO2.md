@@ -32,25 +32,54 @@ Reaching the limit applies the vault's configured destruction or permanent-locko
 
 The FIDO protocol also has verification errors, short-lived authorization tokens and retry reporting. In this implementation, the reported verification retries come from the vault's remaining attempts. The host cannot set up a separate FIDO PIN with its own retry allowance. Prompt timeouts, rejected requests and expired authorization are separate from submitting an incorrect vault credential.
 
-## Why the store is in RAM
+## SD-backed credential storage
 
-The imported FIDO engine works with a small filesystem-like image and accesses records through memory addresses. Our adapter provides that image as a contiguous 128 KiB RAM buffer. On the first FIDO operation that needs it after unlock, we read and authenticate the saved image from the SD card and open it in RAM. Later operations use this image until the FIDO session closes.
+The firmware reads the FIDO filesystem directly from the private SD region. It
+keeps an eight-sector plaintext cache, bounded record buffers and file/RP indexes
+in RAM, rather than a complete filesystem image. Buffers and derived keys are
+cleared when the FIDO session closes.
 
-This simplifies adapting the engine and saving a consistent image, but reserves enough RAM for the whole store. FIDO2 itself does not require this arrangement. The 1 MiB reservation on the card includes snapshot copies and metadata; the engine's usable image is currently 128 KiB.
+The existing 1 MiB reservation contains an 824 KiB filesystem, 55 KiB of sector
+authentication metadata, a 128 KiB redo journal and 17 KiB for control records and
+migration workspace. USB geometry is unchanged. The engine supports 512 resident
+slots; available bytes and fragmentation can limit unusually large records.
+The desktop journal test fills all 512 slots using distinct sites, 64-byte user
+IDs and 100-character account/display names, then checks reopen, signatures,
+full-store rejection, deletion/reuse and reset.
 
-Capacity is approximately 100 discoverable credentials, often called resident passkeys. Each includes account information and storage overhead as well as key material. The [desktop capacity tests](../results/fido-128k-20260921.md) stored 103–112 credentials depending on the lengths of account names, user identifiers and site information. The exact capacity varies with the records stored.
-
-The engine also supports nonresident credentials. For these, the host or service retains a protected credential identifier that the device can use later. They do not each consume a resident-passkey slot, but still depend on the device's FIDO secrets.
+Nonresident credentials remain supported. Their protected identifiers are held
+by the host or service, but still depend on the device's FIDO secrets.
 
 ## Saving and protecting credentials
 
-Separate keys derived from the VMK protect the FIDO store. It uses the selected encryption stack and authenticated snapshots, with two banks on the SD card. When the image changes, the device writes the alternate bank, synchronizes and verifies it, and then commits the authenticated metadata that selects it. A successful operation that changes the store is reported after its persistence step succeeds.
+Separate VMK-derived keys protect the filesystem and journal. Data uses the
+selected encryption stack; sectors are authenticated before decryption. Updates
+first go to a bounded journal, including the replacement authentication metadata.
+The device synchronizes and verifies the journal before publishing its commit
+record. It then applies, synchronizes and verifies those sectors in the main
+filesystem before marking the transaction complete and reporting success.
 
-Opening a valid store is read-only. The current implementation reports a zero signature counter, so ordinary signing does not save the whole image just to increment a counter.
+An interrupted uncommitted update leaves the main filesystem unchanged. A
+committed update is replayed before normal FIDO access, including after another
+interruption during recovery. Missing or corrupt committed journal data fails
+closed. The journal can hold 128 destination sectors; overflow faults the session
+without publishing a partial transaction. Ordinary signing uses zero signature
+counters and does not write merely to increment a counter.
 
-An interrupted save can leave the previous committed snapshot available. If the newest authenticated commit points to damaged data, opening fails instead of silently selecting older credentials. A corrupt store requires explicit action from the user; unlocking does not automatically replace it with an empty one.
+There is no per-sector fingerprint table or internal anti-rollback anchor.
+Restoring old valid sectors/tags at their original positions, journal state, or
+an entire SD image is outside the freshness guarantee and can undo deletion or
+reset. The device assumes exclusive media ownership; card replacement requires
+closing and reopening the session. Soldered storage does not provide cryptographic
+freshness. Changing the vault credential preserves the VMK and passkeys.
+Destroying the enrollment token removes the device's ability to recover the VMK.
 
-As with file storage, authentication does not prevent restoration of an older, valid SD image. Such a restoration can undo passkey deletion or a FIDO reset within the same vault. Changing the vault credential preserves the VMK and therefore preserves the FIDO store. Destroying the enrollment token removes the device's ability to recover the VMK and use the passkeys.
+On first FIDO access after unlock, firmware automatically converts authenticated
+64 KiB or 128 KiB snapshots. It stages the original encrypted snapshot in unused
+space, commits a migration marker, then relocates filesystem links into the larger
+image. Credential payloads and engine wrapping keys are preserved. Interrupted
+migration resumes from the staged source. **Do not downgrade firmware after this
+conversion.** A failed open never automatically creates a fresh store.
 
 ## Viewing, deleting and resetting
 
@@ -60,8 +89,12 @@ Reset FIDO explicitly reinitializes the FIDO store. It removes resident credenti
 
 There is also a host-requested FIDO reset operation. It requires authorization and a destructive confirmation on the device, and is accepted only in the first ten seconds after USB enumeration. Reopening the vault does not restart that window. The local Reset FIDO action provides the unlocked management route outside that window.
 
-## Areas to review
+Reset publishes an authenticated destructive-intent marker before directly
+initializing the filesystem. It does not journal the credentials being erased.
+A restart completes that initialization before allowing FIDO access. Host reset
+preserves the local UV policy; local Reset FIDO clears it, matching the previous
+behaviour. Reset is logical removal, not a promise of forensic SD erasure.
 
-If greater resident-passkey capacity is needed, review the engine's memory-backed storage interface and whether records can be retrieved on demand. This would require preserving authenticated storage and reliable interrupted-write handling. Simply allocating more SD space does not expand the current RAM image.
+## Areas to review
 
 Hardware acceptance still needs to cover power interruption, memory use under combined USB/FIDO workloads and the full session-cleanup paths. The desktop tests provide useful evidence, but these device checks remain part of validating the implementation.

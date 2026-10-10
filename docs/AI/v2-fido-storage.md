@@ -1,4 +1,142 @@
-# V2 FIDO snapshot storage (development formats 1 and 2)
+# FIDO journal storage (format 3)
+
+The firmware uses `fv_fido_journal` with bounded engine read/write callbacks.
+The legacy snapshot API below remains available for migration fixtures and older
+host tests. It is not the firmware storage path.
+
+## Fixed physical geometry
+
+All sectors are 512 bytes. The reservation remains physical sectors 16–2063.
+
+| Physical sectors | Contents | Size |
+| --- | --- | --- |
+| 16–125 | 110 eager sector-authentication metadata sectors | 55 KiB |
+| 126–1773 | 1648 encrypted filesystem sectors | 824 KiB |
+| 1774–2029 | 128 two-sector journal entries | 128 KiB |
+| 2030–2063 | Control/migration area | 17 KiB |
+
+Normal control records alternate at physical 2062 and 2063. The rest of the
+control area supports one-time migration and is reserved afterwards. Headers
+0–15 and USB metadata/data at 2064 onward are never written by this store.
+
+The filesystem keeps its linked records, 32-bit logical addresses, 16 KiB
+permanent-record pool and allocator. Runtime storage has eight cached plaintext
+sectors, at most 128 journal destination indices and function-scoped record views
+capped at 4096 bytes. The existing file/RP indexes have fixed bounds for 512 slots.
+There is no complete plaintext image or per-sector fingerprint table in firmware.
+
+## Keys and journal records
+
+HKDF retains the legacy fixed-width context construction: purpose including NUL,
+SHA-256 of the volume descriptor, bank zero, and layer. New purposes are
+`FV3/fido-xts`, `FV3/fido-sector` and `FV3/fido-journal`. Engine wrapping retains
+`FV2/fido-engine/v1`, preserving resident and nonresident credentials. All
+cipher/HMAC contexts, cache entries and temporary record views are wiped on close.
+
+A journal entry consists of a 512-byte header and a 512-byte replacement sector.
+The header contains `FV3JREC`, the transaction sequence, entry index and relative
+home-sector destination. Its HMAC covers the first 480 header bytes and the whole
+replacement sector. Destinations must be unique and inside the 1758-sector home
+region. Replacement data is already encrypted with the home encryption stack;
+authentication metadata contains tags, not plaintext credential records.
+
+Control records contain `FV3JCTL`, version 3, monotonic sequence, state, entry
+count, legacy source geometry, reset policy and transaction/source digest. Their
+HMAC covers the first 480 bytes. Sequence parity selects the control slot.
+States are CLEAN, READY, RESET and MIGRATE. Sequence overflow fails closed.
+
+## Transaction and recovery ordering
+
+Writes update journal entries through a block-device overlay beneath the existing
+sector-authentication layer. Reads see their transaction's pending replacements.
+The main filesystem stays unchanged until the complete journal is committed.
+Repeated writes to a sector reuse its entry. The 128-entry bound includes data
+and authentication metadata; overflow faults the session and requires reopen.
+
+1. Synchronize journal entries, read back/authenticate all entries, and calculate
+   their ordered digest.
+2. Publish READY with that digest; synchronize and read back the control record.
+3. Validate the complete committed journal before applying any destination.
+4. Apply replacements, synchronize, and compare destination readback with them.
+5. Publish CLEAN; synchronize and read back before journal reuse or success.
+
+Open recovers READY before exposing the engine. Replaying final sector images is
+idempotent. Read/I/O errors are not absence; invalid committed entry data fails
+closed. Uncommitted journal contents may be ignored. A failed commit can still
+have become durable; an error is not evidence that the credential was never saved.
+All operations require serialized ownership and the original unlocked authority,
+credential generation and volume descriptor. Cancellation before publication may
+abort; cancellation cannot undo a published transaction.
+
+The transaction digest authenticates the temporary recovery operation. It is not
+a table of persistent sector fingerprints. Old authentic home-sector/tag pairs
+and complete SD rollback remain outside the freshness guarantee. Media must be
+reopened after replacement; coherent external mutation is unsupported.
+
+## Destructive reset
+
+After UI authorization, publish and verify RESET, discard pending writes, then
+initialize home sectors directly. No copies of erased credentials are journaled.
+RESET contains the host-reset UV policy to retain, or -1 for a local reset.
+Reopening repeats interrupted initialization before exposing the filesystem.
+CLEAN is published only after initialization is synchronized and authenticated
+from media again. Engine initialization
+creates replacement FIDO secrets through a normal transaction. Power loss between
+these stages exposes no old credentials; initialization can safely run again.
+This is logical reset, not guaranteed physical erasure of SD controller copies.
+
+## Automatic startup migration
+
+Migration runs on first FIDO access after successful unlock, when the VMK is
+available. Authenticate the newest legacy snapshot and its complete digest first.
+Copy its contiguous manifest, metadata and ciphertext to physical sector 1774
+onward. A 128 KiB snapshot consumes 275 sectors, ending at 2048; this is outside
+both old banks' used ranges and outside the new home region. Authenticate the
+staged copy and publish MIGRATE at the new control location before modifying home.
+
+Initialize the enlarged home image, stream the old bytes to its upper end, validate
+both old linked lists and relocate their next/previous pointers. Record payloads
+and engine secrets remain unchanged. Authenticate destination sectors, publish
+CLEAN, and supersede MIGRATE before allowing the staging area to serve as a journal.
+Interrupted migration resumes from its staged authenticated source. Both legacy
+64 KiB and 128 KiB snapshots are supported; malformed lists fail closed.
+Downgrade is unsupported. Missing/corrupt storage never triggers an implicit reset.
+
+## Capacity and validation
+
+Resident slots are 0–511. Existing marker IDs remain for slots below 256;
+extended markers use 0xA000–0xA0FF and carry the high slot byte in marker version 2.
+Object IDs for extended slots and formerly unusable slot 32 use a disjoint range
+starting at 0x2000. This avoids the old 0xE020 platform-file collision. The legacy
+RP namespace remains 256 entries; native RP enumeration supports all 512 slots.
+
+`fido_journal_reference` uses python-fido2 for signature, migration, 512-slot,
+full-store, delete/reuse, reset and verification-policy checks.
+`fido_journal_interruptions` injects every write/sync failure in reset and both
+migration sizes, every write/sync/read failure in a multi-sector transaction,
+torn writes, lost unsynchronized data, repeated recovery failures and corruption.
+Validation on 2026-10-10: the normal desktop suite passed 43/43 tests. The
+firmware-adapter, journal-reference and journal-interruption tests also passed
+3/3 under AddressSanitizer and UndefinedBehaviorSanitizer (leak detection disabled).
+The
+interruption harness exercised 14 writes, 4 syncs and 46 reads in its ordinary
+transaction; 439 writes/4 syncs for reset; 1227 writes/7 syncs for 128 KiB migration;
+and 834 writes/7 syncs for 64 KiB migration. Counts are operation boundaries, not
+claims about every possible SD-controller failure. The 512-slot test also lists
+all 512 RPs and verifies keys around the old slot boundary and remapped slot 32.
+
+The RP2354 firmware build succeeds with 343532 bytes of BSS and a linker heap
+range of 160620 bytes (about 157 KiB) before live allocations. This is not a peak
+RAM or stack high-water measurement, and no device was flashed during validation.
+
+Hardware power-loss, latency and peak live RAM acceptance remain outstanding.
+Guarantees assume the block adapter honours completed synchronization and failed
+writes do not destroy unrelated previously durable sectors.
+
+---
+
+# Historical formats 1 and 2 (migration input only)
+
 
 The F2 store connects the portable FIDO engine to the existing V2 encrypted block
 pipeline. It does not attach HID or implement physical UI. See the

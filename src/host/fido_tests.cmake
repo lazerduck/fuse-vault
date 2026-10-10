@@ -64,3 +64,15 @@ add_test(NAME fido_encrypted_reference COMMAND ${Python3_EXECUTABLE}
   $<TARGET_FILE:fido_encrypted_engine_tests> --encrypted)
 set_tests_properties(fido_engine fido_engine_reference fido_store
   fido_encrypted_engine fido_encrypted_reference PROPERTIES TIMEOUT 120)
+
+add_executable(fido_journal_peer tests/fido_journal_peer.c)
+target_compile_options(fido_journal_peer PRIVATE -UNDEBUG)
+target_link_libraries(fido_journal_peer PRIVATE fv_fido_engine fido_test_platform OpenSSL::Crypto)
+add_test(NAME fido_journal_reference COMMAND ${Python3_EXECUTABLE}
+  ${CMAKE_CURRENT_SOURCE_DIR}/tests/fido_journal_reference_tests.py $<TARGET_FILE:fido_journal_peer>)
+set_tests_properties(fido_journal_reference PROPERTIES TIMEOUT 900)
+add_executable(fido_journal_tests tests/fido_journal_tests.c)
+target_compile_options(fido_journal_tests PRIVATE -UNDEBUG -Wall -Wextra -Werror)
+target_link_libraries(fido_journal_tests PRIVATE fido_test_platform)
+add_test(NAME fido_journal_interruptions COMMAND fido_journal_tests)
+set_tests_properties(fido_journal_interruptions PROPERTIES TIMEOUT 1800)

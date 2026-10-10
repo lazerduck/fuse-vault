@@ -44,7 +44,6 @@ extern uintptr_t flash_read_uintptr(uintptr_t addr);
 extern uint16_t flash_read_uint16(uintptr_t addr);
 extern uint32_t flash_read_uint32(uintptr_t addr);
 extern uint8_t flash_read_uint8(uintptr_t addr);
-extern uint8_t *flash_read(uintptr_t addr);
 extern int flash_read_block(uintptr_t addr, byte_array_t data);
 extern int flash_erase_page(uintptr_t addr, size_t page_size);
 extern bool flash_check_blank(const_byte_array_t data);

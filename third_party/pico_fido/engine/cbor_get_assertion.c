@@ -341,7 +341,7 @@ int cbor_get_assertion(const uint8_t *data, size_t len, bool next) {
                 }
                 if (credential_is_resident(allowList[e].id.data, allowList[e].id.len)) {
                     for (int i = 0; i < MAX_RESIDENT_CREDENTIALS && creds_len < MAX_CREDENTIAL_COUNT_IN_LIST; i++) {
-                        file_t *ef = file_search((uint16_t)(EF_CRED + i));
+                        file_t *ef = file_search(fido_credential_fid(i));
                         if (!file_has_data(ef) || !credential_resident_matches_rp(ef, rp_id_hash)) {
                             continue;
                         }
@@ -368,7 +368,7 @@ int cbor_get_assertion(const uint8_t *data, size_t len, bool next) {
                         // Even we provide allowList, we need to check if the credential is resident
                         if (!resident) {
                             for (int i = 0; i < MAX_RESIDENT_CREDENTIALS && creds_len < MAX_CREDENTIAL_COUNT_IN_LIST; i++) {
-                                file_t *ef = file_search((uint16_t)(EF_CRED + i));
+                                file_t *ef = file_search(fido_credential_fid(i));
                                 if (!file_has_data(ef) || !credential_resident_matches_rp(ef, rp_id_hash)) {
                                     continue;
                                 }
@@ -387,7 +387,7 @@ int cbor_get_assertion(const uint8_t *data, size_t len, bool next) {
         }
         else {
             for (int i = 0; i < MAX_RESIDENT_CREDENTIALS && creds_len < MAX_CREDENTIAL_COUNT_IN_LIST; i++) {
-                file_t *ef = file_search((uint16_t)(EF_CRED + i));
+                file_t *ef = file_search(fido_credential_fid(i));
                 if (!file_has_data(ef) || !credential_resident_matches_rp(ef, rp_id_hash)) {
                     continue;
                 }
@@ -441,7 +441,7 @@ int cbor_get_assertion(const uint8_t *data, size_t len, bool next) {
                     }
                     if (credential_is_resident(allowList[e].id.data, allowList[e].id.len)) {
                         for (int i = 0; i < MAX_RESIDENT_CREDENTIALS && creds_len < MAX_CREDENTIAL_COUNT_IN_LIST; i++) {
-                            file_t *ef = file_search((uint16_t)(EF_CRED + i));
+                            file_t *ef = file_search(fido_credential_fid(i));
                             if (!file_has_data(ef) || !credential_resident_matches_rp(ef, rp_id_hash)) {
                                 continue;
                             }

@@ -6,7 +6,7 @@
 #include "pico/stdlib.h"
 #include "fuse_vault/fido_hid.h"
 #include "fuse_vault/fido_engine.h"
-#include "fuse_vault/fido_store.h"
+#include "fuse_vault/fido_journal.h"
 #include "fuse_vault/fido_verification.h"
 #include "cbor.h"
 #include <stdatomic.h>
@@ -25,9 +25,8 @@ static struct {bool secret,approved;uint16_t profile;uint8_t value[64],length;ch
 static bool discard,initialized;
 static bool completed_unlocked;
 static uint32_t keepalive_at;
-static fv_fido_store store;
+static fv_fido_journal store;
 static fv_fido_verification_t verification;
-static uint8_t image[FV_FIDO_STORE_BYTES];
 static bool engine_open,executing,invalidated;
 static char request_label[128];
 static uint8_t uv_policy;
@@ -41,7 +40,7 @@ void fv_fido_close(void){
     fv_fido_verification_clear(&verification);
     if(executing){invalidated=true;return;}
     if(engine_open)fv_fido_engine_close();
-    engine_open=false;fv_fido_store_close(&store);fv_ui_wipe(image,sizeof(image));
+    engine_open=false;fv_fido_journal_close(&store);
 }
 void fv_fido_unlocked(void){fv_fido_verification_begin(&verification,now(NULL));}
 void fv_fido_ui_poll(fv_ui *ui){
@@ -82,9 +81,7 @@ static bool verify(void *ctx,const uint8_t *rp){
     fv_fido_unlocked();return fv_fido_verification_use_policy(&verification,now(NULL),rp,(fv_fido_uv_policy)uv_policy);
 }
 static int presence(void *ctx){(void)ctx;return ask(false,0)?0:2;}
-static bool commit(void *ctx,const uint8_t *data,size_t n){
-    (void)ctx;return (!executing || !fv_fido_cancelled(NULL)) && n==sizeof(image) && fv_fido_store_commit(&store,data)==FV_FIDO_STORE_OK;
-}
+static bool commit_disk(void *ctx){(void)ctx;return (!executing || !fv_fido_cancelled(NULL)) && fv_fido_journal_commit(&store);}
 static uint8_t retries(void *ctx){
     (void)ctx;fv_device_state state;fv_vault *v=fv_fido_vault();
     if(!v->unlocked || v->platform->authority.load(v->platform->authority.context,&state) || state.status!=FV_ENROLLMENT_ACTIVE)return 0;
@@ -116,11 +113,13 @@ static bool label(const uint8_t *request,size_t size){
 static bool ensure_engine(void){
     if(!engine_open){
         uint8_t key[32];
-        if(fv_fido_store_open(&store,fv_fido_vault(),image)!=FV_FIDO_STORE_OK)return false;
-        fv_fido_engine_ops_t ops={.random=fv_fido_random,.commit=commit,.presence=presence,.millis=now,
+        if(fv_fido_journal_open(&store,fv_fido_vault())!=0)return false;
+        fv_fido_engine_ops_t ops={.random=fv_fido_random,.storage_context=&store,.storage_bytes=FV_FIDO_DISK_BYTES,
+            .storage_read=fv_fido_journal_read,.storage_write=fv_fido_journal_write,
+            .storage_commit=commit_disk,.storage_reset=fv_fido_journal_reset,.presence=presence,.millis=now,
             .verify_user=verify,.uv_retries=retries,.cancelled=fv_fido_cancelled,.reset_allowed=reset_allowed,.local_authorized=local};
-        bool ok=fv_fido_store_engine_key(&store,key)==FV_FIDO_STORE_OK &&
-            fv_fido_engine_open(image,key,fv_fido_vault()->config.device_id,&ops);
+        bool ok=fv_fido_journal_key(&store,key)==0 &&
+            fv_fido_engine_open(NULL,key,fv_fido_vault()->config.device_id,&ops);
         fv_ui_wipe(key,sizeof(key));if(!ok)return false;engine_open=true;
     }
     return fv_fido_engine_uv_policy(false,&uv_policy);
@@ -149,12 +148,12 @@ int fv_fido_manage(bool remove,uint16_t *index,uint16_t *count,fv_passkey_t *ent
     return 0;
 }
 int fv_fido_initialize(void){
-    fv_fido_close();int r=fv_fido_store_initialize(&store,fv_fido_vault(),true,image);
-    fv_fido_store_close(&store);fv_ui_wipe(image,sizeof(image));return r;
+    fv_fido_close();int r=fv_fido_journal_initialize(&store,fv_fido_vault(),true);
+    fv_fido_journal_close(&store);return r;
 }
 int fv_fido_prepare_new(const fv_vault *vault){
     fv_fido_close();
-    return fv_fido_store_prepare_new(vault,image);
+    return fv_fido_journal_prepare_new(&store,vault);
 }
 void fv_fido_execute(void){
     size_t n=1;response[0]=0x7f;invalidated=false;executing=true;

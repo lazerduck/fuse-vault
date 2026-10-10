@@ -136,13 +136,20 @@ extern void file_initialize_flash(bool);
 
 extern file_entry_t file_entries[];
 
-extern uint8_t *file_read(const uint8_t *addr);
 extern uint16_t file_read_uint16(const uint8_t *addr);
 extern uint32_t file_read_uint32(const uint8_t *addr);
 extern uint8_t file_read_uint8(const file_t *ef);
 extern uint8_t file_read_uint8_offset(const file_t *ef, const uint16_t offset);
 extern bool file_has_data(const file_t *);
-extern uint8_t *file_get_data(const file_t *tf);
+/* Function-scoped owned record buffer; never retained after its owner returns.
+ * Refilled on each access, so writes are visible without cache invalidation. */
+#define FV_FILE_VIEW_MAX 4096u
+typedef struct { uint8_t *data; } file_view_t;
+void file_view_clear(file_view_t *);
+uint8_t *file_view_data(file_view_t *,const file_t *);
+uint8_t *fv_pico_token_data(const file_t *,bool);
+bool fv_pico_storage_reset(void);
+bool fv_pico_has_storage(void);
 extern uint32_t file_get_size(const file_t *tf);
 extern int file_read_at(const file_t *tf, uint32_t offset, byte_array_t data);
 extern uint8_t file_get_type(const file_t *tf);
@@ -158,7 +165,7 @@ file_t *get_parent(file_t *f);
 
 extern bool isUserAuthenticated;
 
-extern byte_array_t meta_find(uint16_t fid);
+extern byte_array_t meta_find(uint16_t fid, file_view_t *view);
 extern int meta_delete_no_commit(uint16_t fid);
 extern int meta_delete(uint16_t fid);
 extern int meta_add(uint16_t fid, const_byte_array_t data);

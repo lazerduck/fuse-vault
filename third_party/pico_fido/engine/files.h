@@ -38,6 +38,9 @@
 #define EF_FV_UV_POLICY 0x1123 /* Local-only Fuse Vault setting; encrypted snapshot. */
 #define EF_DEV_CONF     0x1122
 #define EF_CRED         0xCF00 // Creds at 0xCF00 - 0xCFFF
+/* Preserve old marker IDs; extended slots live in a disjoint range. */
+static inline uint16_t fido_credential_fid(unsigned slot) { return slot<256 ? (uint16_t)(EF_CRED+slot) : (uint16_t)(0xa000+slot-256); }
+static inline uint16_t fido_credential_slot(uint16_t fid) { return (fid&0xff00u)==EF_CRED ? (uint16_t)(fid-EF_CRED) : (fid>=0xa000 && fid<0xa100 ? (uint16_t)(fid-0xa000+256) : UINT16_MAX); }
 #define EF_RP           0xD000 // RPs at 0xD000 - 0xD0FF
 #define EF_LARGEBLOB    0x1101 // Large Blob Array
 #define EF_OATH_CRED    0xBA00 // OATH Creds at 0xBA00 - 0xBAFE

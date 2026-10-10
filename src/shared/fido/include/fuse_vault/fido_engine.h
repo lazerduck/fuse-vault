@@ -9,7 +9,7 @@
 #define FV_FIDO_ENGINE_RESPONSE_SIZE 4096u
 /* One serialized synchronous instance, owned by the vault worker in firmware.
  * Callbacks must not reenter the engine. Approval/UV callbacks must cooperate
- * with the scheduler. Commit succeeds only after the snapshot is durable.
+ * with the scheduler. Commit succeeds only after the storage transaction is durable.
  * This library supplies no USB transport, unlock policy, or storage encryption. */
 typedef struct {
     bool (*random)(void *, uint8_t *, size_t);
@@ -24,9 +24,18 @@ typedef struct {
     /* Firmware binds reset eligibility to USB enumeration, not engine reopen. */
     bool (*reset_allowed)(void *);
     bool (*local_authorized)(void *); /* Device session only; never host UV. */
+    /* Optional bounded storage backend; image is NULL when supplied. */
+    size_t storage_bytes;
+    void *storage_context;
+    bool (*storage_read)(void *, size_t, uint8_t *, size_t);
+    bool (*storage_write)(void *, size_t, const uint8_t *, size_t);
+    bool (*storage_commit)(void *);
+    bool (*storage_reset)(void *, int keep_policy);
     void *context;
 } fv_fido_engine_ops_t;
-/* store is caller-owned, writable and exclusively held until close (which wipes
+/* With storage callbacks, pass NULL for store; reads/writes are bounded by
+ * storage_bytes and share storage_context. Otherwise the legacy test image
+ * is caller-owned, writable and exclusively held until close (which wipes
  * it). Caller explicitly supplies a fresh all-FF image or authenticated snapshot.
  * root is a separately derived FIDO wrapping key, NEVER the VMK/OTP root.
  * Failed commit/RNG faults the instance; close and recover before further use. */
