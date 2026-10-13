@@ -1,0 +1,100 @@
+{
+  "baseline": "Prototype E",
+  "units": "mm",
+  "case_body": [
+    77.3,
+    27.6,
+    12.1
+  ],
+  "proposed_body": [
+    77.3,
+    27.6,
+    12.1
+  ],
+  "old_overall_bare_stick_height": 14.9,
+  "new_overall_neutral_height": 12.7,
+  "new_pad_protrusion": 0.6,
+  "pad_span": 16,
+  "pad_arm_width": 5.5,
+  "hidden_flange_diameter": 14.6,
+  "flange_pocket_diameter": 15.8,
+  "opening_span": 17.2,
+  "opening_arm_width": 6.7,
+  "pad_centre": [
+    61.1,
+    -11.8
+  ],
+  "old_joystick_centre": [
+    60.325,
+    -14.732
+  ],
+  "centre_shift": [
+    0.7749999999999986,
+    2.9319999999999986
+  ],
+  "select_centre": [
+    49.149,
+    -6.2
+  ],
+  "back_centre": [
+    49.149,
+    -15.875
+  ],
+  "button_diameter": 4.4,
+  "button_centres_distance": 9.675,
+  "switch_pitch_across": 11,
+  "switch_land_reserve_span": [
+    14.2,
+    14.2
+  ],
+  "switch_courtyard_reserve_span": [
+    14.8,
+    14.8
+  ],
+  "courtyard_margin": 0.3,
+  "pcb_top": 1.6,
+  "switch_top": 3.5,
+  "plunger_rest_bottom": 3.65,
+  "roof_top": 7.8,
+  "pad_top": 8.4,
+  "relocate_components": [
+    "R19",
+    "R20",
+    "R22",
+    "R23"
+  ],
+  "new_lands_vs_existing": [
+    {
+      "new_switch": "up",
+      "existing_part": "R19",
+      "overlap_mm3": 0.3
+    },
+    {
+      "new_switch": "up",
+      "existing_part": "R20",
+      "overlap_mm3": 0.177
+    },
+    {
+      "new_switch": "up",
+      "existing_part": "R22",
+      "overlap_mm3": 0.3
+    },
+    {
+      "new_switch": "up",
+      "existing_part": "R23",
+      "overlap_mm3": 0.3
+    }
+  ],
+  "pad_static_collisions": [],
+  "pad_cardinal_sweep_collisions": [],
+  "button_static_collisions": [],
+  "max_height_during_sampled_tilt": 13.222509149388713,
+  "limitations": [
+    "Concept only; original PCB requires replacement of SW3 with four switch footprints and a new Select input footprint.",
+    "Simplified switch bodies and 5 x 3.2 mm land reserves; verify final selected manufacturer land pattern and pad numbering.",
+    "Routed PCB tracks, pullups, vias and soldermask bearing area are not redesigned.",
+    "Four cardinal sweeps only; diagonal behaviour, lift/retention, stops, tolerance stack and cap insertion not qualified.",
+    "Hard-stop tuning and switch preload require a small physical coupon; not print-ready.",
+    "Baseline electronics geometry includes provisional heights. Existing underside SD is unchanged; no centre through-hole is introduced."
+  ]
+}

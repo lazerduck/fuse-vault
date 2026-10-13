@@ -1,0 +1,84 @@
+16 mm D-pad packaging study — 12 October 2026
+
+Result
+The concept fits the existing Prototype E external body (77.3 x 27.6 x
+12.1 mm). It requires a new lid and PCB layout; it is not a replacement
+cap for the existing five-way switch. The current base is used unchanged
+for this packaging study. Its suitability for changed underside routing
+or solder features is not established.
+
+Controls
+D-pad centre: (61.100, -11.800), versus SW3 (60.325, -14.732).
+The shift is +0.775 mm X and +2.932 mm Y.
+Visible pad: 16 mm across, arms 5.5 mm wide, with 0.3 mm top bevel.
+Lid opening: 17.2 mm across, arms 6.7 mm wide.
+Hidden retaining disc: diameter 14.6 mm; pocket diameter 15.8 mm.
+Select and Back heads: diameter 4.4 mm, 9.675 mm centre spacing.
+Back remains over SW4; Select is above it. The original long Back leaf
+is replaced by two independently guided captive plungers.
+The exposed pad and Back head have approximately 2 mm closest plan gap.
+These are compact controls; thumb comfort has not been demonstrated.
+
+Height
+PCB top Z=1.6; case top Z=7.8; pad and button tops Z=8.4.
+The pad is 0.6 mm proud of the lid at rest and 6.8 mm above the PCB.
+This corrects the earlier generic 3–5 mm PCB-to-pad estimate: on this
+existing case the roof position sets the control height.
+Overall height from case bottom: 12.7 mm at rest, versus 14.9 mm for the
+existing bare joystick. See measurements.json for the raised-edge height
+at the checked +/-4 degree tilts (approximately 13.2 mm).
+USB end covers are excluded from these control-height comparisons.
+
+PCB space
+Four representative KMR2 switches sit 5.5 mm from the pad centre.
+Body envelopes are 4.2 x 2.8 mm, with actuator height 1.9 mm above PCB.
+Each land reserve is 5 x 3.2 mm; the four direction reserves fit inside
+14.2 x 14.2 mm, or 14.8 x 14.8 mm with 0.3 mm exterior margin.
+The previous SW3 terminal reserve was provisionally 13.3 x 10.5 mm;
+thus the new directional land bounding box adds 0.9 x 3.7 mm locally.
+Select needs an additional 5 x 3.2 mm reserve alongside the pad.
+The up-switch reserve/courtyard clashes with R19, R20, R22 and R23.
+Those parts are omitted from the proposed assembly to show a revised
+layout. They are not deleted electrically; their new locations and
+routing still need design. SW3 is also omitted. No original PCB or CAD
+files have been edited.
+Part source: Littelfuse C&K KMR2 series datasheet:
+https://www.littelfuse.com/assetdocs/littelfuse-ck-tactile-kmr2-series-datasheet?assetguid=f782bfc7-b600-4ab5-8c8d-a2a094a642e3
+The switch CAD is a simplified study envelope, not final vendor CAD.
+Verify the chosen orderable part, land pattern, stroke, force and contact
+rating before board manufacture.
+
+Mechanism and execution
+The cross, flange, central rounded heel and four contact plungers form
+one printed part. The heel bears against a clear flat soldermask area on
+the PCB, so there is no centre switch or hole into the underside SD area.
+The flange catches beneath the lid, in the diagonal areas outside the
+cross aperture. The square cross opening restrains rotation. The roof
+remaining over the pocket is 0.75 mm nominal, so it needs a print/strength
+check. PCB support, soldermask wear and surface tolerances also matter.
+Switch plungers have 0.15 mm nominal neutral clearance. This avoids
+assuming exact preload, but could produce a loose feel or poor centring.
+Real prototypes must tune this clearance, return/preload and travel stops.
+Hard stops are not yet engineered in this study: do not print and use it
+as an operational final lid. A small coupon is the next useful step.
+
+Checks
+CAD solids are valid and connected. No intersections were found between
+the pad and the modelled lid, base, separate buttons or retained component
+solids in neutral or nine sampled angles from -4 to +4 degrees about each
+cardinal axis. Intentional compression of new switch actuators is not a
+collision failure. These are discrete rigid-body samples, not a tolerance,
+stress, continuous-sweep or switch-internals analysis.
+No full diagonal, retention/lift-out, moving-button, assembly-insertion,
+USB-cap-motion or physical ergonomic qualification was done.
+Existing electronics retain the baseline model's provisional dimensions.
+All baseline Prototype E files are hash-checked unchanged by the script.
+
+Files
+mockup.png: current/proposed case comparison with labelled plan.
+execution.png: exploded mechanism and a thin centre-section view.
+assembly-concept.step: complete reviewable CAD concept.
+Individual STEP files: component geometry in assembly coordinates.
+measurements.json: dimensions, detected PCB conflicts and collision results.
+build_study.py: reproducible CAD construction and image generation.
+No print-ready STL is supplied intentionally.

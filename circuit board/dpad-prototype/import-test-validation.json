@@ -1,0 +1,13 @@
+{
+  "source": "dpad-prototype.eprj2",
+  "source_sha256": "8b8356cd3a8469ccdfd25308e31057ca03504333da1505f3540cd07308c460a8",
+  "output": "dpad-roundtrip-test.epro2",
+  "output_sha256": "ade4b77ee200f7cfe3d889315cfec2d8ad5e0cf06fa8f4545bb0892292b249b3",
+  "pcb_uuid": "44c27b65225b0f26",
+  "document_count": 150,
+  "new_document_layer_records": 7,
+  "existing_records_preserved": true,
+  "source_database_unchanged": true,
+  "easyeda_import_verified": false,
+  "note": "Full PCB recovered from native snapshot; schematic-only export supplies project metadata."
+}
