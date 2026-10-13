@@ -1,0 +1,58 @@
+CONTROL-AREA LID TEST — FOR THE CURRENT PRINTED PCB DUMMY
+
+Print one each:
+  lid-section.stl
+  dpad.stl
+  select.stl
+  back.stl
+Select and Back are the same geometry; you may instead print two copies of either.
+
+All STLs are already bed-oriented. Do not auto-orient them:
+- Lid: exterior/top face on the bed, side rails and guides pointing up.
+- D-pad and buttons: thumb faces on the bed, stems pointing up.
+Print at 100% scale in mm, with your 0.4 mm nozzle, preferably 0.12–0.16 mm
+layers, 3 walls and 20% infill. Supports should not be needed. Leave the mating
+surfaces free of supports. Use elephant-foot compensation if normally calibrated;
+do not enlarge/shrink the entire part. Check that the slicer preserves the thin
+button guide walls and the four D-pad contact posts. A small brim can help the
+separate buttons; remove it completely before assembly.
+
+Assembly:
+1. Clear strings and rough edges, especially the cross opening and round guides.
+2. Hold the lid upside down. Insert the two buttons from inside, their small round
+   faces through the round holes and their collars remaining beneath the lid.
+3. Insert the D-pad from inside. Its small engraved dot must point toward USB-A,
+   the large connector at the end of the dummy. Its four offset posts must sit
+   over their corresponding switch tops; do not rotate it by 90 or 180 degrees.
+4. Keep the loose controls in place and lower the fixture over the dummy. Its two
+   side rails straddle the long PCB edges and stand on the same flat table as
+   the dummy. The small inner end stop meets the PCB-facing side of USB-A.
+   Gently slide it toward USB-A until that stop touches; no force is needed.
+5. Hold the fixture down during testing. It is a removable bridge, not a snap-fit
+   shell. The controls are captive while the fixture sits on the dummy, but may
+   fall out from underneath when it is lifted.
+
+What to check:
+- Both buttons slide without binding and land on the middle of their switch tops.
+- The D-pad sits on its rounded central heel, aligns with all four switches, and
+  has a little play before touching a switch. Its hidden skirt must not rub the
+  two button guides or catch in the cross opening.
+- The fixture sits flat and its rails fit around the dummy without squeezing it.
+
+The dummy switches are RIGID. Expect only the initial free play (nominally 0.25 mm
+at each plunger), not a click or spring return. Do not force full travel against
+the dummy: it cannot simulate switch compression. The approximately 6-degree CAD
+motion check is a guide-clearance test for future real-switch use, not available
+motion on the rigid dummy. This print does not qualify operating force, overtravel
+protection or retention in a finished enclosure.
+
+The 1.4 mm roof and 10 mm fixture height are test dimensions, not a finished-case
+height commitment. The display, full enclosure, microSD access and real underside
+supports are not tested by this control-area fixture.
+
+Validation: four single-body watertight STLs; no nominal resting intersections
+between the parts or the dummy. Sampled +/-6-degree cardinal/diagonal D-pad tilt
+clears the lid and separate controls; buttons clear the lid for 0.6 mm depression.
+All fit/tolerance and print-strength claims still require the physical test.
+
+Source: build.py, validation.json, assembled-reference.step.

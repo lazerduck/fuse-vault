@@ -1,0 +1,101 @@
+{
+  "checks": [
+    {
+      "part": "lid-section",
+      "solid_valid": true,
+      "watertight": true,
+      "one_body": true,
+      "print_bounds_mm": [
+        -1.0000002010822015e-07,
+        24.77515817372301,
+        -1.0000000545393749e-07,
+        25.01164368327998,
+        -0.0007771449979612793,
+        10.000000100000006
+      ]
+    },
+    {
+      "part": "dpad",
+      "solid_valid": true,
+      "watertight": true,
+      "one_body": true,
+      "print_bounds_mm": [
+        -0.039440001698029886,
+        18.303889088888898,
+        -0.10388888888888997,
+        18.303889088888894,
+        -0.0030446095044407797,
+        7.350979142977989
+      ]
+    },
+    {
+      "part": "select",
+      "solid_valid": true,
+      "watertight": true,
+      "one_body": true,
+      "print_bounds_mm": [
+        -0.008170489167001074,
+        6.208170489166998,
+        -0.007206953369532856,
+        6.207206953369534,
+        -0.0006838995982056644,
+        5.100264295299306
+      ]
+    },
+    {
+      "part": "back",
+      "solid_valid": true,
+      "watertight": true,
+      "one_body": true,
+      "print_bounds_mm": [
+        -0.00817048916700147,
+        6.2081704891670055,
+        -0.007206953369533696,
+        6.207206953369533,
+        -0.000683899598205174,
+        5.100264295299307
+      ]
+    }
+  ],
+  "resting_interference_mm3": 0,
+  "tilt_interferences": [],
+  "switch_centres_mm": {
+    "SW4": [
+      48.894999999999996,
+      -16.637
+    ],
+    "SW5": [
+      58.800999999999995,
+      -4.699
+    ],
+    "SW6": [
+      53.086,
+      -10.668
+    ],
+    "SW7": [
+      59.055,
+      -15.875
+    ],
+    "SW8": [
+      64.13499999999999,
+      -10.286999999999999
+    ],
+    "SW9": [
+      48.26,
+      -4.318
+    ]
+  },
+  "pivot_mm": [
+    58.77,
+    -10.38,
+    4.6
+  ],
+  "roof_z_mm": [
+    8.6,
+    10.0
+  ],
+  "plunger_gap_mm": 0.25,
+  "guide_radial_gap_mm": 0.3,
+  "dummy_source": "../pcb-print-model/pcb-fit-dummy.step",
+  "note": "Fit prototype; no claim of proven switch feel or force. Dummy actuators are rigid."
+}

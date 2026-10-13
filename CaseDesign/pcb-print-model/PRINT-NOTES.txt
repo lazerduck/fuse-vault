@@ -1,0 +1,36 @@
+CURRENT PCB — RIGID FIT DUMMY
+
+Print pcb-fit-dummy.stl at 100% scale, millimetres. Flat face is already on Z=0.
+Suggested starting settings: 0.4 mm nozzle, 0.16 mm layers (0.12 mm if convenient),
+3 walls, 15–20% infill. No supports should be needed: housings are solid envelopes,
+USB connector envelopes extend to the bed, and the underside is a solid slab.
+Inspect the slicer preview to confirm that all six small actuator tops are present.
+Do not scale the part to compensate for printer fit; that would move the buttons.
+
+PCB underside is 2.05 mm above the bed. PCB top is 3.65 mm above the bed.
+Nominal PCB thickness is 1.60 mm; fixed switch tops are 5.55 mm above the bed.
+The 2.05 mm underside allowance comes from the current exported component models.
+The export's PCB thickness was 1.5862 mm; top heights are referenced to its surface
+and the printable slab uses the intended nominal 1.60 mm thickness.
+
+This is a rigid mechanical dummy, not a functioning D-pad. It tests XY alignment,
+resting contact height and room for printed button parts. It cannot test switch
+travel, operating force or tactile feel. Switch actuator contact shape is simplified.
+The full underside slab and filled USB envelopes deliberately occupy empty space:
+this model cannot verify bottom-component clearances, case standoffs, connector
+underside clearance, microSD access or the board installation path.
+
+No display or display flex is included: those are absent from the current PCB STEP
+export. Do not treat this dummy as verification of display-to-lid clearance.
+Tiny drill holes/slots, leads and hollow connector interiors are deliberately omitted.
+Component envelopes are based on the current EasyEDA STEP and placements. Switch
+height is set to its specified 1.90 mm; L1 is set to its 2.00 mm maximum. Other heights
+remain dependent on the accuracy of the EasyEDA library models and seating.
+
+Files:
+  pcb-fit-dummy.stl — print this, one connected watertight body
+  pcb-fit-dummy.step — editable solid with the same print coordinates
+  preview.png — coloured preview (STL is a single-material model)
+  measurements.json — dimensions and validation results
+  source-board.step / source-placements.json — captured EasyEDA source geometry
+  build_model.py — reproducible generator (CadQuery 2.8, trimesh, VTK)

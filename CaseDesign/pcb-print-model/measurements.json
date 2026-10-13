@@ -1,0 +1,596 @@
+{
+  "pcb_nominal_thickness_mm": 1.6,
+  "underside_depth_mm": 2.05,
+  "pcb_top_above_print_bed_mm": 3.65,
+  "switch_top_above_print_bed_mm": 5.55,
+  "bounds_mm": [
+    -11.508622641989502,
+    88.625158273723,
+    -21.224343508680015,
+    -0.012699925400036245,
+    -1.0000000355271367e-07,
+    6.860378831026014
+  ],
+  "valid_solid": true,
+  "solid_count": 1,
+  "mesh_watertight": true,
+  "mesh_connected_bodies": 1,
+  "components": [
+    {
+      "ref": "J1",
+      "bounds_print_mm": [
+        68.77515807372299,
+        88.625158173723,
+        -17.301022098043,
+        -4.797022098045,
+        0.0,
+        6.860378731026
+      ],
+      "representation": "solid exported connector envelope, extended down to print bed"
+    },
+    {
+      "ref": "J2",
+      "bounds_print_mm": [
+        -11.5086225419895,
+        2.2284603273490013,
+        -15.043021336043001,
+        -6.293021336042999,
+        0.0,
+        5.051000057006
+      ],
+      "representation": "solid exported connector envelope, extended down to print bed"
+    },
+    {
+      "ref": "C1",
+      "origin_mm": [
+        35.62700012,
+        -3.95123162
+      ],
+      "bounds_print_mm": [
+        35.377071274143,
+        35.877071474143,
+        -4.451239522479,
+        -3.451239522479,
+        3.63,
+        4.1500001
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "C3",
+      "origin_mm": [
+        9.499998779999999,
+        -16.699999619999996
+      ],
+      "bounds_print_mm": [
+        8.700017780036,
+        10.300017780036,
+        -17.100033120066,
+        -16.300032920066002,
+        3.63,
+        4.4500001
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "C4",
+      "origin_mm": [
+        9.499998779999999,
+        -18.600000899999998
+      ],
+      "bounds_print_mm": [
+        8.700017780036,
+        10.300017780036,
+        -19.000038200076,
+        -18.200038000076,
+        3.63,
+        4.4500001
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "C6",
+      "origin_mm": [
+        8.80000018,
+        -8.500000779999997
+      ],
+      "bounds_print_mm": [
+        8.300017780036,
+        9.300017780036,
+        -8.750017880036001,
+        -8.250017680036,
+        3.63,
+        4.1500001
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "C30",
+      "origin_mm": [
+        8.80000018,
+        -10.00000032
+      ],
+      "bounds_print_mm": [
+        8.000017780036,
+        9.600017780036001,
+        -10.400020420040999,
+        -9.600020220041,
+        3.63,
+        4.4500001
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "D1",
+      "origin_mm": [
+        5.08,
+        -2.667
+      ],
+      "bounds_print_mm": [
+        3.15501016002,
+        7.005010160019999,
+        -3.517005434010327,
+        -1.8170052340109997,
+        3.63,
+        5.1000000070119995
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "D2",
+      "origin_mm": [
+        64.389,
+        -1.27
+      ],
+      "bounds_print_mm": [
+        62.464128778257994,
+        66.314128778258,
+        -2.1200026400049996,
+        -0.4200024400056728,
+        3.63,
+        5.1000000070119995
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "D3",
+      "origin_mm": [
+        65.786,
+        -5.08
+      ],
+      "bounds_print_mm": [
+        64.389731977224,
+        67.18255656735398,
+        -6.519742460046,
+        -3.6403032600470007,
+        3.63,
+        5.288241240263
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "D4",
+      "origin_mm": [
+        6.223,
+        -6.858
+      ],
+      "bounds_print_mm": [
+        4.826587450934,
+        7.619412041064,
+        -8.297720616001,
+        -5.418281416002,
+        3.63,
+        5.288241240263
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R4",
+      "origin_mm": [
+        69.596,
+        -1.397
+      ],
+      "bounds_print_mm": [
+        69.346139192278,
+        69.847139292278,
+        -1.897002794006,
+        -0.8970027940059999,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R5",
+      "origin_mm": [
+        3.9888159999999995,
+        -11.886183999999998
+      ],
+      "bounds_print_mm": [
+        3.488823977648,
+        4.488823977648,
+        -12.137207872415999,
+        -11.636207772416,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R6",
+      "origin_mm": [
+        4.318,
+        -13.588999999999999
+      ],
+      "bounds_print_mm": [
+        4.067008536016999,
+        4.568008636017,
+        -14.089027178054,
+        -13.089027178054,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R7",
+      "origin_mm": [
+        68.072,
+        -1.397
+      ],
+      "bounds_print_mm": [
+        67.821136044272,
+        68.322136144272,
+        -1.897002794006,
+        -0.8970027940059999,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R8",
+      "origin_mm": [
+        41.60199959999999,
+        -0.6979996199999999
+      ],
+      "bounds_print_mm": [
+        41.102082804166,
+        42.102082804166,
+        -0.949001116002,
+        -0.44800101600200004,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R9",
+      "origin_mm": [
+        26.600000139999995,
+        -3.30000102
+      ],
+      "bounds_print_mm": [
+        26.100053340107,
+        27.100053340107,
+        -3.550007620015,
+        -3.0490075200150004,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R19",
+      "origin_mm": [
+        50.5000006,
+        -1.25000004
+      ],
+      "bounds_print_mm": [
+        50.249101500203004,
+        50.750101600203,
+        -1.750002540005,
+        -0.7500025400050001,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R20",
+      "origin_mm": [
+        53.00000068,
+        -1.25000004
+      ],
+      "bounds_print_mm": [
+        52.749106580213,
+        53.250106680213,
+        -1.750002540005,
+        -0.7500025400050001,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R21",
+      "origin_mm": [
+        55.50000076,
+        -1.25000004
+      ],
+      "bounds_print_mm": [
+        55.249111660224,
+        55.750111760224,
+        -1.750002540005,
+        -0.7500025400050001,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R22",
+      "origin_mm": [
+        58.00000083999999,
+        -1.25000004
+      ],
+      "bounds_print_mm": [
+        57.749116740234,
+        58.250116840234,
+        -1.750002540005,
+        -0.7500025400050001,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R23",
+      "origin_mm": [
+        60.50000092,
+        -1.25000004
+      ],
+      "bounds_print_mm": [
+        60.249121820244,
+        60.750121920244,
+        -1.750002540005,
+        -0.7500025400050001,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R24",
+      "origin_mm": [
+        47.822825359999996,
+        -10.3313738
+      ],
+      "bounds_print_mm": [
+        47.571920905842,
+        48.072921005842,
+        -10.831394462789,
+        -9.831394462789,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "U4",
+      "origin_mm": [
+        31.999999499999998,
+        -2.35000038
+      ],
+      "bounds_print_mm": [
+        29.500063500127997,
+        34.500063500126,
+        -3.8500051800099997,
+        -0.85000498001,
+        3.63,
+        4.751000099999
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "U5",
+      "origin_mm": [
+        9.017,
+        -13.081
+      ],
+      "bounds_print_mm": [
+        7.617018034037001,
+        10.417018034035001,
+        -14.53102626205159,
+        -11.63102606205241,
+        3.63,
+        4.541000084378999
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "SW5",
+      "origin_mm": [
+        58.800999999999995,
+        -4.699
+      ],
+      "bounds_print_mm": [
+        56.70099999999999,
+        60.900999999999996,
+        -6.099,
+        -3.299,
+        3.63,
+        5.55
+      ],
+      "representation": "4.2 x 2.8 mm simplified housing; fixed 1.7 mm diameter actuator, 1.9 mm total height"
+    },
+    {
+      "ref": "SW6",
+      "origin_mm": [
+        53.086,
+        -10.668
+      ],
+      "bounds_print_mm": [
+        51.686,
+        54.486,
+        -12.768,
+        -8.567999999999998,
+        3.63,
+        5.55
+      ],
+      "representation": "4.2 x 2.8 mm simplified housing; fixed 1.7 mm diameter actuator, 1.9 mm total height"
+    },
+    {
+      "ref": "SW7",
+      "origin_mm": [
+        59.055,
+        -15.875
+      ],
+      "bounds_print_mm": [
+        56.955,
+        61.155,
+        -17.275,
+        -14.474999999999998,
+        3.63,
+        5.55
+      ],
+      "representation": "4.2 x 2.8 mm simplified housing; fixed 1.7 mm diameter actuator, 1.9 mm total height"
+    },
+    {
+      "ref": "SW8",
+      "origin_mm": [
+        64.13499999999999,
+        -10.286999999999999
+      ],
+      "bounds_print_mm": [
+        62.73499999999999,
+        65.535,
+        -12.386999999999999,
+        -8.186999999999998,
+        3.63,
+        5.55
+      ],
+      "representation": "4.2 x 2.8 mm simplified housing; fixed 1.7 mm diameter actuator, 1.9 mm total height"
+    },
+    {
+      "ref": "SW9",
+      "origin_mm": [
+        48.26,
+        -4.318
+      ],
+      "bounds_print_mm": [
+        46.86,
+        49.66,
+        -6.417999999999999,
+        -2.217999999999999,
+        3.63,
+        5.55
+      ],
+      "representation": "4.2 x 2.8 mm simplified housing; fixed 1.7 mm diameter actuator, 1.9 mm total height"
+    },
+    {
+      "ref": "SW4",
+      "origin_mm": [
+        48.894999999999996,
+        -16.637
+      ],
+      "bounds_print_mm": [
+        47.495,
+        50.294999999999995,
+        -18.737000000000002,
+        -14.537,
+        3.63,
+        5.55
+      ],
+      "representation": "4.2 x 2.8 mm simplified housing; fixed 1.7 mm diameter actuator, 1.9 mm total height"
+    },
+    {
+      "ref": "C2",
+      "origin_mm": [
+        6.2729999,
+        -13.61899994
+      ],
+      "bounds_print_mm": [
+        6.023012346024997,
+        6.523012546025001,
+        -14.119027178054,
+        -13.119027178054,
+        3.63,
+        4.1500001
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R1",
+      "origin_mm": [
+        39.317000359999994,
+        -2.91100002
+      ],
+      "bounds_print_mm": [
+        39.067078994158,
+        39.568079094158,
+        -3.411005842012,
+        -2.411005842012,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R10",
+      "origin_mm": [
+        40.48400082,
+        -2.91100002
+      ],
+      "bounds_print_mm": [
+        40.234081788164,
+        40.735081888164,
+        -3.411005842012,
+        -2.411005842012,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "R11",
+      "origin_mm": [
+        3.284728,
+        -9.398
+      ],
+      "bounds_print_mm": [
+        2.784734569469,
+        3.784734569469,
+        -9.648018796038,
+        -9.147018696038002,
+        3.63,
+        4.010000000000301
+      ],
+      "representation": "solid exported component envelope"
+    },
+    {
+      "ref": "L1",
+      "origin_mm": [
+        5.4380003,
+        -17.50000056
+      ],
+      "bounds_print_mm": [
+        3.4379612273299998,
+        7.43806132733,
+        -19.500035660071003,
+        -15.500035460071,
+        3.63,
+        5.65
+      ],
+      "representation": "solid exported component envelope; L1 corrected to 2.0 mm"
+    }
+  ],
+  "limitations": [
+    "Rigid fit dummy; switches do not move.",
+    "Underside is a full slab, not bottom-component detail; this can obstruct existing case supports.",
+    "USB bodies are filled and extended to the bed; underside connector clearances cannot be tested.",
+    "Display and FPC are not in the PCB export and are not included.",
+    "Small packages use solid envelopes, switch actuator shape is simplified; heights depend on library models except nominal switch and L1 height corrections.",
+    "Small PCB holes and slots are filled."
+  ]
+}
