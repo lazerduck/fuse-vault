@@ -84,9 +84,6 @@ fv_vault_result fv_vault_reverify(fv_vault *,const uint8_t *,size_t);
 fv_vault_result fv_vault_change_credential(fv_vault *,const fv_vault_platform *,
     const uint8_t *current,size_t current_bytes,const uint8_t *replacement,size_t replacement_bytes,
     uint16_t profile,uint32_t iterations,fv_auth_policy,bool policy_change_approved);
-/* After unlocking, restore the other copy of the anchored header. Does not
- * change keys/generation or reset attempts. Failure locks the session. */
-fv_vault_result fv_vault_repair_headers(fv_vault *);
 /* In-place 1..64 sectors, four-byte aligned. Reads authenticate the WHOLE batch
  * before decrypting. Writes consume/erase plaintext on valid calls, including
  * failure, and sync before success. No atomic multi-sector write guarantee.

@@ -125,9 +125,12 @@ static void lifecycle(void) {
     CHECK(write_blocks(&f.device,0,1,old_header)==FV_BLOCK_OK);CHECK(write_blocks(&f.device,8,1,old_header)==FV_BLOCK_OK);
     CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_IO);CHECK(!load(&f,&after));CHECK(before.sequence==after.sequence);
     CHECK(write_blocks(&f.device,8,1,new_header)==FV_BLOCK_OK);
+    CHECK(!load(&f,&before));
     CHECK(unlock(&f,replacement,sizeof(replacement)-1)==FV_VAULT_OK);check_plaintext(&f);
-    CHECK(!load(&f,&before));CHECK(fv_vault_repair_headers(&f.session)==FV_VAULT_OK);
-    CHECK(!load(&f,&after));CHECK(before.sequence==after.sequence);
+    CHECK(!f.session.header_repair_pending);
+    CHECK(!load(&f,&after));CHECK(after.sequence==before.sequence+2); /* Only unlock's two commits. */
+    CHECK(after.credential_generation==before.credential_generation);
+    CHECK(!memcmp(after.header_hash,before.header_hash,32));
     CHECK(read_blocks(&f.device,0,1,old_header)==FV_BLOCK_OK);CHECK(!memcmp(old_header,new_header,512));
     /* Corrupt the SECOND sector: no authenticated first-sector plaintext escapes. */
     ciphertext[700]^=1;CHECK(write_blocks(&f.device,2069+7,2,ciphertext)==FV_BLOCK_OK);

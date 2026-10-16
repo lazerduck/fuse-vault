@@ -220,21 +220,6 @@ fv_vault_result fv_vault_change_credential(fv_vault *v,const fv_vault_platform *
 done:
     mbedtls_platform_zeroize(binding,32);fv_vault_lock(v);return r;
 }
-fv_vault_result fv_vault_repair_headers(fv_vault *v) {
-    if(!v || !v->unlocked)return FV_VAULT_DENIED;
-    const fv_vault_platform *p=v->platform;
-    fv_device_state s;fv_envelope_config c;unsigned slot;
-    alignas(4) uint8_t header[512];fv_vault_result r=FV_VAULT_STATE;
-    if(p->authority.load(p->authority.context,&s) || !state_valid(&s) ||
-       s.status!=FV_ENROLLMENT_ACTIVE || s.attempt_pending || !matches(&v->config,&s))goto done;
-    r=select_header(p,&s,header,&c,&slot);
-    if(r!=FV_VAULT_OK)goto done;
-    if(repair_header_copy(p,1-slot,header))r=FV_VAULT_IO;
-    if(r==FV_VAULT_OK)v->header_repair_pending=false;
-done:
-    if(r!=FV_VAULT_OK)fv_vault_lock(v);
-    return r;
-}
 static fv_block_result_t io(fv_vault *v,uint64_t lba,uint32_t count,uint8_t *buffer,bool write) {
     if(!buffer || ((uintptr_t)buffer&3) || !count || count>64)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
     fv_block_result_t r=FV_BLOCK_ERROR_NOT_READY;
