@@ -1,0 +1,71 @@
+FUSE VAULT — FULL CASE F, D-PAD PCB
+
+Print new BASE and LID. These supersede the E shell halves and should be used
+as a pair. The full case is designed around the actual populated PCB, not the
+solid-underneath printed dummy.
+
+REUSE:
+- The D-pad, Select and Back parts from your successful control-area test.
+  Geometrically identical replacements are included in this pack.
+- Prototype E USB-C collar and both USB end covers. They are unchanged and
+  are included for convenience. Keep the end covers in the same material
+  used successfully before (their detent ribs were designed for TPU).
+
+PRINT:
+All STL files are in mm and already oriented with their intended bed face down.
+Use 100% scale. Do not auto-orient or scale to fit.
+For base/lid: start with a 0.4 mm nozzle, 0.16 mm layers, 3 walls, 20% infill.
+For the controls: 0.12–0.16 mm layers. Lid and controls print outside face down.
+Inspect slicer paths at the button guides and snap posts. Keep supports away
+from the guide bores and snap mating surfaces. The top has a flat print face;
+local internal bridges/overhangs still need checking in your slicer, particularly
+around the USB-C hooks and underside access holes.
+
+CHANGES FROM E:
+- Old joystick hole and integral Back flexure replaced by the tested D-pad
+  opening and two collared, guided buttons at the current switch positions.
+- Tested control geometry retained. Roof underside locally at Z=6.55 mm,
+  exterior at Z=7.8 mm, giving 1.25 mm roof thickness around the controls.
+- SD access widened toward USB-A; the nearby upper support shifted to X=69 mm.
+- USB-A opening lowered to clear the current connector library model beneath
+  the PCB. Existing collar capture, snap design, screen window and outer body
+  envelope are retained. Body thickness remains 12.1 mm, excluding controls.
+- Local button-guide clearance provided for the previous display envelope.
+
+ASSEMBLY:
+1. Remove strings/elephant foot from mating edges, guide bores and controls.
+2. Fit the existing USB-C collar to the connector. Lower the populated PCB into
+   the base, sitting on its support ledges. Check that no parts are pressed by
+   a support. Keep the display flex in its existing clearance pocket.
+3. With the lid upside down, insert Select and Back from underneath, collars
+   inside. Insert the D-pad with its small dot facing USB-A. Its asymmetric
+   underside contacts must align with the four switches.
+4. Support the loose controls while bringing the lid to the case. Engage the
+   USB-C-end hooks and lower the USB-A end gently until the snaps seat.
+   Do not force a binding control or trapped flex. Try the controls before
+   fitting the end covers; they must release freely on real switches.
+5. Check the SD card can be pushed/released and removed through the widened
+   side opening. The card's exact ejection projection/finger access needs the
+   real socket/card test; the CAD check reserves a clear withdrawal corridor.
+
+LIMITATIONS / WHAT THIS PRINT TESTS:
+- The control-area print was successful. Full-shell fit and snap holding force
+  remain a physical test, as do real button force, return and overtravel.
+- The printed PCB dummy has a flat slab underneath that occupies the support
+  spaces. It is NOT expected to fit the new base correctly. Do not file away
+  the base's real PCB supports merely to fit that dummy.
+- The screen window and provisional display/flex envelope come from E. They
+  have not been remeasured on the new hardware. This model does not claim
+  verified glass, adhesive or flex thickness.
+- Internal checks use the current saved EasyEDA 3D export. Library model
+  accuracy and manufacturing/printing tolerances still apply.
+- Keep the previously printed E shell if needed; earlier models are unchanged.
+
+FILES:
+base.stl, lid.stl — new shell halves
+ dpad.stl, select.stl, back.stl — unchanged tested controls (Select/Back identical)
+usb_c_collar.stl, usb_c_end_cap.stl, usb_a_end_cap.stl — unchanged E parts
+assembled.png / exploded.png / underside.png — previews
+case-assembly.step — editable case assembly in PCB coordinates
+case-with-board.step — separate review model with the current electronics
+validation.json / closure-validation.json — CAD and mesh check results

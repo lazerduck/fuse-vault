@@ -1,0 +1,44 @@
+{
+  "source": "fuse-vault-dpad-beauty-v2.png",
+  "output": "fuse-vault-dpad-beauty-v3.png",
+  "method": "exact projective screen warp with local continuous texture collar",
+  "source_bezel_corners": [
+    [
+      568.0,
+      442.0
+    ],
+    [
+      943.0,
+      314.0
+    ],
+    [
+      1047.0,
+      487.0
+    ],
+    [
+      665.0,
+      616.0
+    ]
+  ],
+  "target_bezel_corners": [
+    [
+      558.0,
+      442.0
+    ],
+    [
+      936.0,
+      316.0
+    ],
+    [
+      1053.0,
+      490.0
+    ],
+    [
+      675.0,
+      616.0
+    ]
+  ],
+  "unchanged_outside_local_edit": true,
+  "alpha_identical": true,
+  "modified_pixels": 102862
+}

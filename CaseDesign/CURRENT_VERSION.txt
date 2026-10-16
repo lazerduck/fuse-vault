@@ -1,0 +1,11 @@
+CURRENT WORKING VERSION: F
+
+Work from: CaseDesign/prototype-f/
+Editable assembly: CaseDesign/prototype-f/case-assembly.step
+Print pack: CaseDesign/prototype-f/fuse-vault-case-f-print-pack.zip
+Instructions: CaseDesign/prototype-f/PRINT-AND-ASSEMBLY.txt
+
+The control-area sample was physically tested. Complete F case fit remains
+unconfirmed. F is the selected working baseline, not a production release.
+
+G, panelled G and H are archived under CaseDesign/experiments/.

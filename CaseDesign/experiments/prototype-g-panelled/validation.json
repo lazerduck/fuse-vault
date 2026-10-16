@@ -1,0 +1,83 @@
+{
+  "checks": [
+    {
+      "check": "Only shallow grooves removed",
+      "passed": true
+    },
+    {
+      "check": "No added material outside original G lid",
+      "passed": true
+    },
+    {
+      "check": "All G geometry below colour layer unchanged",
+      "passed": true
+    },
+    {
+      "check": "Snap roof preserved (6.05, 0)",
+      "passed": true
+    },
+    {
+      "check": "Snap roof preserved (6.05, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "Snap roof preserved (69.55, 0)",
+      "passed": true
+    },
+    {
+      "check": "Snap roof preserved (69.55, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "lid valid",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_grey valid",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange valid",
+      "passed": true
+    },
+    {
+      "check": "Dark structural lid is one solid",
+      "passed": true
+    },
+    {
+      "check": "lid / lid_inlay_grey disjoint",
+      "passed": true
+    },
+    {
+      "check": "lid / lid_inlay_orange disjoint",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_grey / lid_inlay_orange disjoint",
+      "passed": true
+    },
+    {
+      "check": "lid watertight mesh",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_grey watertight mesh",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange watertight mesh",
+      "passed": true
+    },
+    {
+      "check": "lid_single_colour watertight mesh",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "groove_depth_mm": 0.2,
+  "seam_width_mm": 0.8,
+  "inlay_depth_mm": 0.4,
+  "mechanical_baseline": "prototype-g",
+  "baseline_validation_sha256": "f8370a17f37dc643e551f0a7e6d6312d639dbc66310d380aab949b465467596d",
+  "note": "G clearances inherited by exact preservation below Z6.4 and proof no material added; colour regions do not change assembled geometry. Physical print test pending."
+}

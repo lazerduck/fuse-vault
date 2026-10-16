@@ -1,0 +1,913 @@
+{
+  "revision": "F",
+  "checks": [
+    {
+      "check": "base / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / dpad",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / usb_c_collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / usb_c_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / usb_a_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / dpad",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / usb_c_collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / usb_c_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / usb_a_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / usb_c_collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / usb_c_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / usb_a_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / usb_c_collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / usb_c_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / usb_a_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / usb_c_collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / usb_c_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / usb_a_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / usb_c_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / usb_a_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / usb_a_end_cap",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap / display reserve",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap / SW4 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap / SW5 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap / SW6 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap / SW7 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap / SW8 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "base / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "lid / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "dpad / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_c_end_cap / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "usb_a_end_cap / SW9 actuator",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) -2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 0 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 0 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 0 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 0 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 0, 0) 6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) -2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 0 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 0 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 0 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 0 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (0, 1, 0) 6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) -2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 0 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 0 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 0 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 0 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, 1, 0) 6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) -2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 0 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 0 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 0 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 0 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 2 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 2 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 2 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 2 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 4 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 4 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 4 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 4 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 6 / lid",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 6 / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 6 / select",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "Dpad tilt (1, -1, 0) 6 / back",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select guide travel -0.6",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select guide travel -0.3",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "select guide travel 0",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back guide travel -0.6",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back guide travel -0.3",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "back guide travel 0",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "vertical board loading envelope",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "vertical SD loading envelope",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "SD withdrawal / base",
+      "overlap_mm3": 0.0
+    },
+    {
+      "check": "SD withdrawal / lid",
+      "overlap_mm3": 0.0
+    }
+  ],
+  "failures": [],
+  "controls_reused_from": "control-lid-test, translated -2.05 mm in Z",
+  "body_height_mm": 12.1,
+  "roof_control_thickness_mm": 1.25,
+  "display": "Previous provisional display envelope retained; not measured anew",
+  "limitations": [
+    "Actual switch feel/return and enclosure snap strength require hardware testing.",
+    "Current library 3D models are not a guarantee of manufacturer tolerances.",
+    "Flat-bottom printed PCB dummy is not suitable for testing the real underside supports."
+  ],
+  "print_meshes": {
+    "base": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        77.30000305175781,
+        27.600000381469727,
+        10.300000190734211
+      ]
+    },
+    "lid": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        77.30000305175757,
+        27.600000381469727,
+        5.999999899999999
+      ]
+    },
+    "dpad": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        18.200000662939452,
+        18.200000662939452,
+        7.349999804632567
+      ]
+    },
+    "select": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        6.199999809265135,
+        6.198073062405456,
+        5.099999904632568
+      ]
+    },
+    "back": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        6.199999809265135,
+        6.198073062405456,
+        5.099999904632568
+      ]
+    },
+    "usb_c_collar": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        7.400000095367432,
+        14.19769965147134,
+        3.9000000953674316
+      ]
+    },
+    "usb_c_end_cap": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        15.0,
+        29.100000381469727,
+        19.756999969482422
+      ]
+    },
+    "usb_a_end_cap": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        15.0,
+        29.100000381469727,
+        22.049999237060547
+      ]
+    }
+  }
+}

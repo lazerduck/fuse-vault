@@ -1,6 +1,22 @@
-# Fuse Vault PCB reference
+# Fuse Vault case design
 
-**Latest: prototype E — four supported shell snaps.** [Print instructions](prototype-e/README.md)
+**Current working version: prototype F.** Start in [prototype-f](prototype-f/README.md)
+for further work or manual CAD changes.
+
+- [Editable case assembly](prototype-f/case-assembly.step)
+- [Assembly with the current board](prototype-f/case-with-board.step)
+- [F print pack](prototype-f/fuse-vault-case-f-print-pack.zip)
+- [Print and assembly instructions](prototype-f/PRINT-AND-ASSEMBLY.txt)
+
+F uses the successful control-area test geometry. The complete F enclosure still
+needs physical fit testing; “current” means the selected working baseline, not a
+fully validated production design. F geometry and print files are unchanged.
+
+**G, panelled G and H are archived experiments**, with their outputs and supporting
+scripts under [experiments](experiments/README.md). They are not recommended as
+the starting point. Earlier A–E revisions remain below for reference.
+
+**Previous prototype E — four supported shell snaps.** [Print instructions](prototype-e/README.md)
 replace D's failed thin latch with ramped alignment posts and recesses. Print the
 standard snap sample first, then E base and lid. Reuse the working D end caps and
 USB-C collar. Closure must hold the collar securely without help from the end caps;

@@ -1,0 +1,15 @@
+{
+  "source_sha256": {
+    "prototype-e/base.step": "17aebd7fa1981a694e51fb08b71aee88179bbb6cb933b62ee5b856ed0d7984e4",
+    "prototype-e/lid.step": "30c925f261b326d49b29073b43a3e67ae5222798aa8265cd52b1d6e232b4a6e8",
+    "control-lid-test/build.py": "2cbc6a20ff2d17f2afe98eef4affadd4c5789c861342261f35ee432d8b5d3db2",
+    "pcb-print-model/source-board.step": "d97f7ce3ed3cdead1e8991b5cbf42a414267e23d3b3c7587e826eae2609b5cee",
+    "pcb-print-model/source-placements.json": "300a33947dec9e897218f74129cacd38441e55dca6c623a507f78db83db94073"
+  },
+  "rebuild": [
+    "python CaseDesign/build_case_f.py",
+    "python CaseDesign/check_case_f_closure.py",
+    "python CaseDesign/render_case_f.py"
+  ],
+  "note": "Only prototype-f and its build/review scripts are new; earlier revisions unchanged."
+}

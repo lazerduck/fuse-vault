@@ -1,0 +1,30 @@
+{
+  "source_sha256": {
+    "build_case_h.py": "57d6a9c1dc44902112ea23dacc5d0cec50029e1934c20164558c0aa9382edcfe",
+    "check_case_h_closure.py": "1ea017975f059ce83ae0b490871b3af664b56f4ebff1e09b15749f8a0d0bcd1d",
+    "render_case_h.py": "943c60ae16b8fba79ef34cb524672e0a6e027a30641088fa8ab33735d63a1ad0",
+    "package_case_h.py": "58dbc25680ac7fbfe4b6223898ac58fad863ec580580effb264aa39e3dc8c7ed"
+  },
+  "baseline_sha256": {
+    "prototype-g/lid_single_colour.step": "fc355eaae2baf548a52c6bd4db46910224d3fc6749cd523861f4f0039cbebbb7",
+    "prototype-g/usb_c_collar.step": "2d0e5cfb1eb35b9f2f0970679fe06bc2e5da6fde65a4ed48786f6596ad741368",
+    "prototype-g/base.step": "ab5a24bf5c5d9f333ffdc06cdcb8b7d877f85eaa00520589daba7cb5ddfc2e68",
+    "prototype-g/select.step": "d8b0a0f870e1fd5ce06f1e736c54c64ab2193fe4e7f27755f9c05648e4cd7e0f",
+    "prototype-g/usb_a_end_cap.step": "8ab544fa5307352554930a3865d0203c562e8b1c6a7c8d9cb66de8bb59ca7290",
+    "prototype-g/back.step": "341fe27dc95e3e7a95bc17bfc7e5508c319535156c3d6341094e9a9149030be8",
+    "prototype-g/lid_inlay_grey.step": "3b9d1fc226c611e1018d57a8ef2a4e2b284e753e49194fce11b0ab0af1968fd0",
+    "prototype-g/lid_inlay_orange.step": "8fbbe6ff7b0e8acdba560f582fa18f74fdb273e2b3413438120e43c6a5ca3beb",
+    "prototype-g/lid_cap_coupon.step": "39e1ecceecf707a7c1c4cc6800a63e14d7e4ef3add141fae515e593baf57cbfe",
+    "prototype-g/dpad.step": "74a7befbb91b33f3a374238fd2c9af818c9b730a20e4eae2833e9d67c8f66901",
+    "prototype-g/base_snap_coupon.step": "917443d595873773a9d770b97981086e97a8d8064e7a90d26c39f97ea6f782e6",
+    "prototype-g/lid_snap_coupon.step": "d899bc55479c58e24dd92fdb259d2051f6c75945fe81c8f7e1cffd752da6202a",
+    "prototype-g/screen_shim_2.0mm.step": "0dd2452b8fac30ce585337599eb0bb8f993eea682b55d546620d67682b411035",
+    "prototype-g/usb_c_end_cap.step": "9ec3551ee3a0c1da7dba68c64e12536046240f60b7ff83deba663854b03ef202",
+    "prototype-g/case-assembly.step": "aadb7351ce4d789632799fafe484dbd2b55d8ea153d754d151363af2a604e818",
+    "prototype-g/base_cap_coupon.step": "8f9ce83a57645fa11640969da30c12d15b62535dd759dc3c0b0f13dd7e1b1673",
+    "prototype-g/lid-ams.step": "caad701f17cc8ac7da80da9d52199403ca34b452fb714a069078f585cee55b00",
+    "prototype-g/screen_shim_1.8mm.step": "0e6f775160b685b5627a7b7a8086a5d803020344076bbaad01421d5e229c4e32",
+    "prototype-g/screen_shim_1.6mm.step": "f27773bffc560a5d47cb6c21171bda1c37c9ce3ddf2e614423bdd38208aeb7b6",
+    "prototype-g/lid.step": "9119a4f4d5b4cd3cdba9c50c941ce7707060c60c03bd065b57874fd674429250"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "source_sha256": {
+    "build_case_g.py": "f54db6cafbe935314642888335b151680b98c23a5f25540edf24c1b752c5e126",
+    "check_case_g_closure.py": "dec495dce9cc7f86c544763f57950dcd7e92c500c4a9c5ea00e79e28e1541bf1",
+    "render_case_g.py": "7794db1210f30ffabbc3a48b937e6ba2cd1775ab40f35f5f5ba22ad41a96ecdc",
+    "package_case_g.py": "90607eefafa6316e685a406328002acf23c730e79917213f2480d6927a0a255b",
+    "prototype-f/usb_c_collar.step": "8dda366d6d2ed2b76947ee458a08f37f7536cb5b08c759d21fcaf97a0da56213",
+    "prototype-f/base.step": "99d9ecb03774acb79db97b3da9329c5e2b9d32da15f96ef13d3cdf299a32fea0",
+    "prototype-f/select.step": "c2ffde8c31681113aa726f973dbbbe98719e2cbc53aa2b3c3d957f2897a56c86",
+    "prototype-f/usb_a_end_cap.step": "9d986bfab38d4dfd7792b9c07c0ed98e61f6e762f76aa86d66fe8cd590abd3eb",
+    "prototype-f/back.step": "ae146cd71b7068285054e51ed864c47c41e9664dbb1566670f628193cf7b6863",
+    "prototype-f/dpad.step": "6d1e3f5bfeb01a4ed27b68b39f0c7bce4702f8ea7e23a861b8ed7722bcf84405",
+    "prototype-f/case-with-board.step": "adc876039831ce1af4c06b5fba5034376a9e0c4e20165628e7723c039fb3e766",
+    "prototype-f/usb_c_end_cap.step": "cfb26e2b2593b557134231541678b66458b743a8b9208bcae40d15fd07f9f36d",
+    "prototype-f/case-assembly.step": "17ca0f027df930f6470199f614f641c568aadc46b366f23514fa81c1fae6dccc",
+    "prototype-f/lid.step": "536b905bd6d4b09b095a885d126008d101e64d830a67d8973dd44c918c3e0675"
+  },
+  "multipart_3mf": {
+    "parts": 3,
+    "roundtrip_meshes_watertight": true,
+    "printer_profile": null
+  }
+}

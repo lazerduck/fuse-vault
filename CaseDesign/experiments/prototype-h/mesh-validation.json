@@ -1,0 +1,77 @@
+{
+  "screen_shim_1.8mm.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 0.0
+  },
+  "usb_c_collar.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 0.0
+  },
+  "base_cap_coupon.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 8.881784197001252e-16
+  },
+  "screen_shim_1.6mm.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 0.0
+  },
+  "select.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": -2.2648925149707064e-16
+  },
+  "lid_snap_coupon.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 8.881784197001252e-16
+  },
+  "usb_a_end_cap.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": -1.1088857051852298e-16
+  },
+  "lid_cap_coupon.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 8.881784197001252e-16
+  },
+  "base_snap_coupon.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 0.0
+  },
+  "dpad.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 8.881784197001252e-16
+  },
+  "usb_c_end_cap.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 1.6654682622642826e-15
+  },
+  "lid.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": -2.8663878691122854e-15
+  },
+  "screen_shim_2.0mm.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 0.0
+  },
+  "back.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": -2.2648925149707064e-16
+  },
+  "base.stl": {
+    "watertight": true,
+    "connected_components": 1,
+    "bed_z_mm": 5.412559289652563e-12
+  }
+}
