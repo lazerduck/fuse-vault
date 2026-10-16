@@ -91,7 +91,7 @@ static void render_wait(fv_ui *u) {
 
 static void render_error(fv_ui *u) {
     char b[40];
-    ui_draw_header(u, "OPERATION FAILED", NULL);
+    const char *title = "OPERATION FAILED";
     const char *reason = "PLEASE CHECK DEVICE";
     const char *next = "RETURN TO CHECK STATUS";
     switch (u->error) {
@@ -103,6 +103,13 @@ static void render_error(fv_ui *u) {
     case -6: reason = "LEGACY VAULT"; next = "USE LEGACY DEBUG UNLOCK"; break;
     default: break;
     }
+    /* FV_VAULT_CHANGED_NEEDS_MIRROR means the new credential is committed. */
+    if (u->job.op == UI_CHANGE && u->error == 1) {
+        title = "CREDENTIAL CHANGED";
+        reason = "HEADER COPY NEEDS REPAIR";
+        next = "USE NEW CREDENTIAL";
+    }
+    ui_draw_header(u, title, NULL);
     ui_draw_text_at(u, 4, 21, reason, 1, UI_COLOUR_WARNING);
     ui_draw_text_at(u, 4, 37, next, 1, UI_COLOUR_TEXT);
     snprintf(b, sizeof(b), "DETAIL %d", u->error);

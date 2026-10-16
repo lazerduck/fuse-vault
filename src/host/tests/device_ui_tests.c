@@ -1,4 +1,5 @@
 #include "device_ui.h"
+#include "drawing.h"
 #include "fuse_vault/volume_format.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -159,7 +160,38 @@ static void standard_controls_tests(void){
     key(&u,UI_UP);key(&u,UI_RIGHT);CHECK(!u.fido_done && !u.fido_approved);
     key(&u,UI_BACK);CHECK(u.fido_done && !u.fido_approved && !u.pending);
 }
+static void credential_change_message_tests(void) {
+    fv_ui expected = {0};
+    ui_draw_header(&expected, "CREDENTIAL CHANGED", NULL);
+    ui_draw_text_at(&expected, 4, 21, "HEADER COPY NEEDS REPAIR", 1, UI_COLOUR_WARNING);
+    ui_draw_text_at(&expected, 4, 37, "USE NEW CREDENTIAL", 1, UI_COLOUR_TEXT);
+    const fv_ui_key dismiss[] = {UI_SELECT, UI_BACK};
+    for (unsigned i = 0; i < 2; ++i) {
+        fv_ui u;
+        fv_ui_init(&u);
+        u.job.op = UI_CHANGE;
+        u.job.secret[0] = 1;
+        u.job.length = 1;
+        /* FV_VAULT_CHANGED_NEEDS_MIRROR: the new credential is already committed. */
+        fv_ui_complete(&u, (fv_ui_result){.result=1, .status=2, .profile=3});
+        CHECK(!u.pending && !u.device.unlocked && !u.job.length && !u.job.secret[0]);
+        CHECK(!memcmp(u.framebuffer, expected.framebuffer, 45 * FV_SCREEN_WIDTH));
+        key(&u, dismiss[i]);
+        CHECK(u.pending && u.job.op == UI_STATUS);
+        fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=3});
+        key(&u, UI_SELECT);
+        CHECK(u.screen == UI_SECRET && u.job.profile == 3);
+    }
+    fv_ui failed, failure_header = {0};
+    fv_ui_init(&failed);
+    failed.job.op = UI_CHANGE;
+    fv_ui_complete(&failed, (fv_ui_result){.result=-3, .status=2, .profile=2});
+    ui_draw_header(&failure_header, "OPERATION FAILED", NULL);
+    CHECK(!memcmp(failed.framebuffer, failure_header.framebuffer, 13 * FV_SCREEN_WIDTH));
+}
+
 int main(int argc,char **argv){
+    credential_change_message_tests();
     flip_tests();method_tests();fido_tests();passkey_tests();navigation_tests();standard_controls_tests();
     for(uint64_t capacity=0;capacity<100000;capacity++){
         uint64_t n=fv_volume_max_blocks(capacity);

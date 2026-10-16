@@ -51,6 +51,13 @@ guess. Authentication failures do; errors after a durable charge retain that cha
 The tenth attempt may succeed. Failure to commit its success can destroy the vault
 on restart, a deliberate availability tradeoff of conservative accounting.
 
+After a successful unlock, the other header is compared with the authenticated,
+locally anchored copy and repaired only if it differs or cannot be read. Repair
+writes only the other slot, then syncs and verifies it. A copy failure leaves
+access available and sets the session's `header_repair_pending` flag; the next
+unlock checks again. Media removal still locks the session. Internal credential
+checks for reverification and credential changes do not perform this repair.
+
 Reads authenticate the complete requested batch before decrypting any of it.
 Unset sectors remain zero. Writes encrypt in place, write data/metadata and sync
 before success; the caller's valid write buffer is cleared on success and failure.
@@ -63,7 +70,7 @@ owns and must erase credential buffers and any other plaintext copies.
 Credential change requires the current secret again, even when unlocked. Policy
 changes also require confirmation from the trusted on-device UI. It locks on every
 exit. `FV_VAULT_CHANGED_NEEDS_MIRROR` means the NEW credential has committed; unlock
-with it and call `fv_vault_repair_headers()` to restore the other copy. Other
+with it to automatically restore the other copy. Other
 uncertain state-write failures require reloading the durable authority to determine
 which credential won. There is no host command exposing any of these operations.
 

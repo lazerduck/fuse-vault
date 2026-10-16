@@ -92,6 +92,11 @@ static int save_header(const fv_vault_platform *p,unsigned slot,const uint8_t h[
         p->sd->ops->sync(p->sd)!=FV_BLOCK_OK ||
         p->sd->ops->read(p->sd,slot*8,1,verify)!=FV_BLOCK_OK || memcmp(verify,h,512);
 }
+static int repair_header_copy(const fv_vault_platform *p,unsigned slot,const uint8_t header[512]) {
+    alignas(4) uint8_t other[512];
+    if(p->sd->ops->read(p->sd,slot*8,1,other)==FV_BLOCK_OK && !memcmp(other,header,512))return 0;
+    return save_header(p,slot,header);
+}
 static int initialize_session(fv_vault *v,const fv_vault_platform *p,
                               const fv_envelope_config *c,const uint8_t vmk[32]) {
     fv_working_keys keys={0};fv_algorithm algorithms[4]={0};int r=-1;
@@ -138,7 +143,7 @@ done:
     fv_vault_lock(&temporary);mbedtls_platform_zeroize(vmk,32);mbedtls_platform_zeroize(binding,32);
     return r;
 }
-fv_vault_result fv_vault_unlock(fv_vault *v,const fv_vault_platform *p,const uint8_t *secret,size_t n) {
+static fv_vault_result unlock(fv_vault *v,const fv_vault_platform *p,const uint8_t *secret,size_t n,bool repair) {
     if(!v)return FV_VAULT_INVALID;
     fv_vault_lock(v);
     fv_device_state s;fv_vault_result r=recover(p,&s);
@@ -163,15 +168,24 @@ fv_vault_result fv_vault_unlock(fv_vault *v,const fv_vault_platform *p,const uin
         goto done;
     }
     r=initialize_session(v,p,&c,vmk)?FV_VAULT_STATE:FV_VAULT_OK;
+    if(r==FV_VAULT_OK && repair) {
+        /* The selected header is authoritative. Failure to copy it must not
+         * discard a successfully authenticated session on present media. */
+        v->header_repair_pending=repair_header_copy(p,1-slot,header)!=0;
+        if(!media_valid(p))r=FV_VAULT_IO;
+    }
 done:
     mbedtls_platform_zeroize(binding,32);mbedtls_platform_zeroize(vmk,32);
     if(r!=FV_VAULT_OK)fv_vault_lock(v);
     return r;
 }
+fv_vault_result fv_vault_unlock(fv_vault *v,const fv_vault_platform *p,const uint8_t *secret,size_t n) {
+    return unlock(v,p,secret,n,true);
+}
 fv_vault_result fv_vault_reverify(fv_vault *v,const uint8_t *secret,size_t bytes){
     if(!v || !v->unlocked)return FV_VAULT_DENIED;
     fv_vault candidate={0};
-    fv_vault_result r=fv_vault_unlock(&candidate,v->platform,secret,bytes);
+    fv_vault_result r=unlock(&candidate,v->platform,secret,bytes,false);
     if(r==FV_VAULT_OK && (memcmp(candidate.vmk,v->vmk,32) ||
         memcmp(candidate.config.volume.volume_id,v->config.volume.volume_id,16) ||
         candidate.config.credential_generation!=v->config.credential_generation))r=FV_VAULT_STATE;
@@ -182,7 +196,7 @@ fv_vault_result fv_vault_reverify(fv_vault *v,const uint8_t *secret,size_t bytes
 fv_vault_result fv_vault_change_credential(fv_vault *v,const fv_vault_platform *p,
     const uint8_t *current,size_t current_n,const uint8_t *replacement,size_t replacement_n,
     uint16_t profile,uint32_t iterations,fv_auth_policy policy,bool approved) {
-    fv_vault_result r=fv_vault_unlock(v,p,current,current_n);
+    fv_vault_result r=unlock(v,p,current,current_n,false);
     if(r!=FV_VAULT_OK)return r;
     uint8_t binding[32]={0};alignas(4) uint8_t header[512];fv_device_state s;
     fv_envelope_config old;unsigned slot=0;
@@ -215,7 +229,8 @@ fv_vault_result fv_vault_repair_headers(fv_vault *v) {
        s.status!=FV_ENROLLMENT_ACTIVE || s.attempt_pending || !matches(&v->config,&s))goto done;
     r=select_header(p,&s,header,&c,&slot);
     if(r!=FV_VAULT_OK)goto done;
-    if(save_header(p,1-slot,header))r=FV_VAULT_IO;
+    if(repair_header_copy(p,1-slot,header))r=FV_VAULT_IO;
+    if(r==FV_VAULT_OK)v->header_repair_pending=false;
 done:
     if(r!=FV_VAULT_OK)fv_vault_lock(v);
     return r;

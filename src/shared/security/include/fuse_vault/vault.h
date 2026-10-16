@@ -57,6 +57,8 @@ typedef struct fv_vault {
     const fv_vault_platform *platform;
     uint8_t vmk[32];
     bool unlocked;
+    /* Automatic repair failed; access remains available. Retried on next unlock. */
+    bool header_repair_pending;
 } fv_vault;
 void fv_vault_lock(fv_vault *);
 /* Read-only UI hint from the flash-anchored header; no guess or attempt commit. */
@@ -69,6 +71,9 @@ fv_vault_result fv_vault_recover(const fv_vault_platform *);
 fv_vault_result fv_vault_create(const fv_vault_platform *,uint64_t logical_blocks,
     const uint16_t algorithms[4],uint8_t count,uint16_t profile,uint32_t iterations,
     fv_auth_policy,const uint8_t *secret,size_t secret_bytes);
+/* After successful authentication, repair the other header only if needed.
+ * Copy failure leaves FV_VAULT_OK and sets header_repair_pending; media removal
+ * still locks the session. Reverification/credential-change checks do not repair. */
 fv_vault_result fv_vault_unlock(fv_vault *,const fv_vault_platform *,const uint8_t *,size_t);
 /* Fresh verification under persistent attempt policy, preserving the existing
  * open disk session on success. Any failure locks it. Single worker only. */

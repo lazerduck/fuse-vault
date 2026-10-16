@@ -16,6 +16,7 @@ typedef struct {
     uint8_t root[32],token[32];
     unsigned random_byte,commits,fail_commit,bindings,destroys,header_writes,fail_header_write;
     unsigned syncs,fail_sync,corrupt_readback;
+    unsigned tear_header_write,remove_on_header_write;
     bool uncertain_commit,present,destroyed,fail_destroy;
     uint64_t sectors;
 } fixture;
@@ -29,7 +30,16 @@ static fv_block_result_t read_blocks(fv_block_device_t *d,uint64_t lba,uint32_t 
 static fv_block_result_t write_blocks(fv_block_device_t *d,uint64_t lba,uint32_t n,const uint8_t *in) {
     fixture *f=d->context;
     if(!f->present || lba>=f->sectors || n>f->sectors-lba)return FV_BLOCK_ERROR_IO;
-    if(lba==0 || lba==8)if(++f->header_writes==f->fail_header_write)return FV_BLOCK_ERROR_IO;
+    if(lba==0 || lba==8) {
+        ++f->header_writes;
+        if(f->header_writes==f->remove_on_header_write)f->present=false;
+        if(!f->present || f->header_writes==f->fail_header_write)return FV_BLOCK_ERROR_IO;
+        if(f->header_writes==f->tear_header_write) {
+            CHECK(!fseek(f->sd,(long)(512*lba),SEEK_SET));
+            CHECK(fwrite(in,1,256,f->sd)==256 && !fflush(f->sd));
+            return FV_BLOCK_ERROR_IO;
+        }
+    }
     if(fseek(f->sd,(long)(512*lba),SEEK_SET) || fwrite(in,512,n,f->sd)!=n)return FV_BLOCK_ERROR_IO;
     return FV_BLOCK_OK;
 }
@@ -189,6 +199,70 @@ static void failures(void) {
     alignas(4) uint8_t data[512];memset(data,42,512);f.syncs=0;f.fail_sync=1;
     CHECK(fv_vault_write(&f.session,0,1,data)==FV_BLOCK_ERROR_IO);CHECK(zero(data,512));CHECK(zero(&f.session,sizeof(f.session)));finish(&f);
 }
+static void automatic_header_repair(void) {
+    /* A failed mirror leaves the new header in slot 1 and the old one in slot 0. */
+    for(unsigned mode=0;mode<6;mode++) {
+        fixture f;init(&f);create(&f,fv_auth_policy_default());
+        CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+        alignas(4) uint8_t data[1024],authoritative[512],other[512];
+        for(unsigned i=0;i<sizeof(data);i++)data[i]=(uint8_t)(i*7);
+        CHECK(fv_vault_write(&f.session,7,2,data)==FV_BLOCK_OK);
+        f.header_writes=0;f.fail_header_write=2;
+        CHECK(change(&f)==FV_VAULT_CHANGED_NEEDS_MIRROR);
+        f.fail_header_write=0;f.header_writes=0;f.syncs=0;
+        CHECK(read_blocks(&f.device,8,1,authoritative)==FV_BLOCK_OK);
+        CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_AUTH);
+        CHECK(!f.header_writes); /* A rejected credential must not repair anything. */
+        fv_device_state before,after;CHECK(!load(&f,&before));
+        if(mode==1)f.fail_header_write=1;
+        if(mode==2)f.fail_sync=1;
+        if(mode==3)f.corrupt_readback=1;
+        if(mode==4)f.tear_header_write=1;
+        if(mode==5)f.remove_on_header_write=1;
+        CHECK(unlock(&f,replacement,sizeof(replacement)-1)==(mode==5?FV_VAULT_IO:FV_VAULT_OK));
+        CHECK(f.header_writes==1);
+        CHECK(!load(&f,&after));
+        CHECK(after.sequence==before.sequence+2 && !after.attempts && !after.attempt_pending);
+        CHECK(after.credential_generation==before.credential_generation);
+        CHECK(!memcmp(after.header_hash,before.header_hash,32));
+        if(mode==5)CHECK(zero(&f.session,sizeof(f.session)));
+        else {
+            CHECK(f.session.unlocked && f.session.header_repair_pending==(mode!=0));
+            check_plaintext(&f);
+        }
+        f.fail_header_write=f.fail_sync=f.corrupt_readback=0;
+        f.tear_header_write=f.remove_on_header_write=0;f.present=true;
+        CHECK(read_blocks(&f.device,8,1,other)==FV_BLOCK_OK);
+        CHECK(!memcmp(other,authoritative,512)); /* Repair never overwrites the good copy. */
+        if(mode==1 || mode==4) {
+            CHECK(fv_vault_reverify(&f.session,replacement,sizeof(replacement)-1)==FV_VAULT_OK);
+            CHECK(f.header_writes==1 && f.session.header_repair_pending);
+        }
+        /* Discard volatile state, as on restart after a partial repair write. */
+        fv_vault_lock(&f.session);
+        CHECK(fv_vault_recover(&f.platform)==FV_VAULT_OK);
+        CHECK(unlock(&f,replacement,sizeof(replacement)-1)==FV_VAULT_OK);
+        CHECK(!f.session.header_repair_pending);check_plaintext(&f);
+        CHECK(read_blocks(&f.device,0,1,other)==FV_BLOCK_OK);
+        CHECK(!memcmp(other,authoritative,512));
+        unsigned writes=f.header_writes,syncs=f.syncs;
+        fv_vault_lock(&f.session);
+        CHECK(unlock(&f,replacement,sizeof(replacement)-1)==FV_VAULT_OK);
+        CHECK(f.header_writes==writes && f.syncs==syncs); /* Healthy copies need no writes. */
+        finish(&f);
+    }
+    /* Either slot can be the surviving copy. Credential checks must not repair. */
+    fixture f;init(&f);create(&f,fv_auth_policy_default());
+    alignas(4) uint8_t header[512],other[512]={0};
+    CHECK(read_blocks(&f.device,0,1,header)==FV_BLOCK_OK);
+    CHECK(write_blocks(&f.device,8,1,other)==FV_BLOCK_OK);
+    f.header_writes=0;f.fail_header_write=1;
+    CHECK(change(&f)==FV_VAULT_IO && f.header_writes==1);
+    f.fail_header_write=0;
+    CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+    CHECK(read_blocks(&f.device,8,1,other)==FV_BLOCK_OK && !memcmp(header,other,512));
+    finish(&f);
+}
 static void batches_and_policy(void) {
     fixture f;init(&f);create(&f,fv_auth_policy_default());
     CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
@@ -263,9 +337,9 @@ static void credential_methods(void){
     finish(&f);
 }
 int main(void) {
-    lifecycle();attempts();failures();batches_and_policy();legacy_volume();credential_methods();
+    lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
     algorithms[1]=3;algorithms[3]=3;
-    lifecycle();attempts();failures();batches_and_policy();legacy_volume();credential_methods();
+    lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
     puts("Vault: file-backed lifecycle, rewrap/replay, attempt/destruction and commit/SD failure injection passed");
     return 0;
 }
