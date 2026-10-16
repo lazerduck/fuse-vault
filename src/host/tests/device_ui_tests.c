@@ -163,8 +163,8 @@ static void standard_controls_tests(void){
 static void credential_change_message_tests(void) {
     fv_ui expected = {0};
     ui_draw_header(&expected, "CREDENTIAL CHANGED", NULL);
-    ui_draw_text_at(&expected, 4, 21, "HEADER COPY NEEDS REPAIR", 1, UI_COLOUR_WARNING);
     ui_draw_text_at(&expected, 4, 37, "USE NEW CREDENTIAL", 1, UI_COLOUR_TEXT);
+    ui_draw_footer(&expected, "\005 BACK", "\006 RETURN");
     const fv_ui_key dismiss[] = {UI_SELECT, UI_BACK};
     for (unsigned i = 0; i < 2; ++i) {
         fv_ui u;
@@ -175,7 +175,7 @@ static void credential_change_message_tests(void) {
         /* FV_VAULT_CHANGED_NEEDS_MIRROR: the new credential is already committed. */
         fv_ui_complete(&u, (fv_ui_result){.result=1, .status=2, .profile=3});
         CHECK(!u.pending && !u.device.unlocked && !u.job.length && !u.job.secret[0]);
-        CHECK(!memcmp(u.framebuffer, expected.framebuffer, 45 * FV_SCREEN_WIDTH));
+        CHECK(!memcmp(u.framebuffer, expected.framebuffer, FV_SCREEN_BYTES));
         key(&u, dismiss[i]);
         CHECK(u.pending && u.job.op == UI_STATUS);
         fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=3});
