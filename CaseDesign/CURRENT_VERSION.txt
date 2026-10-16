@@ -5,6 +5,10 @@ Editable assembly: CaseDesign/prototype-f/case-assembly.step
 Print pack: CaseDesign/prototype-f/fuse-vault-case-f-print-pack.zip
 Instructions: CaseDesign/prototype-f/PRINT-AND-ASSEMBLY.txt
 
+The assembly and ZIP pack above are local generated outputs, ignored by Git.
+The eight prototype-f STLs remain tracked for printing from a fresh checkout.
+See CaseDesign/README.md for source dependencies and regeneration order.
+
 The control-area sample was physically tested. Complete F case fit remains
 unconfirmed. F is the selected working baseline, not a production release.
 

@@ -3,6 +3,41 @@
 **Current working version: prototype F.** Start in [prototype-f](prototype-f/README.md)
 for further work or manual CAD changes.
 
+## Files kept in Git
+
+Git keeps the Python generators, JSON parameters and validation reports,
+documentation, source PCB data, previews, and the eight print-ready STLs in
+`prototype-f/`. `pcb-print-model/source-board.step` is also retained: it is an
+input to the PCB dummy and F case generators, not a generated enclosure export.
+
+Generated STEP assemblies and parts, older/experimental STLs, 3MF files and ZIP
+packs are ignored. Existing local exports remain on disk, but a fresh checkout
+does not include them. The export links below and in older design notes refer to
+these local build outputs. Existing Git history and previously uploaded LFS
+objects have not been removed.
+
+F imports E's shell and accessories; E imports C's collar. C's export validation
+also uses A's parts. To regenerate these dependencies from a fresh checkout, run
+the following from the repository root in the original CAD environment
+(CadQuery 2.8.0, VTK and trimesh, plus `CaseDesign/requirements.txt`):
+
+```sh
+python CaseDesign/build_case.py
+python CaseDesign/build_case_c.py
+python CaseDesign/build_case_e.py
+python CaseDesign/build_case_f.py
+python CaseDesign/check_case_f_closure.py
+python CaseDesign/render_case_f.py
+```
+
+The F builder constructs the controls from `control-lid-test/build.py` and its
+tracked measurements; it does not need the old control-test STL exports. These
+commands regenerate models and reports, so use them when rebuilding the design,
+not merely to print the tracked F STLs. ZIP packs are optional packaging, not
+build inputs.
+
+## Current and previous designs
+
 - [Editable case assembly](prototype-f/case-assembly.step)
 - [Assembly with the current board](prototype-f/case-with-board.step)
 - [F print pack](prototype-f/fuse-vault-case-f-print-pack.zip)

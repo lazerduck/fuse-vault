@@ -3,6 +3,11 @@
 Use this version as the starting point for printing, inspection and manual CAD
 changes. The G/H designs are [archived experiments](../experiments/README.md).
 
+The eight printable STLs, docs, previews and JSON reports are tracked in Git.
+STEP exports and the ZIP pack below are local generated files, not included in
+new checkouts. See the [regeneration order](../README.md#files-kept-in-git) before
+running the F builder on a fresh checkout.
+
 | File | Purpose |
 |---|---|
 | [case-assembly.step](case-assembly.step) | Editable enclosure assembly in assembly coordinates |

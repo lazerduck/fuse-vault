@@ -7,3 +7,14 @@ __pycache__/
 
 /fido-web-test.sqlite3*
 /fido-test-credential.json
+
+# Generated case CAD and print packs stay local. Keep the source board and
+# the current prototype F's print-ready parts; see CaseDesign/README.md.
+/CaseDesign/**/*.step
+/CaseDesign/**/*.stp
+/CaseDesign/**/*.stl
+/CaseDesign/**/*.3mf
+/CaseDesign/**/*.zip
+!/CaseDesign/pcb-print-model/source-board.step
+!/CaseDesign/prototype-f/*.stl
+/fuse-vault-reference.zip
