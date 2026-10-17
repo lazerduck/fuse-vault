@@ -5,7 +5,7 @@
  * Improvements.md section 1):
  *
  * Pages 0-2:   reserved chip/boot configuration
- * Page 3:      status mask, 3 bits per slot (10 slots per 32-bit row)
+ * Page 3:      status mask, 3 bits per slot (8 slots per 24-bit OTP row)
  * Pages 4-60:  token secrets, 4 tokens per page, 16 ECC rows per token
  * Pages 61-63: reserved hardware access keys and page-lock configuration
  *
@@ -17,8 +17,8 @@
 #define FV_OTP_TOKENS_PER_PAGE 4u
 #define FV_OTP_TOKEN_ROW_STRIDE 16u   /* ECC rows per token within a page */
 #define FV_OTP_SECRET_ROWS 16u
-#define FV_OTP_MASK_ROWS 23u          /* ceil(228*3/32) */
-#define FV_OTP_SLOTS_PER_MASK_ROW 10u /* 3 bits/slot * 10 = 30 bits/row */
+#define FV_OTP_MASK_ROWS 29u          /* ceil(228/8) = 29 mask rows on page 3 */
+#define FV_OTP_SLOTS_PER_MASK_ROW 8u  /* 24 programmable bits / 3 bits per slot */
 /* Mask states (3 bits per slot). OTP is write-once: transitions only add 1s,
  * so UNUSED(000) -> STARTED(100) -> READY(110) -> REVOKED(111) is valid. */
 #define FV_OTP_MASK_UNUSED 0b000u
@@ -30,8 +30,8 @@ typedef struct {
     void *context;
     int (*read_raw)(void *,uint32_t row,uint32_t *);
     int (*write_raw)(void *,uint32_t row,uint32_t value);
-    int (*read_secret)(void *,unsigned page,uint8_t out[32]);
-    int (*write_secret)(void *,unsigned page,const uint8_t in[32]);
+    int (*read_secret)(void *,unsigned row,uint8_t out[32]);
+    int (*write_secret)(void *,unsigned row,const uint8_t in[32]);
     int (*can_program)(void *,unsigned page);
 } fv_otp_io;
 typedef struct {

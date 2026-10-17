@@ -39,18 +39,21 @@ static int raw_write(void *ctx,uint32_t row,uint32_t value) {
     }
     return rom_func_otp_access((uint8_t*)&value,4,(otp_cmd_t){.flags=row|OTP_CMD_WRITE_BITS});
 }
-static int secret_read(void *ctx,unsigned page,uint8_t out[32]) {
-    (void)ctx;memset(out,0,32);if(!app_page(page))return -1;
+static int secret_read(void *ctx,unsigned row,uint8_t out[32]) {
+    (void)ctx;memset(out,0,32);
+    unsigned page=row/64;
+    if(!app_page(page))return -1;
     alignas(4) uint8_t temp[32]={0};
-    int r=rom_func_otp_access(temp,32,(otp_cmd_t){.flags=page*64|OTP_CMD_ECC_BITS});
+    int r=rom_func_otp_access(temp,32,(otp_cmd_t){.flags=row|OTP_CMD_ECC_BITS});
     if(!r)memcpy(out,temp,32);
     mbedtls_platform_zeroize(temp,32);return r;
 }
-static int secret_write(void *ctx,unsigned page,const uint8_t in[32]) {
+static int secret_write(void *ctx,unsigned row,const uint8_t in[32]) {
+    unsigned page=row/64;
     if(programmable(ctx,page))return -1;
-    for(unsigned i=0;i<64;i++){uint32_t raw;if(raw_read(ctx,page*64+i,&raw) || raw)return -1;}
+    for(unsigned i=0;i<16;i++){uint32_t raw;if(raw_read(ctx,row+i,&raw) || raw)return -1;}
     alignas(4) uint8_t temp[32];memcpy(temp,in,32);
-    int r=rom_func_otp_access(temp,32,(otp_cmd_t){.flags=page*64|OTP_CMD_ECC_BITS|OTP_CMD_WRITE_BITS});
+    int r=rom_func_otp_access(temp,32,(otp_cmd_t){.flags=row|OTP_CMD_ECC_BITS|OTP_CMD_WRITE_BITS});
     mbedtls_platform_zeroize(temp,32);return r;
 }
 static int flash_read(void *ctx,uint32_t offset,uint8_t *out,size_t bytes) {

@@ -37,11 +37,15 @@ static int raw_write(void *ctx,uint32_t row,uint32_t value) {
     if(m->otp_writes==m->fail_otp){m->otp[row]|=value&0xff;return -1;}
     m->otp[row]|=value;return 0;
 }
-static int read_secret(void *ctx,unsigned page,uint8_t out[32]) {
-    (void)ctx;(void)page;(void)out;return -1; /* not used by new code */
+static int read_secret(void *ctx,unsigned row,uint8_t out[32]) {
+    media *m=ctx;unsigned page=row/64;CHECK(page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57);CHECK(row%64+16<=64);if(m->denied)return -1;
+    for(unsigned i=0;i<16;i++){uint32_t v=m->otp[row+i];out[2*i]=(uint8_t)v;out[2*i+1]=(uint8_t)(v>>8);}
+    return 0;
 }
-static int write_secret(void *ctx,unsigned page,const uint8_t in[32]) {
-    (void)ctx;(void)page;(void)in;return -1; /* not used by new code */
+static int write_secret(void *ctx,unsigned row,const uint8_t in[32]) {
+    unsigned page=row/64;CHECK(page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57);CHECK(row%64+16<=64);
+    for(unsigned i=0;i<16;i++)if(raw_write(ctx,row+i,0x10000u|in[2*i]|(uint32_t)in[2*i+1]<<8))return -1;
+    return 0;
 }
 static int can_program(void *ctx,unsigned page){
     media *m=ctx;CHECK(page==FV_OTP_MASK_PAGE || (page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57));

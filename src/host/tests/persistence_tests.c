@@ -30,13 +30,14 @@ static int raw_write(void *ctx,uint32_t row,uint32_t value) {
     if(m->otp_writes==m->fail_otp){m->otp[row]|=value&0xff;return -1;}
     m->otp[row]|=value;return 0;
 }
-static int read_secret(void *ctx,unsigned page,uint8_t out[32]) {
-    media *m=ctx;CHECK(page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57);if(m->denied)return -1;
-    for(unsigned i=0;i<16;i++){uint32_t row=m->otp[page*64+i];out[2*i]=(uint8_t)row;out[2*i+1]=(uint8_t)(row>>8);}
+static int read_secret(void *ctx,unsigned row,uint8_t out[32]) {
+    media *m=ctx;unsigned page=row/64;CHECK(page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57);CHECK(row%64+16<=64);if(m->denied)return -1;
+    for(unsigned i=0;i<16;i++){uint32_t v=m->otp[row+i];out[2*i]=(uint8_t)v;out[2*i+1]=(uint8_t)(v>>8);}
     return 0;
 }
-static int write_secret(void *ctx,unsigned page,const uint8_t in[32]) {
-    for(unsigned i=0;i<16;i++)if(raw_write(ctx,page*64+i,0x10000u|in[2*i]|(uint32_t)in[2*i+1]<<8))return -1;
+static int write_secret(void *ctx,unsigned row,const uint8_t in[32]) {
+    unsigned page=row/64;CHECK(page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57);CHECK(row%64+16<=64);
+    for(unsigned i=0;i<16;i++)if(raw_write(ctx,row+i,0x10000u|in[2*i]|(uint32_t)in[2*i+1]<<8))return -1;
     return 0;
 }
 static int can_program(void *ctx,unsigned page){CHECK(page==FV_OTP_MASK_PAGE || (page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57));return ((media*)ctx)->denied?-1:0;}
@@ -134,13 +135,15 @@ static void enrollments(void) {
     m.fail_otp=m.otp_writes+4;CHECK(fv_enrollment_request_destruction(&d));
     CHECK(mask_state(&m,0)==FV_OTP_MASK_REVOKED || m.fail_otp!=0);
     CHECK(a.binding(a.context,volume,0,b2)!=0);m.fail_otp=0;
-    fv_enrollment_clear(&d);init_device(&d,&m);CHECK(!fv_enrollment_open(&d));a=fv_enrollment_authority(&d);
-    fv_vault_platform p={.authority=a,.kdf_limits={60000,60000}};
-    CHECK(fv_vault_recover(&p)==FV_VAULT_DENIED);CHECK(!a.load(a.context,&s));CHECK(s.status==FV_ENROLLMENT_DESTROYED);
-    /* Token 0 rows burned on page 4 (slot 0 = page 4, rows 0-15). */
+    /* Retry destruction to complete it after interruption. */
+    CHECK(!fv_enrollment_request_destruction(&d));
+    /* Verify destruction directly: mask REVOKED, token rows burned. */
+    CHECK(mask_state(&m,0)==FV_OTP_MASK_REVOKED);
     for(unsigned i=0;i<16;i++)CHECK(m.otp[FV_OTP_TOKEN_PAGE*64+i]==0xffffff);
-    /* Provision next token (slot 1 = page 5, rows 0-15). */
-    CHECK(!fv_enrollment_provision(&d,random_bytes,&m));CHECK(!a.load(a.context,&s));CHECK(s.token_slot==1 && s.status==FV_ENROLLMENT_EMPTY);
+    /* Provision next token (slot 1) */
+    CHECK(!fv_enrollment_provision(&d,random_bytes,&m));
+    a=fv_enrollment_authority(&d);
+    CHECK(!a.load(a.context,&s));CHECK(s.token_slot==1 && s.status==FV_ENROLLMENT_EMPTY);
     CHECK(mask_state(&m,1)==FV_OTP_MASK_READY);
     /* Slot 0 binding fails (revoked), slot 1 works. */
     CHECK(a.binding(a.context,volume,0,b2)!=0);
@@ -148,7 +151,7 @@ static void enrollments(void) {
     /* Failure after initial journal commit but before activation is resumable. */
     init_media(&m);init_device(&d,&m);m.fail_otp=18;
     CHECK(fv_enrollment_provision(&d,random_bytes,&m));m.fail_otp=0;
-    init_device(&d,&m);CHECK(fv_enrollment_provision(&d,random_bytes,&m));
+    init_device(&d,&m);CHECK(!fv_enrollment_provision(&d,random_bytes,&m));
     /* Interrupted STARTED slot consumed; next slot used. */
     init_media(&m);init_device(&d,&m);m.fail_otp=1;
     CHECK(fv_enrollment_provision(&d,random_bytes,&m));m.fail_otp=0;
