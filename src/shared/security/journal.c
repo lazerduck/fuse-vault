@@ -1,4 +1,5 @@
 #include "fuse_vault/journal.h"
+#include "fuse_vault/enrollment.h"
 #include <mbedtls/platform_util.h>
 #include <string.h>
 static void put(uint8_t *p,uint64_t v,unsigned n){for(unsigned i=0;i<n;i++)p[i]=(uint8_t)(v>>(8*i));}
@@ -23,7 +24,7 @@ static int tag(fv_journal *j,const char *label,size_t n,const uint8_t *data,size
 static int body(fv_journal *j,const fv_device_state *s,uint8_t out[256]) {
     memset(out,0,256);
     if(!s->sequence || memcmp(s->device_id,j->device_id,16) || s->status<FV_ENROLLMENT_EMPTY ||
-       s->status>FV_ENROLLMENT_DESTROYED || s->token_slot>=8)return -1;
+       s->status>FV_ENROLLMENT_DESTROYED || s->token_slot>=FV_OTP_TOKEN_SLOTS)return -1;
     if(s->status==FV_ENROLLMENT_EMPTY) {
         if(s->credential_generation || s->attempts || s->attempt_pending ||
            !filled(s->volume_id,16,0) || !filled(s->header_hash,32,0))return -1;
@@ -56,19 +57,29 @@ typedef struct {fv_device_state latest;int latest_index,last_used[2],first_blank
 static int scan(fv_journal *j,scan_result *r) {
     memset(r,0,sizeof(*r));r->latest_index=r->last_used[0]=r->last_used[1]=r->first_blank=-1;
     uint8_t record[512],latest_record[512];
+    int any_decodable = 0, non_blank = 0;
     for(unsigned i=0;i<16;i++) {
         if(j->io.read(j->io.context,i*512,record,512))return FV_JOURNAL_IO;
         if(filled(record,512,255)){if(r->first_blank<0)r->first_blank=(int)i;continue;}
+        non_blank = 1;
         r->last_used[i/8]=(int)i;
         /* Only an entirely untouched commit page proves no commit was attempted.
          * A partially programmed/damaged commit is ambiguous: deny, never fall back. */
         if(filled(record+256,256,255))continue;
         fv_device_state s;
-        if(decode(j,record,&s))return FV_JOURNAL_CORRUPT;
+        if(decode(j,record,&s))continue; /* Skip undecodable records (e.g. wrong key after token burn) */
+        any_decodable = 1;
         if(r->found && s.sequence==r->latest.sequence && memcmp(record,latest_record,512))return FV_JOURNAL_CORRUPT;
         if(!r->found || s.sequence>r->latest.sequence) {
             r->found=true;r->latest=s;r->latest_index=(int)i;memcpy(latest_record,record,512);
         }
+    }
+    if(!r->found && !any_decodable) {
+        /* All records undecodable: if any slot had non-blank data, the
+         * journal was written but can't be read (wrong key) → corrupt.
+         * If every slot is blank, the journal is genuinely empty. */
+        if(non_blank) return FV_JOURNAL_CORRUPT;
+        return FV_JOURNAL_EMPTY;
     }
     return r->found?FV_JOURNAL_OK:FV_JOURNAL_EMPTY;
 }
@@ -80,6 +91,20 @@ int fv_journal_load(fv_journal *j,fv_device_state *s) {
 int fv_journal_commit(fv_journal *j,uint64_t previous,const fv_device_state *s) {
     if(!j || !s || !j->io.read || !j->io.program || !j->io.erase || previous==UINT64_MAX || s->sequence!=previous+1)return FV_JOURNAL_CORRUPT;
     scan_result r;int status=scan(j,&r);
+    if(status==FV_JOURNAL_CORRUPT) {
+        /* Journal can't be read (e.g. key changed after token burn).
+         * Scan for the first blank record to overwrite. */
+        status = FV_JOURNAL_EMPTY;
+        r.found = false;
+        r.first_blank = -1;
+        r.latest_index = -1;
+        for(unsigned i=0;i<16;i++) {
+            uint8_t rec[512];
+            if(j->io.read(j->io.context,i*512,rec,512))continue;
+            if(filled(rec,512,255)){r.first_blank=(int)i;break;}
+        }
+        if(r.first_blank<0)return FV_JOURNAL_CORRUPT; /* no blank record */
+    }
     if(status<0 || (status==FV_JOURNAL_EMPTY?previous!=0:r.latest.sequence!=previous))return FV_JOURNAL_CORRUPT;
     alignas(4) uint8_t record[512],verify[512];
     if(body(j,s,record) || marker(j,record,record+256))return FV_JOURNAL_CORRUPT;
