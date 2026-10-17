@@ -1,7 +1,7 @@
 #ifndef FV_ENROLLMENT_H
 #define FV_ENROLLMENT_H
 #include "fuse_vault/journal.h"
-/* Token-only OTP allocation (proposed improvement, KeyHandling.md /
+/* Token-only OTP allocation (KeyHandling.md /
  * Improvements.md section 1):
  *
  * Pages 0-2:   reserved chip/boot configuration
@@ -21,10 +21,12 @@
 #define FV_OTP_SLOTS_PER_MASK_ROW 8u  /* 24 programmable bits / 3 bits per slot */
 /* Mask states (3 bits per slot). OTP is write-once: transitions only add 1s,
  * so UNUSED(000) -> STARTED(100) -> READY(110) -> REVOKED(111) is valid. */
-#define FV_OTP_MASK_UNUSED 0b000u
-#define FV_OTP_MASK_STARTED 0b100u
-#define FV_OTP_MASK_READY 0b110u
-#define FV_OTP_MASK_REVOKED 0b111u
+#define FV_OTP_MASK_UNUSED 0u
+#define FV_OTP_MASK_STARTED 4u
+#define FV_OTP_MASK_READY 6u
+#define FV_OTP_MASK_REVOKED 7u
+/* Interrupted STARTED revocation sets the revoke bit before completion. */
+#define FV_OTP_MASK_REVOKING 5u
 /* Fixed application allocation only. Never write boot/key/page-lock fuses. */
 typedef struct {
     void *context;
@@ -39,12 +41,14 @@ typedef struct {
     fv_journal journal;
     fv_journal_io flash;
     uint8_t device_id[16];
-    bool opened;
+    bool opened,terminal;
+    unsigned token_slot;
 } fv_enrollment_device;
 void fv_enrollment_init(fv_enrollment_device *,fv_otp_io,fv_journal_io,const uint8_t device_id[16]);
 void fv_enrollment_clear(fv_enrollment_device *);
-/* Read-only open. Returns 1 for entirely virgin allocation, 2 for incomplete
- * first provisioning, 0 for opened, negatives for failure. No automatic reset. */
+/* Read-only open: 1 virgin, 2 explicit setup required (interrupted/legacy),
+ * 0 current enrollment or revoked terminal state, negative on ambiguity or
+ * missing/corrupt READY journal. No automatic erase, burn or attempt reset. */
 int fv_enrollment_open(fv_enrollment_device *);
 /* Read-only occupancy: 1 blank, 0 occupied, -1 unreadable. No secret values. */
 typedef struct {int mask_blank,tokens_blank,flash_blank;} fv_enrollment_inventory;
@@ -54,7 +58,7 @@ int fv_enrollment_token_blank(fv_enrollment_device *,unsigned slot);
 /* Explicit development preparation of the reserved flash banks. Refuses ANY
  * occupied/unreadable enrollment OTP row or unsupported page permissions. */
 int fv_enrollment_prepare_flash(fv_enrollment_device *);
-/* Explicit irreversible provisioning, or next blank token after DESTROYED.
+/* Explicit irreversible provisioning, or next blank token after revocation.
  * Fresh random secrets generated inside the device; no import/export. */
 int fv_enrollment_provision(fv_enrollment_device *,fv_random_bytes,void *);
 fv_device_authority fv_enrollment_authority(fv_enrollment_device *);

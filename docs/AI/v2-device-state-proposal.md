@@ -1,5 +1,8 @@
 # Device authority and destruction — review proposal
 
+> Historical root-based design. The token-only enrollment allocation, journal version 2 and recovery ordering supersede its root and enrollment-lifecycle details. See [current key handling](../KeyHandling.md#token-only-otp-enrollment).
+
+
 **Historical proposal. Superseded for development allocation, flash encoding and
 invalidation by [OTP enrollment and flash authority](v2-persistent-authority.md).**
 That implementation uses raw all-ones token invalidation plus a revocation marker;

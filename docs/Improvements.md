@@ -1,12 +1,10 @@
 # Planned improvements
 
-This collects the changes we intend to make following the review of the current implementation. The first four sections give the intended order of software work. Hardware, enclosure and recovery work follow as separate areas to develop. The linked pages explain the existing behaviour and the design details behind each change. These changes are pending implementation and validation.
+This collects the changes we intend to make following the review of the current implementation. The first four sections give the intended order of software work. Hardware, enclosure and recovery work follow as separate areas to develop. The linked pages explain the existing behaviour and the design details behind each change. Individual sections distinguish implemented software from remaining design and hardware validation.
 
 ## 1. Expand enrollment capacity and simplify provisioning
 
-Replace the current permanent device root and eight enrollment slots with one independently random token per enrollment and a separate OTP status mask. This gives us more opportunities to destroy a vault and start fresh, while simplifying which secrets are needed to protect it.
-
-The proposed allocation is:
+The token-only implementation now replaces the permanent device root and eight enrollment slots with one independently random token per enrollment and a separate OTP status mask. This section records the original goal and its implementation status; hardware validation remains outstanding.
 
 | OTP pages | Purpose |
 | --- | --- |
@@ -15,17 +13,15 @@ The proposed allocation is:
 | 4–60 | Four 32-byte enrollment tokens per page, using 16 ECC rows each |
 | 61–63 | Reserved hardware access keys and page-lock configuration |
 
-This provides **228 enrollment slots on a fresh token area**. Use a single mask and verify each write by reading it back. Its states are `000` unused, `100` started, `110` token complete and `111` revoked.
+This provides **228 slots on a fresh token area**. Eight states fit in each 24-bit raw row, using 29 mask rows. Normal states are `000` unused, `100` started, `110` ready and `111` revoked. Abandoned provisioning uses `101` as a recoverable revocation intermediate so it cannot transiently appear ready.
 
-Derive separate vault-binding and journal-authentication keys from the enrollment token, with distinct purpose labels and context. A fresh enrollment gets a fresh journal, attempt count and policy. Destroying the token removes access to its vault. The mask identifies the current token and irreversible revocation state.
+Vault binding and journal authentication use separate token-derived keys and purpose contexts. Each enrollment starts with a freshly erased journal, sequence 1, zero attempts and default policy. The journal rejects invalid committed records instead of falling back to older attempts.
 
-Before implementing this, finish the ordering and recovery design for token provisioning, journal creation and vault activation. A token left at `100` is abandoned and destroyed. A revoked token must have its secret rows fully burned before advancing. A missing journal for an active vault must deny access and preserve attempt enforcement. The design still needs to resolve interruption after the token reaches `110` but before its journal is initialized.
+The ordering is resolved: write and verify the token, commit its initial journal, then mark it ready. A started token after interruption is abandoned and destroyed. Revoked tokens are fully burned before advancing. A missing journal for a ready token denies access. Destruction recovery after revocation depends only on OTP, not on the destroyed journal key.
 
-Accept an incompatible format change for the two development units. Identify and exclude previously programmed OTP rows when reusing them; their remaining capacity will depend on what is already programmed.
+The development format is incompatible with earlier root-based and experimental records. Previously programmed raw rows are excluded from allocation. Permanent lockout is no longer selectable in setup or policy changes; compatible stored lockout policies retain their enforcement.
 
-As part of the setup changes, remove permanent lockout as a selectable failure action until a useful, secure recovery design exists. Keep the configurable attempt limit and enrollment-token destruction. Decide explicitly how existing lockout-policy records are handled.
-
-Completion should include interruption tests through provisioning, activation and destruction, plus checks that resets and SD replacement or rollback cannot restore attempts. The detailed proposal is in [Key handling](KeyHandling.md#proposed-improvements-not-implemented) and [Setup](Setup.md#improvements-not-yet-implemented).
+Host coverage includes all 228 enrollments, exhaustion, provisioning and destruction interruption with RAM reset, legacy rows, corrupted and stale journals, key separation, and attempts across resets and SD rollback. Physical OTP/ECC and power-interruption acceptance remains outstanding. See [Key handling](KeyHandling.md#token-only-otp-enrollment) and [Setup](Setup.md#interrupted-setup-and-destruction).
 
 ## 2. Access FIDO credentials from the SD card on demand
 

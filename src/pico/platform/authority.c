@@ -24,25 +24,23 @@ static int programmable(void *ctx,unsigned page) {
     return l0 || l1 || otp_hw->sw_lock[page]?-1:0;
 }
 static int raw_write(void *ctx,uint32_t row,uint32_t value) {
-    unsigned page=row/64,index=row%64;
+    unsigned page=row/64;
     if(!app_page(page) || value>0xffffff || programmable(ctx,page))return -1;
     if(page==FV_OTP_MASK_PAGE) {
         /* Mask rows: OTP write-once. New value must only set bits vs current. */
         uint32_t current;
-        if(raw_read(ctx,row,&current))return -1;
+        if(row%64>=FV_OTP_MASK_ROWS || raw_read(ctx,row,&current))return -1;
         if(current & ~value)return -1;
     } else {
-        /* Token pages: all 64 rows hold token secrets (4 tokens × 16 rows).
-         * Provisioning writes 0x10000|byte data; destruction writes 0xffffff.
-         * No magic/activated/revoked rows: status lives in the mask on page 3. */
-        if(!(value & 0x10000u) && value != 0xffffff)return -1;
+        /* Raw access to secret rows is only for irreversible destruction. */
+        if(value!=0xffffff)return -1;
     }
     return rom_func_otp_access((uint8_t*)&value,4,(otp_cmd_t){.flags=row|OTP_CMD_WRITE_BITS});
 }
 static int secret_read(void *ctx,unsigned row,uint8_t out[32]) {
     (void)ctx;memset(out,0,32);
     unsigned page=row/64;
-    if(!app_page(page))return -1;
+    if(page<FV_OTP_TOKEN_PAGE || !app_page(page) || row%FV_OTP_SECRET_ROWS)return -1;
     alignas(4) uint8_t temp[32]={0};
     int r=rom_func_otp_access(temp,32,(otp_cmd_t){.flags=row|OTP_CMD_ECC_BITS});
     if(!r)memcpy(out,temp,32);
@@ -50,8 +48,8 @@ static int secret_read(void *ctx,unsigned row,uint8_t out[32]) {
 }
 static int secret_write(void *ctx,unsigned row,const uint8_t in[32]) {
     unsigned page=row/64;
-    if(programmable(ctx,page))return -1;
-    for(unsigned i=0;i<16;i++){uint32_t raw;if(raw_read(ctx,row+i,&raw) || raw)return -1;}
+    if(page<FV_OTP_TOKEN_PAGE || row%FV_OTP_SECRET_ROWS || programmable(ctx,page))return -1;
+    for(unsigned i=0;i<FV_OTP_SECRET_ROWS;i++){uint32_t raw;if(raw_read(ctx,row+i,&raw) || raw)return -1;}
     alignas(4) uint8_t temp[32];memcpy(temp,in,32);
     int r=rom_func_otp_access(temp,32,(otp_cmd_t){.flags=row|OTP_CMD_ECC_BITS|OTP_CMD_WRITE_BITS});
     mbedtls_platform_zeroize(temp,32);return r;

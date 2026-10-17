@@ -44,4 +44,4 @@ Define and implement the hardware-enforced boundary around key handling and its 
 
 Audit and test cleanup beyond the main session objects: temporary stack copies, library contexts, error exits, cancellation and work interrupted by USB events. The current explicit wipes establish the intended lifecycle, but a complete RAM-cleanup claim needs that wider evidence.
 
-The internal security-state journal also has an authentication key available while locked so the device can enforce its saved state. Its lifetime is separate from the unlocked VMK session. The proposed enrollment redesign in [Key handling](KeyHandling.md#proposed-improvements-not-implemented) changes how that key is derived.
+The internal security-state journal also has an authentication key available while locked so the device can enforce its saved state. Its lifetime is separate from the unlocked VMK session. The [token-only enrollment design](KeyHandling.md#token-only-otp-enrollment) derives that key from the current enrollment token and clears it on revocation.

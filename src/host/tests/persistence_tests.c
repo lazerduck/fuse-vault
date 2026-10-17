@@ -26,7 +26,7 @@ static int raw_read(void *ctx,uint32_t row,uint32_t *out) {
 }
 static int raw_write(void *ctx,uint32_t row,uint32_t value) {
     media *m=ctx;unsigned page=row/64;CHECK(page==FV_OTP_MASK_PAGE || (page>=FV_OTP_TOKEN_PAGE && page<FV_OTP_TOKEN_PAGE+57));CHECK(row%64<64);
-    CHECK(!(m->otp[row]&~value));m->otp_writes++;
+    CHECK(value<=0xffffff);CHECK(!(m->otp[row]&~value));m->otp_writes++;
     if(m->otp_writes==m->fail_otp){m->otp[row]|=value&0xff;return -1;}
     m->otp[row]|=value;return 0;
 }
@@ -60,9 +60,17 @@ static void journals(void) {
     }
     CHECK(m.erases==12);fv_device_state next=fresh(101);unsigned calls=m.programs;
     CHECK(fv_journal_commit(&j,99,&next));CHECK(m.programs==calls);
-    /* Wrong root/device, committed body tampering, unknown policy all deny. */
+    /* Wrong token key/device, committed body tampering, unknown policy all deny. */
     j.key[0]^=1;CHECK(fv_journal_load(&j,&out)==FV_JOURNAL_CORRUPT);j.key[0]^=1;
     m.flash[(99%16)*512+112]^=1;CHECK(fv_journal_load(&j,&out)==FV_JOURNAL_CORRUPT);
+    /* Corruption never authorizes commit(previous=0) into a free record. */
+    init_media(&m);fv_journal_init(&j,flash_io(&m),key,id);
+    fv_device_state first=fresh(1);CHECK(!fv_journal_commit(&j,0,&first));
+    m.flash[224]^=1;calls=m.programs;CHECK(fv_journal_commit(&j,0,&first)==FV_JOURNAL_CORRUPT);
+    CHECK(m.programs==calls);
+    init_media(&m);m.flash[0]=0;
+    CHECK(fv_journal_load(&j,&out)==FV_JOURNAL_CORRUPT);
+    CHECK(fv_journal_commit(&j,0,&first)==FV_JOURNAL_CORRUPT);CHECK(!m.programs);
     /* Model all cut points in each program page. Never report old state after
      * the new commit fully persisted, even if the I/O returned an error. */
     for(unsigned which=1;which<=2;which++)for(unsigned cut=0;cut<=256;cut++) {
@@ -94,8 +102,8 @@ static void preparation(void) {
     CHECK(fv_enrollment_open(&d)<0);
     CHECK(!fv_enrollment_prepare_flash(&d));CHECK(m.erases==2 && !m.otp_writes);
     CHECK(fv_enrollment_open(&d)==1);
-    /* A single occupied row anywhere in root/token allocation forbids erasure. */
-    for(unsigned row=16*64;row<25*64;row++) {
+    /* A single occupied row anywhere in mask/token allocation forbids erasure. */
+    for(unsigned row=FV_OTP_MASK_PAGE*64;row<61*64;row++) {
         init_media(&m);init_device(&d,&m);memset(m.flash,0,8192);m.otp[row]=1;
         CHECK(fv_enrollment_prepare_flash(&d));CHECK(!m.erases && !m.otp_writes);
     }
@@ -133,9 +141,10 @@ static void enrollments(void) {
     CHECK(fv_enrollment_open(&d)<0);CHECK(fv_enrollment_provision(&d,random_bytes,&m));memcpy(m.flash,backup,8192);CHECK(!fv_enrollment_open(&d));
     /* Destruction: slot 0 revoked in mask, token rows burned. */
     m.fail_otp=m.otp_writes+4;CHECK(fv_enrollment_request_destruction(&d));
-    CHECK(mask_state(&m,0)==FV_OTP_MASK_REVOKED || m.fail_otp!=0);
+    CHECK(mask_state(&m,0)==FV_OTP_MASK_REVOKED);
     CHECK(a.binding(a.context,volume,0,b2)!=0);m.fail_otp=0;
-    /* Retry destruction to complete it after interruption. */
+    /* Reboot loses the old token key; OTP alone must finish destruction. */
+    init_device(&d,&m);CHECK(!fv_enrollment_open(&d));
     CHECK(!fv_enrollment_request_destruction(&d));
     /* Verify destruction directly: mask REVOKED, token rows burned. */
     CHECK(mask_state(&m,0)==FV_OTP_MASK_REVOKED);

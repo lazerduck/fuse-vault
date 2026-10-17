@@ -182,7 +182,8 @@ static void otp_snapshot(void) {
 static void persistent_status(void) {
     fv_enrollment_inventory inventory=fv_enrollment_inspect(&persistent_device);
     int opened=fv_enrollment_open(&persistent_device);fv_device_state s={0};
-    int loaded=opened==0?fv_journal_load(&persistent_device.journal,&s):-1;
+    fv_device_authority authority=fv_enrollment_authority(&persistent_device);
+    int loaded=opened==0?authority.load(authority.context,&s):-1;
     append("{\"command\":\"state\",\"ok\":true,\"open_result\":%d,\"boot_recovery\":%d,"
         "\"journal_result\":%d,\"status\":%u,\"sequence\":%llu,\"credential_generation\":%llu,"
         "\"attempts\":%u,\"pending\":%s,\"token_slot\":%u,\"mask_page\":%u,\"token_page\":%u,"
@@ -364,6 +365,9 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         if(!r)r=fv_vault_change_credential(&usb_session,&persistent_platform,job->current,job->current_length,
             job->secret,job->length,job->profile,FV_ENROLLMENT_ITERATIONS,state.policy,false);
         goto done;
+    }
+    if((job->op==UI_POLICY || job->op==UI_CREATE) && policy.limit_action!=FV_LIMIT_DESTROY){
+        r=FV_VAULT_INVALID;goto done;
     }
     if(job->op==UI_POLICY){
         r=fv_vault_change_credential(&usb_session,&persistent_platform,job->secret,job->length,

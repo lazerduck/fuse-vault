@@ -42,13 +42,13 @@ bool fv_envelope_parse(const uint8_t *h,size_t bytes,uint64_t capacity,fv_kdf_li
     if(memcmp(canonical,h,512))return false;
     *out=c;return true;
 }
-int fv_vault_binding(const uint8_t root[32],const uint8_t token[32],uint32_t slot,const uint8_t id[16],uint8_t out[32]) {
+int fv_vault_binding(const uint8_t binding_key[32],const uint8_t token[32],uint32_t slot,const uint8_t id[16],uint8_t out[32]) {
     if(!out)return -1;
     memset(out,0,32);fv_hmac h={0};int r=-1;
     static const char label[]="FV2/vault-binding/v1";uint8_t ctx[sizeof(label)+4+16];
-    if(!root || !token || !id)goto done;
+    if(!binding_key || !token || !id)goto done;
     memcpy(ctx,label,sizeof(label));put(ctx+sizeof(label),slot,4);memcpy(ctx+sizeof(label)+4,id,16);
-    if(!fv_hmac_init(&h,root,32))r=fv_hmac_compute(&h,ctx,sizeof(ctx),token,32,out);
+    if(!fv_hmac_init(&h,binding_key,32))r=fv_hmac_compute(&h,ctx,sizeof(ctx),token,32,out);
  done:fv_hmac_clear(&h);if(r)mbedtls_platform_zeroize(out,32);return r;
 }
 static int derive(const uint8_t h[512],const uint8_t binding[32],const uint8_t *secret,size_t bytes,
