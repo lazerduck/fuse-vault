@@ -1,4 +1,5 @@
 #include "fuse_vault/journal.h"
+#include "fuse_vault/enrollment.h"
 #include <mbedtls/platform_util.h>
 #include <string.h>
 static void put(uint8_t *p,uint64_t v,unsigned n){for(unsigned i=0;i<n;i++)p[i]=(uint8_t)(v>>(8*i));}
@@ -23,7 +24,7 @@ static int tag(fv_journal *j,const char *label,size_t n,const uint8_t *data,size
 static int body(fv_journal *j,const fv_device_state *s,uint8_t out[256]) {
     memset(out,0,256);
     if(!s->sequence || memcmp(s->device_id,j->device_id,16) || s->status<FV_ENROLLMENT_EMPTY ||
-       s->status>FV_ENROLLMENT_DESTROYED || s->token_slot>=8)return -1;
+       s->status>FV_ENROLLMENT_DESTROYED || s->token_slot>=FV_OTP_TOKEN_SLOTS)return -1;
     if(s->status==FV_ENROLLMENT_EMPTY) {
         if(s->credential_generation || s->attempts || s->attempt_pending ||
            !filled(s->volume_id,16,0) || !filled(s->header_hash,32,0))return -1;
