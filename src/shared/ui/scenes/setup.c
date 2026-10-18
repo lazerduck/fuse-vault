@@ -31,6 +31,7 @@ static void options_key(fv_ui *u, fv_ui_key key) {
         ui_go_home(u);
         return;
     }
+    u->job.action = 1; /* New policies support destruction only. */
     ui_selection_move(&u->cursor, 3, key);
     if (key == UI_LEFT || key == UI_RIGHT) {
         if (u->cursor == 0) {
@@ -38,8 +39,6 @@ static void options_key(fv_ui *u, fv_ui_key key) {
                 ++u->job.attempts;
             if (key == UI_LEFT && u->job.attempts > 1)
                 --u->job.attempts;
-        } else if (u->cursor == 1) {
-            u->job.action = u->job.action == 1 ? 2 : 1;
         }
     }
     if (key == UI_SELECT) {
@@ -88,10 +87,10 @@ static void render_options(fv_ui *u) {
     ui_draw_header(u, "FAILURE POLICY", NULL);
     snprintf(b, sizeof(b), "ATTEMPTS: %u", (unsigned)u->job.attempts);
     ui_draw_choice(u, 16, b, u->cursor == 0);
-    ui_draw_choice(u, 28, u->job.action == 1 ? "THEN: DESTROY KEY" : "THEN: LOCKOUT",
+    ui_draw_choice(u, 28, "THEN: DESTROY KEY",
                    u->cursor == 1);
     ui_draw_choice(u, 40, "REVIEW", u->cursor == 2);
-    if (u->cursor < 2)
+    if (u->cursor == 0)
         ui_draw_text_at(u, 4, 55, "\003\001 CHANGE", 1, UI_COLOUR_TEXT);
     ui_draw_footer(u, "\005 BACK", "\006 SELECT");
 }

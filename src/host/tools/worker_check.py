@@ -32,13 +32,13 @@ def main():
         print(json.dumps({'info': info, 'state': state}, indent=2), flush=True)
         if args.expect_unprovisioned:
             expected = {'open_result': 1, 'boot_recovery': 1,
-                        'root_blank': 1, 'tokens_blank': 1, 'flash_blank': 1}
+                        'mask_blank': 1, 'tokens_blank': 1, 'flash_blank': 1}
             if any(state.get(k) != v for k, v in expected.items()):
                 raise RuntimeError('Worker responds, but state is not the expected blank/unprovisioned state')
             print('PASS: V2 USB and worker respond; enrollment is blank/unprovisioned.')
         elif args.expect_empty:
             expected = {'open_result': 0, 'boot_recovery': 0, 'journal_result': 0,
-                        'status': 1, 'token_slot': 0, 'root_blank': 0,
+                        'status': 1, 'token_slot': 0, 'mask_blank': 0,
                         'tokens_blank': 0, 'flash_blank': 0, 'attempts': 0,
                         'pending': False}
             if any(state.get(k) != v for k, v in expected.items()):

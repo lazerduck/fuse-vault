@@ -80,6 +80,12 @@ target_link_libraries(persistence_pico_tests PRIVATE fv_security)
 target_compile_options(persistence_pico_tests PRIVATE -Wall -Wextra -Werror)
 add_test(NAME persistent_authority_pico_contract COMMAND persistence_pico_tests)
 
+add_executable(otp_mask_tests tests/otp_mask_tests.c)
+target_link_libraries(otp_mask_tests PRIVATE fv_crypto fv_security)
+target_include_directories(otp_mask_tests PRIVATE ${FV_SHARED}/security/include ${FV_SHARED}/storage/include)
+target_compile_options(otp_mask_tests PRIVATE -Wall -Wextra -Werror)
+add_test(NAME otp_mask_lifecycle COMMAND otp_mask_tests)
+
 add_executable(usb_storage_tests tests/usb_storage_tests.c ${FV_PICO}/device/usb_storage.c)
 target_include_directories(usb_storage_tests PRIVATE tests/msc_stubs ${FV_PICO}/device ${FV_SHARED}/storage/include)
 target_compile_options(usb_storage_tests PRIVATE -Wall -Wextra -Werror)

@@ -40,7 +40,7 @@ static fv_rp2354_sd_t sd;
 static bool sd_initialized;
 static uint8_t buffer[32768] __attribute__((aligned(4)));
 /* TEST enrollment only, never persisted to flash/OTP and never exported. */
-static struct {fv_device_state state;uint8_t root[32],token[32];bool destroyed;} enrollment;
+static struct {fv_device_state state;uint8_t token[32];bool destroyed;} enrollment;
 static const uint8_t credential[]="public bring-up credential",replacement[]="public replacement credential";
 static void append(const char *format,...) __attribute__((format(printf,1,2)));
 static void append(const char *format,...) {
@@ -98,7 +98,8 @@ static int commit_state(void *unused,uint64_t previous,const fv_device_state *s)
 }
 static int binding(void *unused,const uint8_t id[16],uint32_t slot,uint8_t out[32]) {
     (void)unused;if(enrollment.destroyed || slot)return -1;
-    return fv_vault_binding(enrollment.root,enrollment.token,slot,id,out);
+    /* No permanent device root: the token is both binding key and input. */
+    return fv_vault_binding(enrollment.token,enrollment.token,slot,id,out);
 }
 static int destroy(void *unused,uint32_t slot) {
     (void)unused;if(slot)return -1;
@@ -122,7 +123,7 @@ static void vault_test(void) {
     if(!ready)goto done;
     phase="test-enrollment";
     enrollment.state.status=FV_ENROLLMENT_EMPTY;
-    if(fv_random_generate(&random_source,enrollment.root,32) || fv_random_generate(&random_source,enrollment.token,32) ||
+    if(fv_random_generate(&random_source,enrollment.token,32) ||
        fv_random_generate(&random_source,enrollment.state.device_id,16))goto done;
     phase="create";uint64_t start=time_us_64();
     const uint16_t algorithms[4]={1,2,0,0};
@@ -181,14 +182,15 @@ static void otp_snapshot(void) {
 static void persistent_status(void) {
     fv_enrollment_inventory inventory=fv_enrollment_inspect(&persistent_device);
     int opened=fv_enrollment_open(&persistent_device);fv_device_state s={0};
-    int loaded=opened==0?fv_journal_load(&persistent_device.journal,&s):-1;
+    fv_device_authority authority=fv_enrollment_authority(&persistent_device);
+    int loaded=opened==0?authority.load(authority.context,&s):-1;
     append("{\"command\":\"state\",\"ok\":true,\"open_result\":%d,\"boot_recovery\":%d,"
         "\"journal_result\":%d,\"status\":%u,\"sequence\":%llu,\"credential_generation\":%llu,"
-        "\"attempts\":%u,\"pending\":%s,\"token_slot\":%u,\"root_page\":%u,\"token_page\":%u,"
-        "\"flash_offset\":%u,\"iterations\":%u,\"root_blank\":%d,\"tokens_blank\":%d,\"flash_blank\":%d}\n",opened,boot_recovery,loaded,(unsigned)s.status,
+        "\"attempts\":%u,\"pending\":%s,\"token_slot\":%u,\"mask_page\":%u,\"token_page\":%u,"
+        "\"flash_offset\":%u,\"iterations\":%u,\"mask_blank\":%d,\"tokens_blank\":%d,\"flash_blank\":%d}\n",opened,boot_recovery,loaded,(unsigned)s.status,
         (unsigned long long)s.sequence,(unsigned long long)s.credential_generation,(unsigned)s.attempts,
-        s.attempt_pending?"true":"false",(unsigned)s.token_slot,FV_OTP_ROOT_PAGE,(unsigned)(FV_OTP_TOKEN_PAGE+s.token_slot),
-        FV_SECURITY_FLASH_OFFSET,FV_ENROLLMENT_ITERATIONS,inventory.root_blank,inventory.tokens_blank,inventory.flash_blank);
+        s.attempt_pending?"true":"false",(unsigned)s.token_slot,FV_OTP_MASK_PAGE,(unsigned)(FV_OTP_TOKEN_PAGE+s.token_slot/4),
+        FV_SECURITY_FLASH_OFFSET,FV_ENROLLMENT_ITERATIONS,inventory.mask_blank,inventory.tokens_blank,inventory.flash_blank);
 }
 #if FV_DEBUG_ENROLLMENT
 static bool confirm_device(const char *command,const char *prefix) {
@@ -363,6 +365,9 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         if(!r)r=fv_vault_change_credential(&usb_session,&persistent_platform,job->current,job->current_length,
             job->secret,job->length,job->profile,FV_ENROLLMENT_ITERATIONS,state.policy,false);
         goto done;
+    }
+    if((job->op==UI_POLICY || job->op==UI_CREATE) && policy.limit_action!=FV_LIMIT_DESTROY){
+        r=FV_VAULT_INVALID;goto done;
     }
     if(job->op==UI_POLICY){
         r=fv_vault_change_credential(&usb_session,&persistent_platform,job->secret,job->length,
