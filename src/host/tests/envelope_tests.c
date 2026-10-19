@@ -39,6 +39,7 @@ static void vector(const uint8_t expected[512],const uint8_t bad_kw[512],const u
     for(unsigned fail=1;fail<=c.volume.layer_count;fail++) {
         rng=(random_state){.fail=fail};
         CHECK(fv_envelope_seal(&c,2133,limits,binding,secret,sizeof(secret),vmk,random_bytes,&rng,bad));CHECK(zero(bad,512));
+        CHECK(rng.calls==fail); /* Prove RNG failure was reached, not invalid configuration. */
     }
     c.credential_profile=2;rng=(random_state){0};
     CHECK(fv_envelope_seal(&c,2133,limits,binding,secret,sizeof(secret),vmk,random_bytes,&rng,bad));CHECK(!rng.calls);
@@ -66,6 +67,11 @@ int main(void) {
     vector(sm4_header,sm4_bad_kw,sm4_binding);vector(mixed_sm4_header,mixed_sm4_bad_kw,mixed_sm4_binding);
     wrap_vector(3,sm4_key_0,sm4_share_0,sm4_wrapped_0);
     wrap_vector(1,aes_key_0,aes_share_0,aes_wrapped_0);wrap_vector(2,cam_key_0,cam_share_0,cam_wrapped_0);
+    vector(aria_header,aria_bad_kw,aria_binding);vector(mixed_aria_header,mixed_aria_bad_kw,mixed_aria_binding);
+    vector(aria_last_header,aria_last_bad_kw,aria_last_binding);
+    wrap_vector(4,aria_key_0,aria_share_0,aria_wrapped_0);
+    wrap_vector(4,mixed_aria_key_1,mixed_aria_share_1,mixed_aria_wrapped_1);
+    wrap_vector(4,aria_last_key_3,aria_last_share_3,aria_last_wrapped_3);
     puts("Envelope: independent fixed vectors, full-byte tampering, KW failure, RNG failure, cost/profile bounds passed");
     return 0;
 }

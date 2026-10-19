@@ -209,6 +209,7 @@ int main(int argc,char **argv){
     sequence(&u);sequence(&u);CHECK(u.screen==UI_STACK);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==2);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==3);
+    key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==4);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==1);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==2);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==2);

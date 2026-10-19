@@ -10,7 +10,7 @@ static void stack_key(fv_ui *u, fv_ui_key key) {
     }
     ui_selection_move(&u->cursor, u->job.count + 3, key);
     if ((key == UI_LEFT || key == UI_RIGHT || key == UI_SELECT) && u->cursor < u->job.count) {
-        u->job.algorithms[u->cursor] = u->job.algorithms[u->cursor] % 3 + 1;
+        u->job.algorithms[u->cursor] = u->job.algorithms[u->cursor] % 4 + 1;
     } else if (key == UI_SELECT) {
         if (u->cursor == u->job.count) {
             if (u->job.count < 4)
@@ -71,7 +71,8 @@ static void render_stack(fv_ui *u) {
             snprintf(b, sizeof(b), "%u %s", i + 1,
                      u->job.algorithms[i] == 1   ? "AES-256"
                      : u->job.algorithms[i] == 2 ? "CAMELLIA-256"
-                                                 : "SM4-128");
+                     : u->job.algorithms[i] == 3 ? "SM4-128"
+                                                 : "ARIA-256");
         else
             snprintf(b, sizeof(b), "%s",
                      i == u->job.count        ? "ADD LAYER (MAX 4)"

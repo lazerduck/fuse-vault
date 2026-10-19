@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <mbedtls/aes.h>
+#include <mbedtls/aria.h>
 #include <mbedtls/camellia.h>
 #include <gmssl/sm4.h>
 
@@ -11,7 +12,7 @@
 #define FV_MAX_LAYERS 4u
 
 typedef enum { FV_OK = 0, FV_INVALID = -1, FV_CRYPTO_ERROR = -2 } fv_status;
-typedef enum { FV_AES_256_XTS = 1, FV_CAMELLIA_256_XTS = 2, FV_SM4_128_XTS = 3 } fv_algorithm;
+typedef enum { FV_AES_256_XTS = 1, FV_CAMELLIA_256_XTS = 2, FV_SM4_128_XTS = 3, FV_ARIA_256_XTS = 4 } fv_algorithm;
 
 /* Backend storage is concrete for stack/static allocation: no heap, no opaque
  * byte-buffer casts. Treat all fields as private. Do not copy initialized keys. */
@@ -19,6 +20,7 @@ typedef union {
     struct { mbedtls_aes_context enc, dec, tweak; } aes;
     struct { mbedtls_camellia_context enc, dec, tweak; } camellia;
     struct { SM4_KEY enc, dec, tweak; } sm4;
+    struct { mbedtls_aria_context enc, dec, tweak; } aria;
 } fv_key_context;
 struct fv_cipher_ops;
 typedef struct { const struct fv_cipher_ops *ops; fv_key_context key; } fv_cipher;
