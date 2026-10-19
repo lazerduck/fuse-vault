@@ -7,6 +7,7 @@ add_library(fv_crypto STATIC backends/sm4.c
   ${FV_SM4_DIR}/sm4_common.c ${FV_SM4_DIR}/sm4_enc.c ${FV_SM4_DIR}/sm4_setkey.c
   hmac.c hmac_self_test.c cipher.c pipeline.c backends/mbedtls.c
   ${FV_MBEDTLS_DIR}/library/aes.c
+  ${FV_MBEDTLS_DIR}/library/aria.c
   ${FV_MBEDTLS_DIR}/library/ctr_drbg.c
   ${FV_MBEDTLS_DIR}/library/sha256.c
   ${FV_MBEDTLS_DIR}/library/camellia.c
