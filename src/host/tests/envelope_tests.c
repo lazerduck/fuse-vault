@@ -13,8 +13,6 @@ static int random_bytes(void *ctx,uint8_t *out,size_t n) {
     for(size_t i=0;i<n;i++)out[i]=(uint8_t)s->next++;
     return 0;
 }
-static void vector_self(uint16_t algorithm);
-static void wrap_vector_self(uint16_t id);
 static const uint8_t secret[]={'a',0,'t','e','s','t',' ','p','a','s','s','w','o','r','d'};
 static void vector(const uint8_t expected[512],const uint8_t bad_kw[512],const uint8_t expected_binding[32]) {
     fv_kdf_limits limits={1,100};fv_envelope_config c;
@@ -41,6 +39,7 @@ static void vector(const uint8_t expected[512],const uint8_t bad_kw[512],const u
     for(unsigned fail=1;fail<=c.volume.layer_count;fail++) {
         rng=(random_state){.fail=fail};
         CHECK(fv_envelope_seal(&c,2133,limits,binding,secret,sizeof(secret),vmk,random_bytes,&rng,bad));CHECK(zero(bad,512));
+        CHECK(rng.calls==fail); /* Prove RNG failure was reached, not invalid configuration. */
     }
     c.credential_profile=2;rng=(random_state){0};
     CHECK(fv_envelope_seal(&c,2133,limits,binding,secret,sizeof(secret),vmk,random_bytes,&rng,bad));CHECK(!rng.calls);
@@ -68,58 +67,11 @@ int main(void) {
     vector(sm4_header,sm4_bad_kw,sm4_binding);vector(mixed_sm4_header,mixed_sm4_bad_kw,mixed_sm4_binding);
     wrap_vector(3,sm4_key_0,sm4_share_0,sm4_wrapped_0);
     wrap_vector(1,aes_key_0,aes_share_0,aes_wrapped_0);wrap_vector(2,cam_key_0,cam_share_0,cam_wrapped_0);
-    /* ARIA has no independent fixture vector yet (cryptography lib lacks ARIA);
-     * self-contained round-trip + tamper tests below cover the same properties. */
-    vector_self(4);
-    wrap_vector_self(4);
+    vector(aria_header,aria_bad_kw,aria_binding);vector(mixed_aria_header,mixed_aria_bad_kw,mixed_aria_binding);
+    vector(aria_last_header,aria_last_bad_kw,aria_last_binding);
+    wrap_vector(4,aria_key_0,aria_share_0,aria_wrapped_0);
+    wrap_vector(4,mixed_aria_key_1,mixed_aria_share_1,mixed_aria_wrapped_1);
+    wrap_vector(4,aria_last_key_3,aria_last_share_3,aria_last_wrapped_3);
     puts("Envelope: independent fixed vectors, full-byte tampering, KW failure, RNG failure, cost/profile bounds passed");
     return 0;
-}
-
-/* Self-contained envelope test for an algorithm without fixture vectors.
- * Seals with the given algorithm, opens to recover the VMK, then flips every
- * header byte and verifies open rejects all tampered copies. */
-static void vector_self(uint16_t algorithm) {
-    fv_kdf_limits limits={1,100};fv_envelope_config c={0};
-    uint8_t root[32],token[32],vmk[32],binding[32],out[32],header[512],bad[512];
-    for(unsigned i=0;i<32;i++){root[i]=i;token[i]=32+i;vmk[i]=64+i;}
-    c.volume.layout_version=1;c.volume.logical_blocks=64;c.volume.layer_count=1;
-    c.volume.cipher_ids[0]=algorithm;
-    for(unsigned i=0;i<16;i++)c.volume.volume_id[i]=(uint8_t)(i+1);
-    memcpy(c.device_id,root,16);c.credential_generation=1;c.credential_profile=1;
-    c.iterations=3;c.token_slot=0;c.policy.max_attempts=10;c.policy.limit_action=FV_LIMIT_DESTROY;
-    CHECK(!fv_vault_binding(root,token,9,c.volume.volume_id,binding));
-    random_state rng={0};
-    CHECK(!fv_envelope_seal(&c,2133,limits,binding,secret,sizeof(secret),vmk,random_bytes,&rng,header));
-    CHECK(rng.calls==1); /* one layer => one RNG draw for the share */
-    CHECK(!fv_envelope_open(header,2133,limits,binding,secret,sizeof(secret),out));
-    CHECK(!memcmp(out,vmk,32));
-    /* Full-byte tamper rejection. */
-    for(unsigned i=0;i<512;i++) {
-        memcpy(bad,header,512);bad[i]^=1;memset(out,1,32);
-        CHECK(fv_envelope_open(bad,2133,limits,binding,secret,sizeof(secret),out));
-        CHECK(zero(out,32));
-    }
-    /* Wrong binding, wrong secret, wrong size. */
-    binding[0]^=1;CHECK(fv_envelope_open(header,2133,limits,binding,secret,sizeof(secret),out));CHECK(zero(out,32));binding[0]^=1;
-    CHECK(fv_envelope_open(header,2133,limits,binding,(const uint8_t*)"bad",3,out));CHECK(zero(out,32));
-    CHECK(!fv_envelope_parse(header,511,2133,limits,&c));
-    CHECK(!fv_envelope_parse(header,512,2132,limits,&c));
-    /* RNG failure during seal must not publish a partial header. */
-    for(unsigned fail=1;fail<=1;fail++) {
-        rng=(random_state){.fail=fail};
-        CHECK(fv_envelope_seal(&c,2133,limits,binding,secret,sizeof(secret),vmk,random_bytes,&rng,bad));CHECK(zero(bad,512));
-    }
-}
-
-/* Self-contained key wrap test for an algorithm without fixture vectors.
- * Wraps a share, unwraps and verifies round-trip, then flips every wrapped
- * byte and verifies unwrap rejects all tampered copies. */
-static void wrap_vector_self(uint16_t id) {
-    uint8_t key[32],share[32],wrapped[40],out[32];
-    for(unsigned i=0;i<32;i++){key[i]=(uint8_t)(i*3+1);share[i]=(uint8_t)(i*7+2);}
-    CHECK(!fv_share_wrap(id,key,share,wrapped));
-    CHECK(!fv_share_unwrap(id,key,wrapped,out));
-    CHECK(!memcmp(out,share,32));
-    for(unsigned i=0;i<40;i++){wrapped[i]^=1;CHECK(fv_share_unwrap(id,key,wrapped,out));CHECK(zero(out,32));wrapped[i]^=1;}
 }
