@@ -30,3 +30,18 @@ static int cam_block(fv_key_context *c, int enc, int tweak,
 }
 const fv_cipher_ops fv_aes_ops = {"AES-256-XTS", aes_init, aes_block};
 const fv_cipher_ops fv_camellia_ops = {"Camellia-256-XTS", cam_init, cam_block};
+static int aria_init(fv_key_context *c, const uint8_t *k) {
+    mbedtls_aria_init(&c->aria.enc); mbedtls_aria_init(&c->aria.dec);
+    mbedtls_aria_init(&c->aria.tweak);
+    if (mbedtls_aria_setkey_enc(&c->aria.enc, k, 256) ||
+        mbedtls_aria_setkey_dec(&c->aria.dec, k, 256) ||
+        mbedtls_aria_setkey_enc(&c->aria.tweak, k + 32, 256)) return -1;
+    return 0;
+}
+static int aria_block(fv_key_context *c, int enc, int tweak,
+                      const uint8_t *in, uint8_t *out) {
+    mbedtls_aria_context *ctx = tweak ? &c->aria.tweak :
+        (enc ? &c->aria.enc : &c->aria.dec);
+    return mbedtls_aria_crypt_ecb(ctx, in, out);
+}
+const fv_cipher_ops fv_aria_ops = {"ARIA-256-XTS", aria_init, aria_block};

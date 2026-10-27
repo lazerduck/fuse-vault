@@ -18,7 +18,9 @@ static void reference(fv_algorithm a, const uint8_t *key, uint64_t lba,
         /* Independent Camellia/SM4 block implementation and explicit polynomial
          * bit multiplication, checked alongside OpenSSL's complete AES-XTS. */
         uint8_t t[16], b[16], next[16];
-        const EVP_CIPHER *cipher = a == FV_SM4_128_XTS ? EVP_sm4_ecb() : EVP_camellia_256_ecb();
+        const EVP_CIPHER *cipher = a == FV_SM4_128_XTS ? EVP_sm4_ecb() :
+                           a == FV_ARIA_256_XTS ? EVP_aria_256_ecb() :
+                           EVP_camellia_256_ecb();
         CHECK(EVP_EncryptInit_ex(c,cipher,NULL,key+(a == FV_SM4_128_XTS ? 16 : 32),NULL));
         CHECK(EVP_CIPHER_CTX_set_padding(c,0));
         CHECK(EVP_EncryptUpdate(c,t,&n,iv,16)); CHECK(n==16);
@@ -54,7 +56,7 @@ int main(void) {
     for (unsigned k=0;k<4;k++) for (unsigned i=0;i<64;i++) keys[k][i]=(uint8_t)(i+71*k);
     for (unsigned i=0;i<512;i++) plain[i]=(uint8_t)(i*13+7);
     uint64_t lbas[]={0,1,15,16,UINT64_C(0x123456789abcdef0),UINT64_MAX};
-    for (int algorithm=1;algorithm<=3;algorithm++) {
+    for (int algorithm=1;algorithm<=4;algorithm++) {
         fv_cipher c={0};
         CHECK(fv_cipher_encrypt(&c,0,plain,temp)==FV_INVALID);
         CHECK(fv_cipher_init(&c,(fv_algorithm)algorithm,keys[0],fv_cipher_key_bytes((fv_algorithm)algorithm))==FV_OK);
@@ -88,13 +90,13 @@ int main(void) {
     /* All algorithm/order combinations through the configured depth. */
     unsigned combinations=1;
     for (size_t count=1;count<=4;count++) {
-        combinations*=3;
+        combinations*=4;
         for (unsigned mask=0;mask<combinations;mask++) {
             unsigned digits=mask;
             fv_algorithm algorithms[4]; fv_pipeline p={0};
             memcpy(expected,plain,512);
             for (size_t i=0;i<count;i++) {
-                algorithms[i]=(fv_algorithm)(1+digits%3); digits/=3;
+                algorithms[i]=(fv_algorithm)(1+digits%4); digits/=4;
                 reference(algorithms[i],keys[i],17,expected,temp);
                 memcpy(expected,temp,512);
             }
