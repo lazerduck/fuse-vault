@@ -1,0 +1,381 @@
+{
+  "SD_wall_missing_volume_mm3": 0.0,
+  "unchanged_STL_sha256": {
+    "select": "60adbf81948fe5505c0ec0ac527ac5e0e7c8ed359dea0c66c316c10bd85882cc",
+    "back": "682cf304aa36e71b5eb9957a52716d6d0db7184520221731ba9e889ab9356e37",
+    "usb_c_collar": "b89a819788b1fd8bad44368c974f7a02fea7ec363077d142c92ae31b762d032a"
+  },
+  "cap_removal": [
+    {
+      "cap": "c",
+      "removal_mm": 0,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 0,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 0,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 0.5,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 0.5,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 0.5,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 1,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 1,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 1,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 2,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 2,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 2,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 4,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 4,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 4,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 8,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 8,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 8,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 15,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 15,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 15,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 25,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 25,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 25,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0.5,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0.5,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0.5,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 1,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 1,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 1,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 2,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 2,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 2,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 4,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 4,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 4,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 8,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 8,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 8,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 15,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 15,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 15,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 25,
+      "obstacle": "base",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 25,
+      "obstacle": "lid",
+      "rigid_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 25,
+      "obstacle": "usb_c_collar",
+      "rigid_overlap_mm3": 0.0
+    }
+  ],
+  "elastic_detent_motion": [
+    {
+      "cap": "c",
+      "removal_mm": 0,
+      "elastic_overlap_mm3": 0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 0.5,
+      "elastic_overlap_mm3": 0.016704804859157985
+    },
+    {
+      "cap": "c",
+      "removal_mm": 1,
+      "elastic_overlap_mm3": 0.2943912231132607
+    },
+    {
+      "cap": "c",
+      "removal_mm": 2,
+      "elastic_overlap_mm3": 0.9461250150143428
+    },
+    {
+      "cap": "c",
+      "removal_mm": 4,
+      "elastic_overlap_mm3": 0.05112002813265626
+    },
+    {
+      "cap": "c",
+      "removal_mm": 8,
+      "elastic_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 15,
+      "elastic_overlap_mm3": 0.0
+    },
+    {
+      "cap": "c",
+      "removal_mm": 25,
+      "elastic_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0,
+      "elastic_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 0.5,
+      "elastic_overlap_mm3": 0.016704804860964872
+    },
+    {
+      "cap": "a",
+      "removal_mm": 1,
+      "elastic_overlap_mm3": 0.29056293163567803
+    },
+    {
+      "cap": "a",
+      "removal_mm": 2,
+      "elastic_overlap_mm3": 0.670793062505991
+    },
+    {
+      "cap": "a",
+      "removal_mm": 4,
+      "elastic_overlap_mm3": 0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 8,
+      "elastic_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 15,
+      "elastic_overlap_mm3": 0.0
+    },
+    {
+      "cap": "a",
+      "removal_mm": 25,
+      "elastic_overlap_mm3": 0.0
+    }
+  ],
+  "failures": []
+}

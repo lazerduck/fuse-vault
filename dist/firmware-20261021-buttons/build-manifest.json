@@ -1,0 +1,12 @@
+{
+  "base_commit": "d7c5206c2e5944a9bc09af3b5cf2c7061f869c98",
+  "working_tree_build": true,
+  "uf2_sha256": "442c02b532e116ec7c541b36bb25d50ee8cd0f85afa3aae9e5fed9c76df83e44",
+  "source_sha256": {
+    "src/pico/platform/buttons.c": "58a9943b5d204522a5adf74aac23ec771852f6dfa6f2eb3cf85b92cfe7456d2e",
+    "src/pico/platform/include/fuse_vault/pico_buttons.h": "c890bcfeefacedc0f428ca396bc3752038f37d351f3c58127a214e6393a37420",
+    "src/pico/device/device_ui_adapter.c": "af7cfe4e554de06c3200b00f9f9afb0d311d62bfa39770b4bfcef10b3213804b",
+    "src/pico/device/CMakeLists.txt": "7a9187db4e2d9a05abb198bf5e595914f9f495c58f2448e6353dc74569fd1c28",
+    "src/host/tools/button_monitor.py": "6ef251f6fdb2556f0180bc88f9cabdb7e93a4cef63912f354f0384b9c66d2279"
+  }
+}

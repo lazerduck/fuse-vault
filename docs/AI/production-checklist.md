@@ -19,25 +19,33 @@ it is finished when preparing a production image. FIDO is outside this milestone
 
 ## OTP and persistent authority
 
-- [x] Implement fixed development allocation: root page 16, token pages 17–24;
-  guard all writes, refuse unexpected contents/permissions, never write boot or
-  page-lock fuses through the development interface.
-- [x] Implement revoked-first token destruction, all-ones fill of secret rows,
-  verification, retry after interruption and advance to a fresh token slot.
-- [x] Implement authenticated flash journal, separate body/commit programming,
-  verified writes, stale-sequence rejection, two-bank rollover and boot recovery.
+Current software: [PR #1](https://github.com/lazerduck/fuse-vault/pull/1), merged
+2026-10-18. See the [validation record](../../results/otp-enrollment-20261018.md).
+The September board results below use the superseded root-based layout; their
+checked status records historical evidence, not acceptance of the new allocation.
+
+- [x] Implement token-only development allocation: raw status mask on page 3,
+  228 token slots on pages 4–60 on fresh OTP; pages 0–2 and 61–63 untouched.
+  No permanent device root. Use ECC token I/O and raw occupancy/burn checks.
+- [x] Implement recoverable provisioning and revoked-first destruction. Commit
+  the fresh journal before READY; finish abandoned/revoked token burns before reuse
+  of the allocator. Recovery after revocation depends only on OTP.
+- [x] Implement token-derived journal MAC keys and version 2 records, separate
+  body/commit programming, verified writes, two-bank rollover and boot recovery.
+  Invalid committed records deny access, even beside older valid records;
+  nonblank journals without valid records are CORRUPT, not EMPTY.
 - [x] Reserve flash 0x1fe000–0x1fffff in V2 firmware linker layouts; both cores
   participate in SDK flash-safe execution. No default-state fallback on corruption.
-- [x] Host failure-injection tests cover the above and the full vault lifecycle.
-- [x] Explicit initialization of reserved flash on reused boards, guarded by every
-  enrollment OTP row being blank/readable. No reset path after OTP enrollment.
-  Physical verification pending; remove this debug command from production.
-- [x] On sample 317741A1459A6F94: initialize reserved flash, provision root/token,
-  verify expected OTP occupancy/unchanged locks, create/write/unlock/read 1 MiB
-  using OTP/flash authority at 60,000 iterations. See
-  [hardware record](../../results/security-persistence-20260918.md).
-- [x] Saved attempt count and all 1 MiB of payload survived a full power cycle and
-  diagnostic reflash; delayed worker launch recovered/unlocked/read successfully.
+- [x] Pass 30/30 standard host tests and 44/44 full host/FIDO ASan/UBSan tests;
+  build full Pico firmware. Host coverage includes all 228 slots and exhaustion,
+  malformed masks, key separation, legacy occupied rows and interrupted recovery.
+- [ ] Physically qualify the new mask allocation, ROM ECC token I/O, fresh-journal
+  initialization and provisioning/destruction recovery at power-interruption points.
+  Reused boards have reduced capacity; old root-based journals are not migrated.
+- [x] Historical September evidence on sample 317741A1459A6F94: reserved-flash
+  initialization, root/token provisioning, expected OTP occupancy/unchanged locks,
+  create/write/unlock/read 1 MiB and persistence across power cycle/diagnostic reflash.
+  See the [hardware record](../../results/security-persistence-20260918.md).
 - [ ] Resolve normal automatic startup: USB fails in the normal image but works
   immediately after flashing with explicit delayed worker launch. Cold startup
   of that diagnostic also fails before worker launch; inspect boot selection and
@@ -45,14 +53,14 @@ it is finished when preparing a production image. FIDO is outside this milestone
   checkpoint now localizes the stall to SDK clock initialization before main.
 - [ ] Wrong attempts persist across power cycles and SD swaps. Interrupted final
   attempt completes destruction before further authentication, including without SD.
-- [x] Physical token destruction completed with raw all-ones readback verified by
+- [x] Historical root-based physical token destruction completed with raw all-ones readback verified by
   firmware; page 17 alone changed in snapshot fields, locks unchanged, old vault
   denied. Credential change and preserved-payload read also passed.
-- [x] Destruction persisted through cold power removal: old vault denied after
+- [x] Historical root-based destruction persisted through cold power removal: old vault denied after
   recovery. Advanced to slot 1/page 18 and created/read-verified a fresh 1 MiB
   vault. Only page 18 changed in snapshot fields; root remains usable.
 - [ ] Provision next token slot; prove old slot never reused and exhaustion denies
-  new enrollment. Cover partial initial root/token provisioning and repair policy.
+  new enrollment. Cover interrupted STARTED/REVOKING cleanup and fresh-journal-before-READY ordering.
 - [ ] Actual flash interruption/rollover tests, timeout/readback failures, wear and
   lifecycle budget. Current ambiguous torn commits/erases deliberately deny access;
   define servicing/reprovisioning UX without a counter reset or revival bypass.
@@ -62,14 +70,14 @@ it is finished when preparing a production image. FIDO is outside this milestone
 
 ## Production access protections
 
-- [ ] Implement and review permanent OTP access policy. Root must not be exposed
+- [ ] Implement and review permanent OTP access policy. Tokens must not be exposed
   through Non-secure/debug/bootloader paths; token policy must still permit the
   intended Secure destruction operation. The current development adapter requires
   zero lock settings and is not the sealed production adapter.
 - [ ] Signed/trusted firmware boot and update policy, debug restrictions, relevant
   silicon/ROM errata review. Storing a secret in OTP alone is not protection while
   arbitrary firmware/debug access remains possible.
-- [ ] Secure RAM/access boundaries for VMK/derived keys/root intermediates; verify
+- [ ] Secure RAM/access boundaries for VMK/derived keys/token intermediates; verify
   compiler/linker placement, stack/heap ownership and worst-case stack use.
 - [ ] Real on-device credential UI and physical approval for policy changes;
   remove public test credentials and host-driven authentication controls.
@@ -152,7 +160,7 @@ they do not certify the complete assembled device or all firmware integrations.
 - [ ] Integrate/test physical TFT output from the shared UI framebuffer; current
       development viewer works with the disconnected display.
 - [ ] Finalize credential UX, terminal lockout/recovery and authenticated reset UX;
-      current reset consumes one of eight OTP token slots. Document unmounting.
+      current reset consumes a fresh token slot (228 total on fresh OTP). Document unmounting.
 
 - [ ] Hardware-test lazy bitmap first-write power loss, including a batch crossing
       bitmap sectors; verify SD sync semantics, logical-zero reads before publish,

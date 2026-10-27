@@ -80,6 +80,9 @@ void fv_device_ui_poll(void) {
         refresh = false;
     }
     fv_ui_key key = fv_pico_buttons_poll(ui.fido_generation);
+#if FV_DEBUG_BUTTONS
+    key = 0; /* Dedicated diagnostic image: test presses never navigate/approve. */
+#endif
 #if FV_TFT_DISPLAY
     if (key && fv_tft_activity())
         key = 0; /* A dark-screen press wakes only; never submits a secret or approval. */
@@ -138,6 +141,20 @@ void fv_device_ui_poll(void) {
 #endif
 }
 bool fv_device_ui_command(const char *command, char *out, size_t size) {
+#if FV_DEBUG_BUTTONS
+    if (!strcmp(command, "BUTTONS")) {
+        fv_button_diagnostics d = fv_pico_buttons_diagnostics();
+        snprintf(out, size,
+                 "{\"command\":\"buttons\",\"ok\":true,\"schema\":1,"
+                 "\"diagnostic_only\":true,\"raw_pressed\":%u,\"stable_pressed\":%u,"
+                 "\"presses\":[%lu,%lu,%lu,%lu,%lu,%lu]}\n",
+                 d.raw_pressed, d.stable_pressed,
+                 (unsigned long)d.presses[0], (unsigned long)d.presses[1],
+                 (unsigned long)d.presses[2], (unsigned long)d.presses[3],
+                 (unsigned long)d.presses[4], (unsigned long)d.presses[5]);
+        return true;
+    }
+#endif
 #if FV_DEBUG_SCREEN
     bool startup = !strncmp(command, "STARTUP ", 8);
     unsigned startup_frame = 0;
@@ -184,6 +201,9 @@ bool fv_device_ui_command(const char *command, char *out, size_t size) {
                 break;
         bool accepted = time_us_64() >= startup_until && i < 6 && ui.screen != UI_WAIT && !ui.fido_done &&
                         (!offset || generation == ui.fido_generation) && (!ui.fido_modal || offset);
+#if FV_DEBUG_BUTTONS
+        accepted = false;
+#endif
         if (accepted) {
             fv_device_ui_wake();
             fv_ui_keypress(&ui, (fv_ui_key)(i + 1));

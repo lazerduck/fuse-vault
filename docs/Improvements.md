@@ -1,8 +1,10 @@
-# Planned improvements
+# Improvements and progress
 
 This collects the changes we intend to make following the review of the current implementation. The first four sections give the intended order of software work. Hardware, enclosure and recovery work follow as separate areas to develop. The linked pages explain the existing behaviour and the design details behind each change. Individual sections distinguish implemented software from remaining design and hardware validation.
 
 ## 1. Expand enrollment capacity and simplify provisioning
+
+**Status: software merged on 2026-10-18 in [PR #1](https://github.com/lazerduck/fuse-vault/pull/1); hardware acceptance pending.** See the [merge and validation record](../results/otp-enrollment-20261018.md).
 
 The token-only implementation now replaces the permanent device root and eight enrollment slots with one independently random token per enrollment and a separate OTP status mask. This section records the original goal and its implementation status; hardware validation remains outstanding.
 

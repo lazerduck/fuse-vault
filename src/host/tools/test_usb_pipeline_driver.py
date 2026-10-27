@@ -18,7 +18,7 @@ driver = (args.firmware_build / 'msc_device_pipeline.c').resolve()
 if not driver.is_file():
     parser.error('configure the firmware build first to generate the patched driver')
 with tempfile.TemporaryDirectory(prefix='fv-msc-driver-') as tmp:
-    for size in (4096, 16384, 32768):
+    for size in (4096, 16384, 32768, 65024):
         binary = Path(tmp) / f'msc-{size}'
         command = ['cc', '-std=c11', '-g', '-DCFG_TUSB_MCU=OPT_MCU_NRF5X',
                    '-DFV_USB_MSC=1', f'-DFV_USB_IO_BYTES={size}',

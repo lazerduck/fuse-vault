@@ -72,9 +72,11 @@ removal, deletion or rollback by someone controlling the SD card.
 
 ## Cache, batching and completion
 
-Requests contain 1–64 sectors, using four-byte-aligned caller buffers. A cache
-holds a contiguous window of up to six metadata sectors (3 KiB), enough for any
-64-sector batch even when it starts at the end of a metadata group. Cache hits
+Writes and `fv_auth_read_batch` accept 1–128 sectors, using four-byte-aligned
+caller buffers. The batch read returns a two-word unset-sector mask; the original
+`fv_auth_read` remains limited to 64 sectors for existing callers. A cache
+holds a contiguous window of up to ten metadata sectors (5 KiB), enough for any
+128-sector batch even when it starts at the end of a metadata group. Cache hits
 avoid repeated metadata reads. A cache miss reads the needed consecutive metadata
 sectors in one request; it never reads old payloads for a complete overwrite.
 

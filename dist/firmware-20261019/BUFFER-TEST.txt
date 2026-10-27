@@ -1,0 +1,41 @@
+Larger storage buffer experiment — 2026-10-19
+
+Image: fuse-vault-buffer-635k-ram-debug.uf2
+SHA-256: 56c3c5ca3c0552b94354df13be77be9c5e7cb943ee093728f14bc51447ad7769
+Source: d7c5206 plus local OTP routing and larger USB-buffer changes.
+Build directory: build-board-buffer-test; FV_USB_IO_BYTES=65024.
+
+Both USB endpoint and worker buffers increase from 32768 to 65024 bytes:
+63.5 KiB each, 63 KiB extra total. Exactly 64 KiB cannot fit TinyUSB's
+16-bit transfer length. Vault operations retain their 64-sector limit;
+each larger worker request is split into at most 64 + 63 sectors. Failed
+sub-batches stop the request, and success is returned only after all finish.
+This experiments with USB/worker overlap, not larger SD/crypto operations.
+Firmware defaults remain 32 KiB; only this experimental build selects 65024.
+
+Physical display, UI, storage and FIDO remain on. RAM/debug screen and OTP
+inspection remain on, matching the baseline. Other debug flags remain off.
+Vault, passkeys and OTP formats are unchanged; do not create a new vault.
+
+Safely eject the mounted vault before BOOTSEL flashing. Reconnect and unlock.
+The existing viewer reconnects automatically. Use the same source file,
+cipher configuration, connector and viewer for comparison. Copy to a fresh
+filename with enough space; time until the copy finishes its final flush.
+Compare the steady device upload rate against the previous ~500 KiB/s.
+After safe eject/reconnect, verify the copied file and check FIDO still works.
+
+Expected fixed RAM: 428.1 KiB (was 365.1 KiB). With the observed 14.9 KiB
+heap reservation, uncommitted RAM should be about 77 KiB (was 140 KiB).
+Actual performance and runtime RAM figures still require hardware testing.
+
+Validation:
+- Full firmware cross-build passed; UF2 identity/address range checked.
+- ELF confirms two 65024-byte buffers and +64512 bytes fixed allocation.
+- Five targeted host tests passed, using the existing ASan/UBSan build.
+- Actual patched TinyUSB BOT driver tests passed under ASan/UBSan with
+  4096, 16384, 32768 and 65024-byte buffers, covering overlap, delayed
+  completion, failure, reset and durable final write acknowledgement.
+- New worker tests cover split reads/writes, failures in either sub-batch,
+  whole-request bounds validation and locked-vault rejection.
+
+Baseline for rollback: fuse-vault-d7c5206-ram-debug.uf2 in this directory.

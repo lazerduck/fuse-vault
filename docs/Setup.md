@@ -62,4 +62,4 @@ Provisioning marks a slot started, writes and verifies its ECC token, erases and
 
 After revocation, destruction resumes from OTP state even if the token is partly burned and its old journal can no longer authenticate. All revoked tokens must be fully burned before starting another enrollment. The detailed ordering, derivation labels and mask states are in [Key handling](KeyHandling.md#token-only-otp-enrollment).
 
-Host interruption and rollback tests pass; physical power-interruption validation remains outstanding. Restoring an older image of internal flash within the same enrollment remains outside the agreed protection scope.
+This enrollment behavior was merged in [PR #1](https://github.com/lazerduck/fuse-vault/pull/1) on 2026-10-18. Host interruption and rollback tests pass; physical power-interruption validation remains outstanding. See the [merge and validation record](../results/otp-enrollment-20261018.md). Restoring an older image of internal flash within the same enrollment remains outside the agreed protection scope.

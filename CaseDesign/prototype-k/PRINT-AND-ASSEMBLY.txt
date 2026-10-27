@@ -1,0 +1,77 @@
+FUSE VAULT CASE K — 21 October 2026 — ALL PARTS PLA
+
+PRINT NEW: base, lid, D-pad, Select, Back, and TWO universal end caps.
+REUSE: the existing USB-C collar only.
+Use revision K parts together. F/J round buttons are too tall for this lid.
+This replaces J following physical feedback; CAD checks are not a print trial.
+
+CHANGES
+D-pad: four 3.2 mm diameter pads instead of 1.7 mm posts, about 3.5 times the
+contact area. Pads merge into the underside skirt; no thin projecting stems.
+Their contact height remains Z=3.65. The small orientation dot faces USB-A.
+The simple underside flange and close lid opening from J remain.
+
+Round buttons: exposed tops trimmed by 0.55 mm, restoring 1.05 mm protrusion
+above the lid, as in F. Stems, retaining flanges and seated positions unchanged.
+Do not scale the parts or shorten their switch-contact stems.
+
+SD: restored side shoulder and installed-card allowance out to Y=2.5, with a
+continuous outer wall at Y=2.5..3.9. Floor restored to Z=-2.9; base bottom -4.1
+keeps a flat printable floor 1.2 mm thick. The enclosure is closed around this
+space; it is not filled in. Card/socket is loaded from above before the lid.
+The reserved loading volume is X=50.7..68.1, Y=-15..2.5, Z=-2.7 upwards.
+This combines the earlier F clearance with the current socket width. It is not
+an assertion that the fitted card has been physically measured anew.
+
+Caps: return to full overlapping sleeves with 1.6 mm nominal walls, not the
+thin-tongue J design. Print TWO copies of universal_end_cap.stl in PLA.
+Both caps are identical and fit either end, right-side-up or upside-down.
+The small bumps are at the shell centre height, Z=1.575, on both sides.
+They seat in shallow dimples in the case. Nominal interference is only 0.10 mm
+per side; fit, retention force and durability still depend on the actual print.
+The stops are symmetric too. No A/C labels. Caps overlap the body instead of sitting flush with it.
+
+DIMENSIONS
+Main body: 77.3 x 26.2 x 11.35 mm.
+Width at the restored SD shoulder: 27.6 mm.
+Body height with round buttons: 12.4 mm. Round buttons stand 1.05 mm above lid.
+Both end caps fitted: overall bounds 110.8 x 29.8 x 14.95 mm.
+Equal caps need enough depth for USB-A, so the USB-C cap has additional room.
+
+PRINT
+All files are millimetres, oriented on the bed. Print at 100% scale in PLA.
+Base: flat underside down. Lid and three controls: outside/thumb faces down.
+Caps: closed end on bed, opening up. Use the same PLA settings as your prior
+successful parts. For a 0.4 mm nozzle, 0.12 mm layers on the controls/lid and
+0.16 mm on the base/caps are starting points; use four walls where they fit.
+Check the slicer around the sleeve's internal stop ramps and the lid guides.
+Remove strings and elephant-foot burrs. Do not enlarge the D-pad opening or
+sand its retaining flange indiscriminately. Inspect cap bumps before fitting.
+
+ASSEMBLY
+1. Fit the SD card into its socket. Fit the PCB and original USB-C collar into
+   the base from above. Confirm the fitted card clears the restored shoulder.
+2. Dry-fit the display and its folded cable; restored floor allowance is not a
+   substitute for checking the actual fold. Do not use the lid to compress it.
+3. Insert the new K Select, Back and D-pad through the underside of the loose
+   lid. D-pad dot faces USB-A. Support controls while positioning the lid.
+4. Engage the USB-C hooks, lower the lid gently and check movement before
+   fully engaging the four snaps. No switch should be pressed at rest.
+5. Test all six switches individually with the diagnostic firmware. Confirm
+   each releases and inspect Up/Left feel with the broader D-pad contact pads.
+6. Fit either cap to either end. Either 180-degree roll orientation works.
+   If a PLA cap needs excessive force, remove it and inspect bumps/burrs;
+   do not force the sleeve onto the connector. Retention needs a physical trial.
+   Remove both caps before opening the case.
+
+VALIDATION
+Checks cover valid solids and watertight meshes, the 278 exported electronics
+solids, explicit installed-card and loading reserves, closed SD walls/floor,
+D-pad +/-3-degree rocking, underside control insertion, sampled lid closure,
+unchanged button geometry below the trimmed tops, matching cap geometry and
+180-degree roll symmetry, cap removal excluding only intentional bump flex.
+Broad pad faces stay above a Z=3.2 housing-check plane in the sampled motion;
+nominal switch housing top is Z=3.0. This does not simulate actuator compression
+or guarantee the electrical click at every tolerance extreme.
+All mechanical feel, PLA retention/wear and actual card/flex fit remain print
+checks. No claim is made that revision K has already been physically tested.

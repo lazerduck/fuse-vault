@@ -1,0 +1,344 @@
+{
+  "checks": [
+    {
+      "part": "lid",
+      "closure_angle": 0,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 0,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 0,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 0,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 0,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 0,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 0,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 0,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 0.5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 0.5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 0.5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 0.5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 0.5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 0.5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 0.5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 0.5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 1,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 1,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 1,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 1,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 1,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 1,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 1,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 1,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 2,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 2,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 2,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 2,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 2,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 2,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 2,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 2,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 5,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 5,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 10,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 10,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 10,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 10,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 10,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 10,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 10,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 10,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 15,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "lid",
+      "closure_angle": 15,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 15,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "dpad",
+      "closure_angle": 15,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 15,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "select",
+      "closure_angle": 15,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 15,
+      "obstacle": "base excluding elastic snap beads",
+      "overlap_mm3": 0.0
+    },
+    {
+      "part": "back",
+      "closure_angle": 15,
+      "obstacle": "collar",
+      "overlap_mm3": 0.0
+    }
+  ],
+  "failures": [],
+  "limitations": [
+    "Sampled rigid closure trajectory only; snap elasticity and loose controls need physical assembly testing."
+  ]
+}

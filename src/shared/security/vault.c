@@ -221,19 +221,19 @@ done:
     mbedtls_platform_zeroize(binding,32);fv_vault_lock(v);return r;
 }
 static fv_block_result_t io(fv_vault *v,uint64_t lba,uint32_t count,uint8_t *buffer,bool write) {
-    if(!buffer || ((uintptr_t)buffer&3) || !count || count>64)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
+    if(!buffer || ((uintptr_t)buffer&3) || !count || count>FV_AUTH_MAX_BATCH_SECTORS)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
     fv_block_result_t r=FV_BLOCK_ERROR_NOT_READY;
     if(!v || !v->unlocked)goto done;
     if(!media_valid(v->platform)){fv_vault_lock(v);goto done;}
     r=FV_BLOCK_ERROR_OUT_OF_RANGE;
     if(lba>=v->config.volume.logical_blocks || count>v->config.volume.logical_blocks-lba)goto done;
-    uint64_t unset=0;
+    fv_auth_unset_mask unset={{0,0}};
     if(!write) {
-        r=fv_auth_read(&v->store,lba,count,buffer,&unset);
+        r=fv_auth_read_batch(&v->store,lba,count,buffer,&unset);
         if(r!=FV_BLOCK_OK)goto done;
     }
     for(uint32_t i=0;i<count;i++) {
-        if(!write && (unset & (UINT64_C(1)<<i)))continue;
+        if(!write && fv_auth_sector_unset(&unset,i))continue;
         uint8_t *sector=buffer+(size_t)i*512;
         fv_status status=write?fv_pipeline_encrypt(&v->pipeline,lba+i,sector,sector):
                                fv_pipeline_decrypt(&v->pipeline,lba+i,sector,sector);

@@ -7,6 +7,7 @@
 #include "vault_filesystem.h"
 #endif
 #include "fuse_vault/vault.h"
+#include "usb_vault_io.h"
 #include "fuse_vault/development_policy.h"
 #include "fuse_vault/rp2354_authority.h"
 #include "pico/flash.h"
@@ -283,9 +284,7 @@ void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *respo
     case FV_USB_LOCK:usb_lock();break;
     case FV_USB_READ:
     case FV_USB_WRITE:
-        if(request->count>FV_USB_IO_BYTES/512 || !request->count)result=FV_BLOCK_ERROR_INVALID_ARGUMENT;
-        else if(request->op==FV_USB_READ)result=fv_vault_read(&usb_session,request->lba,request->count,request->data);
-        else result=fv_vault_write(&usb_session,request->lba,request->count,request->data);
+        result=fv_usb_vault_io(&usb_session,request);
         /* Stop serving the medium on authentication or physical I/O failure. */
         if(result!=FV_BLOCK_OK && result!=FV_BLOCK_ERROR_OUT_OF_RANGE &&
            result!=FV_BLOCK_ERROR_INVALID_ARGUMENT)usb_lock();
@@ -423,6 +422,9 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
 #endif
 static bool usb_session_command(const char *command) {
     if(!strcmp(command,"INFO") || !strcmp(command,"STATE"))return false;
+#if FV_DEBUG_OTP_INSPECT
+    if(!strcmp(command,"OTP"))return false;
+#endif
     int r=0;
     if(!strcmp(command,"LOCK"))usb_lock();
     else if(FV_DEBUG_SESSION && (!strcmp(command,"UNLOCK ORIGINAL") || !strcmp(command,"UNLOCK REPLACEMENT"))) {

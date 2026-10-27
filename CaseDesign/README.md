@@ -1,13 +1,19 @@
 # Fuse Vault case design
 
-**Current working version: prototype F.** Start in [prototype-f](prototype-f/README.md)
-for further work or manual CAD changes.
+**Current assembly baseline: [revision L](prototype-l/README.md).**
+L aligns the D-pad noses to the source switch actuator surfaces, adds a 2.4 mm
+screen platform, eases pocket-facing edges and increases shell and cap retention.
+User feedback on 22 October confirms L goes together well. Remaining button feel
+is suspected to be switch-quality limited, but the cause is not confirmed.
+Keep L's geometry as the baseline; retention durability and electrical actuation
+reliability have not been separately quantified.
+F remains the earlier baseline; I is withdrawn and J/K are superseded as print trials.
 
 ## Files kept in Git
 
 Git keeps the Python generators, JSON parameters and validation reports,
-documentation, source PCB data, previews, and the eight print-ready STLs in
-`prototype-f/`. `pcb-print-model/source-board.step` is also retained: it is an
+documentation, source PCB data, previews, and the printable STLs in
+`prototype-f/`, `prototype-i/`, `prototype-j/`, `prototype-k/` and `prototype-l/`. `pcb-print-model/source-board.step` is also retained: it is an
 input to the PCB dummy and F case generators, not a generated enclosure export.
 
 Generated STEP assemblies and parts, older/experimental STLs, 3MF files and ZIP
@@ -38,14 +44,18 @@ build inputs.
 
 ## Current and previous designs
 
-- [Editable case assembly](prototype-f/case-assembly.step)
-- [Assembly with the current board](prototype-f/case-with-board.step)
-- [F print pack](prototype-f/fuse-vault-case-f-print-pack.zip)
-- [Print and assembly instructions](prototype-f/PRINT-AND-ASSEMBLY.txt)
+- [L editable case assembly](prototype-l/case-assembly.step)
+- [L print pack](prototype-l/fuse-vault-case-l-print-pack.zip)
+- [L print and assembly instructions](prototype-l/PRINT-AND-ASSEMBLY.txt)
+- [Previous K design](prototype-k/README.md)
+- [Preserved F baseline](prototype-f/README.md)
 
-F uses the successful control-area test geometry. The complete F enclosure still
-needs physical fit testing; “current” means the selected working baseline, not a
-fully validated production design. F geometry and print files are unchanged.
+L preserves K's working round buttons, PCB locating scheme and collar, and adds
+stronger cap detents using sleeve-wall flex.
+Its changed D-pad, shell and screen platform are intended for a full print trial.
+Check actual switch feel, screen adhesive/flex clearance and snap force during
+assembly. After building K's STEP inputs, run `python CaseDesign/build_case_l.py`,
+then the detail checker, renderer and packager listed in L's README.
 
 **G, panelled G and H are archived experiments**, with their outputs and supporting
 scripts under [experiments](experiments/README.md). They are not recommended as

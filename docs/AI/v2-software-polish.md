@@ -34,6 +34,13 @@ work, even after UI polish is complete.
 
 ## Current handoff
 
+- Enrollment update (2026-10-18): token-only OTP enrollment merged in
+  [PR #1](https://github.com/lazerduck/fuse-vault/pull/1). The permanent device root
+  is removed; fresh OTP provides 228 slots. Software recovery fixes and local
+  validation are complete; physical OTP/ECC and power-interruption acceptance
+  remain pending. See the [merge record](../../results/otp-enrollment-20261018.md)
+  and [improvements](../Improvements.md#1-expand-enrollment-capacity-and-simplify-provisioning).
+
 - Visual follow-up (2026-09-21): FIDO approval, passkey management, verification,
   destructive confirmations, setup menus and error screens now use shared headers,
   separators, highlight bars and compact icon footers. The first pass primarily

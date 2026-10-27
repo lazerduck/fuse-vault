@@ -1,0 +1,33 @@
+Optional OTP inspection firmware — 2026-10-19
+
+Use fuse-vault-d7c5206-otp-readout.uf2 for the initial used-stick check.
+Full physical UI/TFT, USB storage and FIDO remain enabled.
+FV_DEBUG_OTP_INSPECT=ON; all other FV_DEBUG_* options remain OFF.
+Source is d7c5206 plus the local commands.c fix allowing OTP through the
+USB mass-storage command dispatcher. The original full UF2 is unchanged.
+
+SHA-256:
+9273aed4777c4eeecf573b656b093ac601414006f70a9e9198d333d38a23a508
+
+The OTP command only reads: per-page blank/programmed/all-ones/unreadable
+counts, public lock rows and software lock settings. No token/data-row
+contents or secret fingerprints are exported. It can confirm that page 3
+is blank/unlocked and identify occupied pages. It does not decode individual
+slot states or give an exact remaining-slot count.
+
+After flashing via BOOTSEL, reconnect normally. Before confirming any new
+setup, select the device's /dev/serial/by-id/usb-Fuse_Vault_* port and run:
+
+python3 src/host/tools/security_probe.py --port "$PORT" info
+python3 src/host/tools/security_probe.py --port "$PORT" snapshot \
+  --out results/otp-before-new-setup-20261019.json
+
+Set PORT to the actual serial path first. Snapshot output refuses to overwrite
+an existing file. Use a distinct filename for another stick or later snapshot.
+The snapshot command is read-only; normal on-device setup/destruction and
+startup recovery retain their existing behavior and can write OTP.
+
+Build directory: build-board-otp-readout.
+Build passed; UF2 identity verified as RP2350 ARM Secure.
+OTP inspection, snapshot CLI and OTP lifecycle tests passed under ASan/UBSan.
+Physical command execution and OTP validation on this stick remain pending.

@@ -28,7 +28,7 @@ The enrollment token also derives a separate key that authenticates the internal
 
 ## Token-only OTP enrollment
 
-This implements the allocation proposed in [Improvements](Improvements.md#1-expand-enrollment-capacity-and-simplify-provisioning). Each enrollment has an independently random 32-byte token. Destroying it abandons its vault, attempt count, failure policy and header reference. Journal continuity between enrollments is neither required nor accepted.
+Merged on 2026-10-18 in [PR #1](https://github.com/lazerduck/fuse-vault/pull/1). This implements the allocation proposed in [Improvements](Improvements.md#1-expand-enrollment-capacity-and-simplify-provisioning). Each enrollment has an independently random 32-byte token. Destroying it abandons its vault, attempt count, failure policy and header reference. Journal continuity between enrollments is neither required nor accepted.
 
 ### Key separation and formats
 
@@ -83,6 +83,6 @@ This is an incompatible development format change. Root-based and earlier experi
 
 Lockout-policy records that authenticate in the current format keep their stored policy and locked state. New UI setup and policy changes offer destruction only. Credential changes preserve the existing policy; the firmware does not silently convert an existing lockout into destruction.
 
-Host tests exercise all 228 enrollments and exhaustion, actual journal-key separation, malformed masks, legacy occupied rows, byte-level journal write cuts, provisioning/cleanup/destruction interruption with RAM reset, and stale or missing journals. Pico firmware can be cross-compiled; hardware power-interruption and OTP ECC qualification remain required.
+Host tests exercise all 228 enrollments and exhaustion, actual journal-key separation, malformed masks, legacy occupied rows, byte-level journal write cuts, provisioning/cleanup/destruction interruption with RAM reset, and stale or missing journals. Validation of the merged PR head passed 30/30 standard host tests and 44/44 full host/FIDO tests under AddressSanitizer and UndefinedBehaviorSanitizer, and built the full Pico firmware with UI, USB MSC and FIDO. Hardware power-interruption and OTP ECC qualification remain required. See the [validation record](../results/otp-enrollment-20261018.md) for scope and limitations.
 
 Restoring an older internal-flash image within the same enrollment remains outside the agreed protection scope. OTP access restrictions, trusted firmware and debug protections are still necessary. Burning a token cannot revoke a copy extracted beforehand.

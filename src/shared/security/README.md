@@ -12,7 +12,7 @@ implemented for development/testing, not frozen for production use.
 - Random 32-byte VMK; n-of-n XOR shares wrapped with AES-256-KW, Camellia-256-KW or SM4-128-KW
   matching the storage layers. Separate HMAC authenticates the complete envelope
   before any unwrap. No partially recovered VMK is published on failure.
-- Root + enrollment-token binding, PBKDF2-HMAC-SHA-256 hardening, and separated
+- Enrollment-token-only binding, PBKDF2-HMAC-SHA-256 hardening, and separated
   HKDF keys for each wrapper, XTS layer and sector authentication.
 - Create, unlock, read/write, lock, credential change and header repair. Rewrap
   keeps the VMK/descriptor/data keys and payload unchanged; salt/shares refresh.
@@ -34,7 +34,7 @@ See [`vault.h`](include/fuse_vault/vault.h). Zero-initialize one `fv_vault` sess
 use one trusted owner, with no concurrent/reentrant calls or copied live sessions.
 The platform supplies block I/O, cryptographic random bytes, trusted KDF bounds,
 and device authority. The authority loads/atomically commits logical snapshots,
-provides a binding key without exporting root/token, and irreversibly invalidates
+provides a binding key without exporting the token, and irreversibly invalidates
 an enrollment. An error from commit may mean the new snapshot is already durable:
 the caller remains locked and reloads authority on the next operation.
 
@@ -61,7 +61,7 @@ checks for reverification and credential changes do not perform this repair.
 Reads authenticate the complete requested batch before decrypting any of it.
 Unset sectors remain zero. Writes encrypt in place, write data/metadata and sync
 before success; the caller's valid write buffer is cleared on success and failure.
-Failed reads clear their valid output buffer. Requests are 1–64 whole sectors,
+Failed reads clear their valid output buffer. Requests are 1–128 whole sectors,
 four-byte aligned. Storage corruption remains a local read failure; transport
 failure/removal locks and clears the session. Media-removal/UI/USB callbacks must
 also call `fv_vault_lock()` promptly, including when no I/O is in flight. The caller
@@ -103,8 +103,9 @@ explicit board RAM/stack budget before runtime integration; default SDK thread
 stacks must not be assumed sufficient. ARM compilation alone isn't a runtime test.
 
 The TRNG/CTR-DRBG adapter, 60,000-iteration enrollment profile, authenticated flash
-journal and fixed OTP root/token lifecycle are implemented. See
-[persistent authority](../../../docs/AI/v2-persistent-authority.md) for encoding,
+journal version 2 and token-only OTP lifecycle are implemented, with 228 slots
+on a fresh token area and no permanent device root. See
+[current key handling](../../../docs/KeyHandling.md#token-only-otp-enrollment) for encoding,
 allocation, recovery limits and pending physical tests. Production access/debug
 protections, Secure RAM isolation, on-device credential UI and USB MSC remain on
 the [release checklist](../../../docs/AI/production-checklist.md). The separate benchmark
@@ -122,8 +123,9 @@ over an injected checked 192-bit entropy source; the RP2354 adapter uses normal
 TRNG health checks and bounded collection. `journal.c` and `enrollment.c` implement
 the persistent authority behind the same vault callbacks, with physical adapters
 in `src/pico/platform/authority.c`. Debug commands provision, exercise and destroy
-an enrollment without exporting secrets. Hardware OTP programming and power-cycle
-verification remain pending; the earlier successful board tests used RAM authority.
+an enrollment without exporting secrets. Physical validation of the merged token-only allocation remains pending. Earlier
+root-based OTP board results do not validate this format. See the
+[2026-10-18 merge record](../../../results/otp-enrollment-20261018.md).
 
 SM4 algorithm ID 3 uses a 128-bit wrapping key and two 128-bit XTS keys.
 It participates in the same n-of-n VMK share scheme as AES/Camellia; see

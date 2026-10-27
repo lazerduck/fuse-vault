@@ -1,0 +1,622 @@
+{
+  "checks": [
+    {
+      "check": "installed card/socket reserve / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "installed card/socket reserve / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "card/socket loading from above",
+      "volume_mm3": 0
+    },
+    {
+      "check": "closed outer SD wall",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "continuous SD floor",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closed SD end wall 49.5",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "closed SD end wall 68.2",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "select only exposed top trimmed",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "back only exposed top trimmed",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "same cap either end",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap upside-down symmetry",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap upside-down symmetry",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 0 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0.2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0.2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0.2 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0.5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0.5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 0.5 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 1 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 1 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 1 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 2 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 3 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 3 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 3 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 4 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 4 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 4 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 5 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 6 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 6 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 6 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap rigid removal 8 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 8 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 8 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 15 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 15 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 15 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 25 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 25 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap rigid removal 25 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 0 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 0 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 0 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 0.2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 0.2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 0.2 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 0.5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 0.5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 0.5 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 1 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 1 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 1 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 2 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 3 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 3 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 3 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 4 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 4 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 4 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap rigid removal 5 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 6 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 6 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 6 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 8 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 8 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 8 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 15 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 15 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 15 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 25 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 25 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap rigid removal 25 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "dpad underside insertion -12",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "dpad underside insertion -8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "dpad underside insertion -5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "dpad underside insertion -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "dpad underside insertion -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "dpad underside insertion -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "dpad underside insertion -0.5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "dpad underside insertion -0.2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "dpad underside insertion 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select underside insertion -12",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "select underside insertion -8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "select underside insertion -5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select underside insertion -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select underside insertion -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select underside insertion -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select underside insertion -0.5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select underside insertion -0.2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select underside insertion 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "back underside insertion -12",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "back underside insertion -8",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "back underside insertion -5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "back underside insertion -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "back underside insertion -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "back underside insertion -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "back underside insertion -0.5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "back underside insertion -0.2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "back underside insertion 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 complete 3.2 mm contact face",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "SW6 complete 3.2 mm contact face",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "SW7 complete 3.2 mm contact face",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "SW8 complete 3.2 mm contact face",
+      "volume_mm3": 0.0
+    }
+  ],
+  "pad_checks": [
+    {
+      "switch": "SW5",
+      "contact_diameter_mm": 3.2,
+      "minimum_contact_face_z_at_sampled_tilts_mm": 3.2674343908251573,
+      "nominal_housing_top_z_mm": 3.0,
+      "conservative_check_plane_z_mm": 3.2
+    },
+    {
+      "switch": "SW6",
+      "contact_diameter_mm": 3.2,
+      "minimum_contact_face_z_at_sampled_tilts_mm": 3.2672773829564283,
+      "nominal_housing_top_z_mm": 3.0,
+      "conservative_check_plane_z_mm": 3.2
+    },
+    {
+      "switch": "SW7",
+      "contact_diameter_mm": 3.2,
+      "minimum_contact_face_z_at_sampled_tilts_mm": 3.2771688786863447,
+      "nominal_housing_top_z_mm": 3.0,
+      "conservative_check_plane_z_mm": 3.2
+    },
+    {
+      "switch": "SW8",
+      "contact_diameter_mm": 3.2,
+      "minimum_contact_face_z_at_sampled_tilts_mm": 3.2839725529979282,
+      "nominal_housing_top_z_mm": 3.0,
+      "conservative_check_plane_z_mm": 3.2
+    }
+  ],
+  "detent_motion": [
+    {
+      "end": "c",
+      "distance_mm": 0,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "distance_mm": 0.2,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "distance_mm": 0.5,
+      "detent_interference_mm3": 0.018086425160333125
+    },
+    {
+      "end": "c",
+      "distance_mm": 1,
+      "detent_interference_mm3": 0.032463032048884566
+    },
+    {
+      "end": "c",
+      "distance_mm": 2,
+      "detent_interference_mm3": 0.002305461188051805
+    },
+    {
+      "end": "c",
+      "distance_mm": 3,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "distance_mm": 4,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "distance_mm": 5,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "distance_mm": 6,
+      "detent_interference_mm3": 0.0
+    },
+    {
+      "end": "c",
+      "distance_mm": 8,
+      "detent_interference_mm3": 0.0
+    },
+    {
+      "end": "c",
+      "distance_mm": 15,
+      "detent_interference_mm3": 0.0
+    },
+    {
+      "end": "c",
+      "distance_mm": 25,
+      "detent_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "distance_mm": 0,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "distance_mm": 0.2,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "distance_mm": 0.5,
+      "detent_interference_mm3": 0.018086444460452572
+    },
+    {
+      "end": "a",
+      "distance_mm": 1,
+      "detent_interference_mm3": 0.032463032043480444
+    },
+    {
+      "end": "a",
+      "distance_mm": 2,
+      "detent_interference_mm3": 0.0023054611941495384
+    },
+    {
+      "end": "a",
+      "distance_mm": 3,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "distance_mm": 4,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "distance_mm": 5,
+      "detent_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "distance_mm": 6,
+      "detent_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "distance_mm": 8,
+      "detent_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "distance_mm": 15,
+      "detent_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "distance_mm": 25,
+      "detent_interference_mm3": 0.0
+    }
+  ],
+  "failures": [],
+  "limitations": [
+    "PLA detent fit and durability require a print; nominal wall deflection is .10 mm per side.",
+    "Restored F installed-card allowance is not a new physical measurement.",
+    "Housing-plane checks are nominal geometric checks, not switch force/travel simulation."
+  ]
+}

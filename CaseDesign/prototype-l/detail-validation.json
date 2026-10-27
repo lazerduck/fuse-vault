@@ -1,0 +1,1239 @@
+{
+  "checks": [
+    {
+      "check": "SW5 complete contact face at source actuator centre",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 0, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (0, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW5 fixed housing rock (1, -1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 complete contact face at source actuator centre",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 0, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (0, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW6 fixed housing rock (1, -1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 complete contact face at source actuator centre",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 0, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (0, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW7 fixed housing rock (1, -1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 complete contact face at source actuator centre",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 0, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (0, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, 1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) -4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) -3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) -2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) -1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) 3",
+      "volume_mm3": 0
+    },
+    {
+      "check": "SW8 fixed housing rock (1, -1, 0) 4",
+      "volume_mm3": 0
+    },
+    {
+      "check": "select preserved from K",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "back preserved from K",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "usb_c_collar preserved from K",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "raised display / closing lid 0",
+      "volume_mm3": 0
+    },
+    {
+      "check": "raised display / closing lid 0.5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "raised display / closing lid 1",
+      "volume_mm3": 0
+    },
+    {
+      "check": "raised display / closing lid 2",
+      "volume_mm3": 0
+    },
+    {
+      "check": "raised display / closing lid 5",
+      "volume_mm3": 0
+    },
+    {
+      "check": "raised display / closing lid 10",
+      "volume_mm3": 0
+    },
+    {
+      "check": "raised display / closing lid 15",
+      "volume_mm3": 0
+    },
+    {
+      "check": "identical caps at both ends",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap 180 degree roll symmetry",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 0 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0.2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0.2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0.2 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0.5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0.5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 0.5 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 1 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 1 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 1 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 2 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 3 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 3 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 3 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 4 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 4 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 4 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 5 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 6 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 6 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 6 / usb_c_collar",
+      "volume_mm3": 0
+    },
+    {
+      "check": "c cap removal 8 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 8 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 8 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 15 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 15 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 15 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 25 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 25 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "c cap removal 25 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap 180 degree roll symmetry",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 0 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 0 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 0 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 0.2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 0.2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 0.2 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 0.5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 0.5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 0.5 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 1 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 1 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 1 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 2 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 2 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 2 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 3 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 3 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 3 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 4 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 4 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 4 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 5 / base",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 5 / lid",
+      "volume_mm3": 0
+    },
+    {
+      "check": "a cap removal 5 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 6 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 6 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 6 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 8 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 8 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 8 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 15 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 15 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 15 / usb_c_collar",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 25 / base",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 25 / lid",
+      "volume_mm3": 0.0
+    },
+    {
+      "check": "a cap removal 25 / usb_c_collar",
+      "volume_mm3": 0.0
+    }
+  ],
+  "actuator_alignment": [
+    {
+      "switch": "SW5",
+      "placement_origin_mm": [
+        58.800999999999995,
+        -4.699
+      ],
+      "source_actuator_centre_mm": [
+        58.801117602235,
+        -5.0522844528395
+      ],
+      "correction_mm": [
+        0.00011760223500800748,
+        -0.3532844528395005
+      ],
+      "nominal_rest_gap_mm": 0.08757092639699993,
+      "source_sections": [
+        {
+          "z_mm": 3.0,
+          "xy_extent_mm": [
+            3.930473458991493,
+            2.8000000000000007
+          ],
+          "area_mm2": 9.424021826665077
+        },
+        {
+          "z_mm": 3.05,
+          "xy_extent_mm": [
+            2.0811098274765953,
+            1.6811098274735894
+          ],
+          "area_mm2": 3.0870287382670387
+        },
+        {
+          "z_mm": 3.2,
+          "xy_extent_mm": [
+            2.0601317838937803,
+            1.660131783890769
+          ],
+          "area_mm2": 3.0143672283215923
+        }
+      ],
+      "fixed_housing_check_ceiling_mm": 3.05
+    },
+    {
+      "switch": "SW6",
+      "placement_origin_mm": [
+        53.086,
+        -10.668
+      ],
+      "source_actuator_centre_mm": [
+        52.73283111739251,
+        -10.668021336043
+      ],
+      "correction_mm": [
+        -0.35316888260749124,
+        -2.133604299991987e-05
+      ],
+      "nominal_rest_gap_mm": 0.08757092639699993,
+      "source_sections": [
+        {
+          "z_mm": 3.0,
+          "xy_extent_mm": [
+            2.799999999999997,
+            3.930473458991502
+          ],
+          "area_mm2": 9.423963552398346
+        },
+        {
+          "z_mm": 3.05,
+          "xy_extent_mm": [
+            1.681109827473584,
+            2.0811098274765882
+          ],
+          "area_mm2": 3.087028738268104
+        },
+        {
+          "z_mm": 3.2,
+          "xy_extent_mm": [
+            1.660131783890769,
+            2.0601317838937696
+          ],
+          "area_mm2": 3.014367228322494
+        }
+      ],
+      "fixed_housing_check_ceiling_mm": 3.05
+    },
+    {
+      "switch": "SW7",
+      "placement_origin_mm": [
+        59.055,
+        -15.875
+      ],
+      "source_actuator_centre_mm": [
+        59.055118110236,
+        -16.2283068048835
+      ],
+      "correction_mm": [
+        0.00011811023600216686,
+        -0.3533068048834984
+      ],
+      "nominal_rest_gap_mm": 0.08757092639699993,
+      "source_sections": [
+        {
+          "z_mm": 3.0,
+          "xy_extent_mm": [
+            3.930473458991493,
+            2.8000000000000025
+          ],
+          "area_mm2": 9.424021826665037
+        },
+        {
+          "z_mm": 3.05,
+          "xy_extent_mm": [
+            2.0811098274765953,
+            1.6811098274735894
+          ],
+          "area_mm2": 3.0870287382670414
+        },
+        {
+          "z_mm": 3.2,
+          "xy_extent_mm": [
+            2.0601317838937803,
+            1.660131783890769
+          ],
+          "area_mm2": 3.0143672283216323
+        }
+      ],
+      "fixed_housing_check_ceiling_mm": 3.05
+    },
+    {
+      "switch": "SW8",
+      "placement_origin_mm": [
+        64.13499999999999,
+        -10.286999999999999
+      ],
+      "source_actuator_centre_mm": [
+        64.4884033250765,
+        -10.287020574041
+      ],
+      "correction_mm": [
+        0.3534033250765134,
+        -2.057404100064275e-05
+      ],
+      "nominal_rest_gap_mm": 0.08757092639699993,
+      "source_sections": [
+        {
+          "z_mm": 3.0,
+          "xy_extent_mm": [
+            2.8000000000000043,
+            3.930473458991502
+          ],
+          "area_mm2": 9.423963552397662
+        },
+        {
+          "z_mm": 3.05,
+          "xy_extent_mm": [
+            1.681109827473584,
+            2.0811098274765882
+          ],
+          "area_mm2": 3.087028738267604
+        },
+        {
+          "z_mm": 3.2,
+          "xy_extent_mm": [
+            1.6601317838907619,
+            2.0601317838937696
+          ],
+          "area_mm2": 3.014367228322031
+        }
+      ],
+      "fixed_housing_check_ceiling_mm": 3.05
+    }
+  ],
+  "cap_flex_samples": [
+    {
+      "end": "c",
+      "travel_mm": 0,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "travel_mm": 0.2,
+      "intentional_bead_interference_mm3": 0.002267711867133565
+    },
+    {
+      "end": "c",
+      "travel_mm": 0.5,
+      "intentional_bead_interference_mm3": 0.1968174096819626
+    },
+    {
+      "end": "c",
+      "travel_mm": 1,
+      "intentional_bead_interference_mm3": 0.5556983883123229
+    },
+    {
+      "end": "c",
+      "travel_mm": 2,
+      "intentional_bead_interference_mm3": 0.43285607559912354
+    },
+    {
+      "end": "c",
+      "travel_mm": 3,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "travel_mm": 4,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "travel_mm": 5,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "c",
+      "travel_mm": 6,
+      "intentional_bead_interference_mm3": 0.0
+    },
+    {
+      "end": "c",
+      "travel_mm": 8,
+      "intentional_bead_interference_mm3": 0.0
+    },
+    {
+      "end": "c",
+      "travel_mm": 15,
+      "intentional_bead_interference_mm3": 0.0
+    },
+    {
+      "end": "c",
+      "travel_mm": 25,
+      "intentional_bead_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "travel_mm": 0,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "travel_mm": 0.2,
+      "intentional_bead_interference_mm3": 0.0022676974521397275
+    },
+    {
+      "end": "a",
+      "travel_mm": 0.5,
+      "intentional_bead_interference_mm3": 0.19681736602429156
+    },
+    {
+      "end": "a",
+      "travel_mm": 1,
+      "intentional_bead_interference_mm3": 0.5557307353063329
+    },
+    {
+      "end": "a",
+      "travel_mm": 2,
+      "intentional_bead_interference_mm3": 0.4329874776323791
+    },
+    {
+      "end": "a",
+      "travel_mm": 3,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "travel_mm": 4,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "travel_mm": 5,
+      "intentional_bead_interference_mm3": 0
+    },
+    {
+      "end": "a",
+      "travel_mm": 6,
+      "intentional_bead_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "travel_mm": 8,
+      "intentional_bead_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "travel_mm": 15,
+      "intentional_bead_interference_mm3": 0.0
+    },
+    {
+      "end": "a",
+      "travel_mm": 25,
+      "intentional_bead_interference_mm3": 0.0
+    }
+  ],
+  "cap_nominal_flex_per_side_mm": 0.4,
+  "failures": [],
+  "limitations": [
+    "Source section checks distinguish the broad housing below Z=3.05 from the moving actuator above it; actual switch force and compressible actuator travel are not simulated.",
+    "Source switch models may differ from soldered hardware.",
+    "Cap detent elasticity and snap retention force need physical testing."
+  ]
+}

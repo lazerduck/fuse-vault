@@ -6,12 +6,14 @@ project(fuse_vault_security_bringup C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 pico_sdk_init()
 set(FV_SD_CLOCK_HZ 25000000 CACHE STRING "SD data clock in Hz")
+set(FV_USB_IO_BYTES 32768 CACHE STRING "MSC buffer bytes (512-byte multiple, maximum 65024)")
 set(FV_MBEDTLS_DIR "${PICO_SDK_PATH}/lib/mbedtls" CACHE PATH "Mbed TLS source")
 option(FV_HMAC_PICO "Use SHA accelerator" ON)
 option(FV_CIPHERS_RAM "Run cipher hot paths from SRAM" ON)
 option(FV_DEVICE_UI "Enable device setup and controls" OFF)
 option(FV_TFT_DISPLAY "Drive physical ST7735S screen when device UI is enabled" ON)
 option(FV_DEBUG_SCREEN "Expose framebuffer and injected keys over CDC" OFF)
+option(FV_DEBUG_BUTTONS "Report button inputs over CDC and disable UI button actions" OFF)
 option(FV_USB_MSC "Expose vault sectors through USB mass storage" OFF)
 option(FV_DEBUG_SESSION "Allow public-fixture USB lock/unlock commands" OFF)
 option(FV_DEBUG_ENROLLMENT "Expose fixed-allocation OTP provisioning and persistent test commands" OFF)
@@ -40,6 +42,9 @@ if(FV_DEVICE_UI AND NOT FV_USB_MSC)
 endif()
 if(FV_DEBUG_SCREEN AND NOT FV_DEVICE_UI)
   message(FATAL_ERROR "Debug screen requires device UI")
+endif()
+if(FV_DEBUG_BUTTONS AND NOT FV_DEBUG_SCREEN)
+  message(FATAL_ERROR "Button diagnostics require debug screen and device UI")
 endif()
 add_executable(fuse_vault_security main.c usb.c commands.c usb_mux.c
   ../platform/entropy.c ../platform/sd_native.c
@@ -83,11 +88,13 @@ if(FV_DEBUG_OTP_INSPECT)
 endif()
 target_include_directories(fuse_vault_security PRIVATE . ../../shared/ui ../../shared/fido/include ../platform/include)
 target_compile_definitions(fuse_vault_security PRIVATE FV_SD_CLOCK_HZ=${FV_SD_CLOCK_HZ}
+  FV_USB_IO_BYTES=${FV_USB_IO_BYTES}
   FV_USB_MSC=$<BOOL:${FV_USB_MSC}>
   FV_USB_FIDO=$<BOOL:${FV_USB_FIDO}>
   FV_DEVICE_UI=$<BOOL:${FV_DEVICE_UI}>
   FV_TFT_DISPLAY=$<BOOL:${FV_TFT_DISPLAY}>
   FV_DEBUG_SCREEN=$<BOOL:${FV_DEBUG_SCREEN}>
+  FV_DEBUG_BUTTONS=$<BOOL:${FV_DEBUG_BUTTONS}>
   FV_DEBUG_SESSION=$<BOOL:${FV_DEBUG_SESSION}>
   FV_DEBUG_OTP_INSPECT=$<BOOL:${FV_DEBUG_OTP_INSPECT}>
   FV_DEBUG_ENROLLMENT=$<BOOL:${FV_DEBUG_ENROLLMENT}>

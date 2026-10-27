@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #define CHECK(x) do{if(!(x)){fprintf(stderr,"%s:%d: %s\n",__FILE__,__LINE__,#x);exit(1);}}while(0)
-#define CAPACITY 2200u
+#define CAPACITY 2400u
 static const uint8_t password[]="test password",replacement[]="different password";
 static uint16_t algorithms[4]={1,2,1,2};
 static bool zero(const void *p,size_t n){const uint8_t *b=p;while(n--)if(*b++)return false;return true;}
@@ -266,6 +266,37 @@ static void automatic_header_repair(void) {
     CHECK(read_blocks(&f.device,8,1,other)==FV_BLOCK_OK && !memcmp(header,other,512));
     finish(&f);
 }
+static void large_batches(void) {
+    fixture f;init(&f);
+    CHECK(fv_vault_create(&f.platform,160,algorithms,4,1,3,fv_auth_policy_default(),password,sizeof(password)-1)==FV_VAULT_OK);
+    CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+    static alignas(4) uint8_t data[128*512];
+    CHECK(fv_vault_read(&f.session,14,128,data)==FV_BLOCK_OK && zero(data,sizeof(data)));
+    /* Only one sector in each mask half is written; unset sectors stay zero
+     * through decryption, including positions 63, 64 and 127. */
+    for(unsigned i=0;i<512;i++)data[i]=(uint8_t)(i*19+7);
+    CHECK(fv_vault_write(&f.session,14+63,1,data)==FV_BLOCK_OK);
+    for(unsigned i=0;i<512;i++)data[i]=(uint8_t)(i*19+7);
+    CHECK(fv_vault_write(&f.session,14+64,1,data)==FV_BLOCK_OK);
+    CHECK(fv_vault_read(&f.session,14,128,data)==FV_BLOCK_OK);
+    for(unsigned i=0;i<128;i++)for(unsigned j=0;j<512;j++)CHECK(data[i*512+j]==(i==63 || i==64?(uint8_t)(j*19+7):0));
+    for(unsigned count=127;count<=128;count++) {
+        for(unsigned i=0;i<count*512;i++)data[i]=(uint8_t)(i*19+7);
+        CHECK(fv_vault_write(&f.session,14,count,data)==FV_BLOCK_OK && zero(data,count*512));
+        fv_vault_lock(&f.session);CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+        CHECK(fv_vault_read(&f.session,14,count,data)==FV_BLOCK_OK);
+        for(unsigned i=0;i<count*512;i++)CHECK(data[i]==(uint8_t)(i*19+7));
+    }
+    CHECK(fv_vault_read(&f.session,0,129,data)==FV_BLOCK_ERROR_INVALID_ARGUMENT);
+    CHECK(fv_vault_read(&f.session,34,127,data)==FV_BLOCK_ERROR_OUT_OF_RANGE && zero(data,127*512));
+    /* Tamper with the final sector: no plaintext from the preceding 127 may escape. */
+    f.session.store.cache_count=0;
+    uint64_t tag_offset=(f.session.store.base+141/15)*512+32+(141%15)*32;
+    CHECK(!fseek(f.sd,(long)tag_offset,SEEK_SET));int byte=fgetc(f.sd);CHECK(byte!=EOF);
+    CHECK(!fseek(f.sd,(long)tag_offset,SEEK_SET));CHECK(fputc(byte^1,f.sd)!=EOF && !fflush(f.sd));
+    CHECK(fv_vault_read(&f.session,14,128,data)==FV_BLOCK_ERROR_INTEGRITY && zero(data,sizeof(data)));
+    finish(&f);
+}
 static void batches_and_policy(void) {
     fixture f;init(&f);create(&f,fv_auth_policy_default());
     CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
@@ -340,8 +371,10 @@ static void credential_methods(void){
     finish(&f);
 }
 int main(void) {
+    large_batches();
     lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
     algorithms[1]=3;algorithms[3]=3;
+    large_batches();
     lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
     puts("Vault: file-backed lifecycle, rewrap/replay, attempt/destruction and commit/SD failure injection passed");
     return 0;

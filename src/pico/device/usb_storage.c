@@ -17,8 +17,8 @@ static void wipe(void *buffer,uint32_t bytes) {
 }
 static bool command_active,command_write,pending,ready,final_write;
 static uint32_t command_lba,command_left,pending_bytes;
-_Static_assert(FV_USB_IO_BYTES>=512 && FV_USB_IO_BYTES<=32768 && FV_USB_IO_BYTES%512==0,
-    "USB batch must fit the vault 64-sector batch limit");
+_Static_assert(FV_USB_IO_BYTES>=512 && FV_USB_IO_BYTES<=65024 && FV_USB_IO_BYTES%512==0,
+    "USB batch must be whole sectors and fit a 16-bit USB transfer length");
 static fv_usb_response completed;
 static void clear_pipeline(void){
     /* Never wipe a buffer while core 1 is reading or writing it. */
