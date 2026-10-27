@@ -1,6 +1,8 @@
 #include "fuse_vault/auth_store.h"
 #include <mbedtls/platform_util.h>
 #include <string.h>
+_Static_assert(FV_TAG_CACHE_BLOCKS<=16,"metadata occupancy must fit its mask");
+_Static_assert(FV_AUTH_MAX_BATCH_SECTORS<=128,"unset mask must cover every sector");
 static uint64_t now(fv_auth_store *s){return s->now_us?s->now_us():0;}
 void fv_auth_close(fv_auth_store *s){if(s)mbedtls_platform_zeroize(s,sizeof(*s));}
 static fv_block_result_t open_store(bool bitmap,fv_auth_store *s,fv_block_device_t *d,uint64_t base,
@@ -65,7 +67,7 @@ fv_block_result_t fv_auth_format(fv_auth_store *s) {
     return fv_auth_format_buffered(s,s->cache,FV_TAG_CACHE_BLOCKS,NULL,NULL);
 }
 static fv_block_result_t validate(fv_auth_store *s,uint64_t lba,uint32_t count,const void *p) {
-    if(!s || !p || ((uintptr_t)p&3) || !count || count>64)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
+    if(!s || !p || ((uintptr_t)p&3) || !count || count>FV_AUTH_MAX_BATCH_SECTORS)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
     if(!s->ready)return FV_BLOCK_ERROR_NOT_READY;
     if(lba>=s->blocks || count>s->blocks-lba)return FV_BLOCK_ERROR_OUT_OF_RANGE;
     return FV_BLOCK_OK;
@@ -111,7 +113,7 @@ static fv_block_result_t publish(fv_auth_store *s,uint64_t first,uint32_t count)
             r=s->device->ops->sync(s->device);if(r!=FV_BLOCK_OK)return r;
         }
     }
-    s->cache_initialized|=(uint8_t)mask;return FV_BLOCK_OK;
+    s->cache_initialized|=(uint16_t)mask;return FV_BLOCK_OK;
 }
 static fv_block_result_t load(fv_auth_store *s,uint64_t lba,uint32_t count) {
     uint64_t first=lba/15,last=(lba+count-1)/15;
@@ -126,7 +128,7 @@ static fv_block_result_t load(fv_auth_store *s,uint64_t lba,uint32_t count) {
         /* Read written runs together; never inspect stale uninitialized sectors. */
         for(unsigned i=0;i<n;i++){
             fv_block_result_t r=bitmap_load(s,first+i);if(r!=FV_BLOCK_OK)return fault(s,r);
-            if(bitmap_bit(s,first+i))s->cache_initialized|=(uint8_t)(1u<<i);
+            if(bitmap_bit(s,first+i))s->cache_initialized|=(uint16_t)(1u<<i);
         }
         memset(s->cache,0,n*512u);
         for(unsigned i=0;i<n;){
@@ -165,20 +167,20 @@ fv_block_result_t fv_auth_write(fv_auth_store *s,uint64_t lba,uint32_t count,con
     if(r==FV_BLOCK_OK)r=publish(s,first,n);
     return r==FV_BLOCK_OK?r:fault(s,r);
 }
-fv_block_result_t fv_auth_read(fv_auth_store *s,uint64_t lba,uint32_t count,uint8_t *data,uint64_t *unset) {
+fv_block_result_t fv_auth_read_batch(fv_auth_store *s,uint64_t lba,uint32_t count,uint8_t *data,fv_auth_unset_mask *unset) {
     if(!unset)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
-    *unset=0;
+    memset(unset,0,sizeof(*unset));
     fv_block_result_t r=validate(s,lba,count,data);if(r!=FV_BLOCK_OK)return r;
     r=load(s,lba,count);if(r!=FV_BLOCK_OK)goto fail;
     for(uint32_t i=0;i<count;i++) {
         uint8_t state=entry(s,lba+i)[(lba+i)%15];
-        if(state==0)*unset|=UINT64_C(1)<<i;
+        if(state==0)unset->words[i/64]|=UINT64_C(1)<<(i%64);
         else if(state!=1){r=FV_BLOCK_ERROR_INTEGRITY;goto fail;}
     }
     for(uint32_t i=0;i<count;) {
-        if((*unset>>i)&1) {memset(data+i*512,0,512);i++;continue;}
+        if(fv_auth_sector_unset(unset,i)) {memset(data+i*512,0,512);i++;continue;}
         uint32_t end=i+1;
-        while(end<count && !((*unset>>end)&1))end++;
+        while(end<count && !fv_auth_sector_unset(unset,end))end++;
         uint64_t start=now(s);
         r=s->device->ops->read(s->device,s->data_base+lba+i,end-i,data+i*512);
         s->stats.data_us+=now(s)-start;
@@ -186,14 +188,22 @@ fv_block_result_t fv_auth_read(fv_auth_store *s,uint64_t lba,uint32_t count,uint
         i=end;
     }
     for(uint32_t i=0;i<count;i++) {
-        if((*unset>>i)&1)continue;
+        if(fv_auth_sector_unset(unset,i))continue;
         uint8_t computed[32];uint8_t *stored=entry(s,lba+i)+32+((lba+i)%15)*32;
         if(tag(s,lba+i,data+i*512,computed)){r=FV_BLOCK_ERROR_IO;goto fail;}
         if(!fv_tag_equal(computed,stored)){r=FV_BLOCK_ERROR_INTEGRITY;goto fail;}
     }
     return FV_BLOCK_OK;
 fail:
-    memset(data,0,count*512);*unset=0;s->cache_count=0;
+    memset(data,0,count*512);memset(unset,0,sizeof(*unset));s->cache_count=0;
     /* Corrupt sectors are local errors; only transport failures close the store. */
     return r==FV_BLOCK_ERROR_INTEGRITY?r:fault(s,r);
+}
+fv_block_result_t fv_auth_read(fv_auth_store *s,uint64_t lba,uint32_t count,uint8_t *data,uint64_t *unset) {
+    if(!unset)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
+    *unset=0;
+    if(count>64)return FV_BLOCK_ERROR_INVALID_ARGUMENT;
+    fv_auth_unset_mask mask;
+    fv_block_result_t result=fv_auth_read_batch(s,lba,count,data,&mask);
+    *unset=mask.words[0];return result;
 }

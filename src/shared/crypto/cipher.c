@@ -5,7 +5,7 @@ void fv_cipher_clear(fv_cipher *c) { if (c) mbedtls_platform_zeroize(c, sizeof(*
 const char *fv_cipher_name(const fv_cipher *c) { return c && c->ops ? c->ops->name : "uninitialized"; }
 size_t fv_cipher_key_bytes(fv_algorithm a) {
     switch (a) {
-    case FV_AES_256_XTS: case FV_CAMELLIA_256_XTS: return 64;
+    case FV_AES_256_XTS: case FV_CAMELLIA_256_XTS: case FV_ARIA_256_XTS: return 64;
     case FV_SM4_128_XTS: return 32;
     default: return 0;
     }
@@ -17,7 +17,8 @@ fv_status fv_cipher_init(fv_cipher *c, fv_algorithm a, const uint8_t *k, size_t 
     if (!k || !bytes || n != bytes || !memcmp(k, k + bytes/2, bytes/2)) return FV_INVALID;
     const fv_cipher_ops *ops = a == FV_AES_256_XTS ? &fv_aes_ops :
                               a == FV_CAMELLIA_256_XTS ? &fv_camellia_ops :
-                              a == FV_SM4_128_XTS ? &fv_sm4_ops : NULL;
+                              a == FV_SM4_128_XTS ? &fv_sm4_ops :
+                              a == FV_ARIA_256_XTS ? &fv_aria_ops : NULL;
     if (!ops) return FV_INVALID;
     if (ops->init(&c->key, k)) { fv_cipher_clear(c); return FV_CRYPTO_ERROR; }
     c->ops = ops;

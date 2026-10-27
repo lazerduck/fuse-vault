@@ -115,8 +115,9 @@ min-entropy, certification or hardware-tested reliability. The first board run p
 clock and supply conditions and failure recovery policy. There is no fallback to
 SDK PRNG, serial numbers, timers or test seeds on entropy failure.
 
-The current allocation is root page 16, token pages 17–24, with flash offsets
-0x1fe000–0x1fffff reserved by both V2 firmware linker layouts. Commands recheck live
+The current allocation is a raw status mask on OTP page 3 and 228 token slots
+on pages 4–60 (fresh token area), with no permanent device root. Flash offsets
+0x1fe000–0x1fffff are reserved by both V2 firmware linker layouts. Commands recheck live
 contents/permissions and verify writes. Permanent access locks are deliberately
 unchanged during development. Hardware interruption testing, Secure access/debug
 policy and protected RAM isolation are tracked in the
@@ -126,7 +127,17 @@ More passing RNG smoke tests show reliable integration, not entropy quality. We
 rely on vendor source design and focus remaining checks on failure handling and
 the intended board operating conditions.
 
-## Validation
+## Current validation
+
+[PR #1](https://github.com/lazerduck/fuse-vault/pull/1) merged on 2026-10-18.
+Its final head passed 30/30 standard host tests and 44/44 full host/FIDO tests
+under ASan/UBSan; full Pico firmware with UI, USB MSC and FIDO built successfully.
+Physical OTP/ECC and interruption acceptance for this design remains pending.
+See the [validation record](../../../results/otp-enrollment-20261018.md).
+
+## Historical bring-up validation
+
+The results below predate the token-only allocation and do not validate it.
 
 - 19 desktop tests pass, also under ASan/UBSan. They include entropy failures,
   OTP inspection contracts, CLI wrong-device/debug-option guards, byte-cut journal

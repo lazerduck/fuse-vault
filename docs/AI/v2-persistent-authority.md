@@ -1,5 +1,8 @@
 # OTP enrollment and flash authority — development implementation
 
+> Historical root-based design. The token-only enrollment allocation, journal version 2 and recovery ordering supersede its root and enrollment-lifecycle details. See [current key handling](../KeyHandling.md#token-only-otp-enrollment).
+
+
 Implemented for hardware testing, with debug retained. Hardware programming and
 power-cycle results must be recorded before claiming the physical path verified.
 The previous RAM-only bring-up baseline is in `results/security-bringup-20260917.md`.

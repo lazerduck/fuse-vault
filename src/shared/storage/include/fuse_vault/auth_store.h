@@ -4,7 +4,13 @@
 #include "fuse_vault/hmac.h"
 #include <stdalign.h>
 #define FV_TAGS_PER_BLOCK 15u
-#define FV_TAG_CACHE_BLOCKS 6u
+#define FV_AUTH_MAX_BATCH_SECTORS 128u
+/* Worst alignment starts at the last entry of a metadata sector. */
+#define FV_TAG_CACHE_BLOCKS ((FV_AUTH_MAX_BATCH_SECTORS+2*FV_TAGS_PER_BLOCK-2)/FV_TAGS_PER_BLOCK)
+typedef struct {uint64_t words[2];} fv_auth_unset_mask;
+static inline bool fv_auth_sector_unset(const fv_auth_unset_mask *mask,unsigned sector) {
+    return (mask->words[sector/64]>>(sector%64))&1u;
+}
 /* 512-byte metadata sector: 15 state bytes, 17 reserved zero bytes, 15 tags.
  * State 0 = unset, 1 = written; all other values fail integrity checking. */
 typedef struct {uint64_t hmac_us,metadata_us,data_us,metadata_reads,metadata_writes;} fv_auth_stats;
@@ -13,7 +19,7 @@ typedef struct {
     uint64_t base,blocks,metadata_blocks,data_base;
     uint64_t bitmap_base,bitmap_blocks,bitmap_cached_sector;
     bool bitmap_cached;
-    uint8_t cache_initialized;
+    uint16_t cache_initialized;
     alignas(4) uint8_t bitmap_cache[512];
     uint64_t (*now_us)(void);
     uint8_t volume[16];fv_hmac hmac;
@@ -38,9 +44,11 @@ fv_block_result_t fv_auth_format(fv_auth_store *);
 typedef void (*fv_format_progress)(void *,uint64_t completed,uint64_t total);
 fv_block_result_t fv_auth_format_buffered(fv_auth_store *,uint8_t *scratch,uint32_t sectors,
     fv_format_progress,void *context);
-/* Requests are 1..64 whole sectors. Read authenticates the complete requested
+/* Writes and read_batch accept 1..128 whole sectors. Read authenticates the complete requested
  * batch before success; unset_mask indicates zero-filled sectors to NOT decrypt.
  * Buffer must be four-byte aligned. Writes are ciphertext, never plaintext. */
 fv_block_result_t fv_auth_read(fv_auth_store *,uint64_t,uint32_t,uint8_t *,uint64_t *unset_mask);
+/* Legacy read above remains limited to 64 sectors and a single-word mask. */
+fv_block_result_t fv_auth_read_batch(fv_auth_store *,uint64_t,uint32_t,uint8_t *,fv_auth_unset_mask *);
 fv_block_result_t fv_auth_write(fv_auth_store *,uint64_t,uint32_t,const uint8_t *);
 #endif

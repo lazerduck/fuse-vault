@@ -16,16 +16,16 @@ The wheels have more possible values than the four-word method, but a direction 
 
 The user first enters and confirms their credential, then selects the encryption stack. They can select one to four layers from AES-256, Camellia-256 and SM4-128. These layers build the pipeline through which content is encrypted and decrypted. Additional layers can reduce transfer speeds. Changing the stack currently requires creating a fresh vault. Credential changes preserve the existing vault.
 
-The user also selects the failure policy before confirming creation. The current UI allows 1–100 attempts and offers either key destruction or permanent lockout. The default is ten attempts followed by key destruction. Removing the lockout option is an intended change described below.
+The user also selects the failure policy before confirming creation. The UI allows 1–100 attempts, followed by enrollment-token destruction. The default is ten attempts. Permanent lockout is no longer selectable.
 
 The current setup order is:
 
 1. Choose the credential entry method.
 2. Enter and confirm the credential.
 3. Select the encryption stack.
-4. Select the attempt limit and failure action.
+4. Select the attempt limit; exhausting attempts destroys the enrollment token.
 5. Review the choices and explicitly confirm creation, which replaces the existing SD layout.
-6. Provision OTP enrollment material if needed. On a new device this includes both a permanent device root and an enrollment token; after destruction, the existing root is retained and a fresh token is provisioned.
+6. Provision OTP enrollment material if needed. Each enrollment gets one fresh random token and a fresh authenticated journal. There is no permanent device root.
 7. Generate a random VMK and protect it using the credential and device-held secrets, with the selected cipher families.
 8. Initialize storage metadata and create the partition table and FAT32 filesystem through the encrypted storage path. Prepare the FIDO store when FIDO is enabled.
 9. Write and verify the vault headers, then commit the active-vault state in the internal journal.
@@ -42,42 +42,24 @@ While locked, the VMK is stored encrypted in the SD card's vault headers. Intern
 
 From the locked home screen, pressing Select opens the entry method chosen at setup. That choice is recorded in the unencrypted SD header. The firmware checks the header against the authoritative hash held in the internal journal before trusting it.
 
-Before evaluating a submitted credential, the device durably increments the attempt counter and records that an attempt is pending. HMAC authenticates the journal records, protecting the saved attempt count and other security state against unauthorized modification. Its authentication key is currently derived from the permanent device root. An interrupted attempt remains charged across power cycles.
+Before evaluating a submitted credential, the device durably increments the attempt counter and records that an attempt is pending. HMAC authenticates the journal records, protecting the saved attempt count and other security state against unauthorized modification. Its authentication key is derived from the enrollment token, with separate purpose and slot context. An interrupted attempt remains charged across power cycles.
 
 If the credential is correct, the firmware recovers the VMK, resets the attempt count to zero and builds the working encryption pipeline. If it is incorrect, the user can try again while attempts remain. The final allowed attempt can still succeed. An interruption on the final charged attempt is handled conservatively by applying the limit policy during recovery.
 
 ## Reaching the attempt limit
 
-With the default destruction policy, the device records destruction intent, marks the current enrollment token revoked, and programs its secret rows to all ones. Interrupted destruction is resumed during recovery before allowing further authentication. The permanent root is retained in the current implementation.
+With the default destruction policy, the device records destruction intent, marks the current enrollment token revoked, and programs its secret rows to all ones. Interrupted destruction is resumed during recovery before allowing further authentication. No permanent root or old journal key is retained.
 
 The enrollment token is a required input to deriving the VMK's wrapping keys. Destroying it removes that input, preventing the device from recovering the VMK even with the correct user credential. The encrypted VMK and encrypted files and passkeys remain on the SD card, with access lost through destruction of the token.
 
-After destruction completes, the user can set up a fresh vault using the next available token slot. The current implementation has eight slots, including the initial enrollment, and partially programmed slots can also be consumed. The fresh enrollment creates a new, empty vault.
+After destruction completes, the user can set up a fresh vault using the next available token slot. A fresh token area has 228 slots, including the initial enrollment; interrupted provisioning and legacy occupied rows reduce available capacity. The fresh enrollment creates a new, empty vault.
 
-The alternative currently offered is permanent lockout. This refuses further authentication, including the correct credential, but retains the token. This is a terminal state with no supported recovery or fresh-setup route.
+Existing lockout-policy records that authenticate in the current format retain their policy and enforcement. A locked enrollment remains denied; credential changes do not silently change its policy. The UI offers destruction for new setup and explicit policy changes. Old root-based development formats are incompatible and are not migrated.
 
-## Improvements not yet implemented
+## Interrupted setup and destruction
 
-### Remove permanent lockout
+Provisioning marks a slot started, writes and verifies its ECC token, erases and initializes its journal, then marks the slot ready. Interrupted started slots are revoked and fully burned before explicit setup advances. A ready token always requires its existing authenticated journal: a missing or corrupt journal denies access, never resets attempts.
 
-Remove permanent lockout as a selectable failure action until we have designed an alternative with a clear purpose and a secure recovery path. Keep the configurable attempt limit, with destruction as the supported action when the limit is exhausted.
+After revocation, destruction resumes from OTP state even if the token is partly burned and its old journal can no longer authenticate. All revoked tokens must be fully burned before starting another enrollment. The detailed ordering, derivation labels and mask states are in [Key handling](KeyHandling.md#token-only-otp-enrollment).
 
-The new UI should make the consequence explicit: exhausting attempts destroys access to the current vault, and setting up again creates an empty vault. Existing lockout-policy records need an explicit compatibility decision that preserves enforcement of their stored state and policy.
-
-### Simplify enrollment secrets and expand capacity
-
-Remove the permanent device root. Use one independently random enrollment token to derive separate keys for vault protection and journal authentication. A new enrollment starts with a fresh journal, policy and zero attempts.
-
-Use a single raw OTP status mask on page 3 and pack four token secrets per page across pages 4–60. This provides 228 slots on a fresh token area. The mask identifies unused, started, completed and revoked tokens. The allocation and derivation proposal is described in [Key handling](KeyHandling.md#proposed-improvements-not-implemented).
-
-A token left in the started state after interruption is abandoned and destroyed before advancing. A completed token must be verified before being used to create a vault. A revoked token is never selected again, and any unfinished burning of its secret rows must be completed.
-
-### Define interrupted setup and fresh journal creation
-
-Specify and test the ordering between token completion, journal initialization, filesystem/FIDO initialization and the final active-vault commit. Track token completion and vault activation as separate stages.
-
-Only explicit new-enrollment setup may initialize a fresh journal. A missing or corrupt journal for an existing active vault must deny access. Recovery after interruption between token completion and journal initialization remains a design detail to resolve.
-
-Accept an incompatible format change for the two development units. Previously programmed OTP rows must be identified and excluded from fresh slot allocation.
-
-Implementation of these improvements is pending. Attempt accounting must remain effective across normal resets and SD replacement or rollback. Restoring an older image of internal flash remains outside the agreed protection scope.
+This enrollment behavior was merged in [PR #1](https://github.com/lazerduck/fuse-vault/pull/1) on 2026-10-18. Host interruption and rollback tests pass; physical power-interruption validation remains outstanding. See the [merge and validation record](../results/otp-enrollment-20261018.md). Restoring an older image of internal flash within the same enrollment remains outside the agreed protection scope.

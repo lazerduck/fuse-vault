@@ -1,0 +1,61 @@
+{
+  "firmware": {
+    "command": "info",
+    "ok": true,
+    "protocol": 1,
+    "device_id": "9365BE6AC2B6D6E4",
+    "sdk": "2.3.0",
+    "chip_revision": 3,
+    "rom_revision": 4,
+    "cpu_hz": 150000000,
+    "sd_hz": 25000000,
+    "otp_inspection": true,
+    "usb_msc": true,
+    "device_ui": true,
+    "debug_screen": true,
+    "debug_session": false,
+    "otp_writes": true,
+    "persistent_authority": true,
+    "debug_enrollment": false,
+    "hmac_backend": 1,
+    "session_bytes": 7600,
+    "usb_fido": true,
+    "worker_stack_bytes": 65536,
+    "production_ready": false
+  },
+  "samples": [
+    {
+      "captured_at": "2026-10-19T18:59:25.901543+00:00",
+      "ram": {
+        "total_bytes": 532480,
+        "fixed_bytes": 438400,
+        "heap_reserved_bytes": 3968,
+        "heap_peak_reserved_bytes": 3968,
+        "uncommitted_bytes": 90112
+      },
+      "busy": false
+    },
+    {
+      "captured_at": "2026-10-19T18:59:26.951322+00:00",
+      "ram": {
+        "total_bytes": 532480,
+        "fixed_bytes": 438400,
+        "heap_reserved_bytes": 3968,
+        "heap_peak_reserved_bytes": 3968,
+        "uncommitted_bytes": 90112
+      },
+      "busy": false
+    },
+    {
+      "captured_at": "2026-10-19T18:59:28.002649+00:00",
+      "ram": {
+        "total_bytes": 532480,
+        "fixed_bytes": 438400,
+        "heap_reserved_bytes": 3968,
+        "heap_peak_reserved_bytes": 3968,
+        "uncommitted_bytes": 90112
+      },
+      "busy": false
+    }
+  ]
+}

@@ -7,20 +7,22 @@
 #define CAP 70000u
 #define BLOCKS 65000u
 static uint8_t *disk,*durable,dirty[CAP];
-static unsigned operation,fail_operation,metadata_reads,writes;
+static unsigned operation,fail_operation,metadata_reads,writes,max_data_read,max_data_write;
 static bool fail_after;
 static uint64_t formatted;
 static fv_auth_store store;
 static uint8_t volume[16]={1},key[32]={2};
-static alignas(4) uint8_t input[64*512],output[64*512];
+static alignas(4) uint8_t input[128*512],output[128*512];
 static uint64_t capacity(const fv_block_device_t *d){(void)d;return CAP;}
 static fv_block_result_t read_disk(fv_block_device_t *d,uint64_t l,uint32_t n,uint8_t *out){
     (void)d;CHECK(l+n<=CAP);
     if(l>=store.base && l<store.data_base)++metadata_reads;
+    if(l>=store.data_base && n>max_data_read)max_data_read=n;
     memcpy(out,disk+l*512,n*512);return FV_BLOCK_OK;
 }
 static fv_block_result_t write_disk(fv_block_device_t *d,uint64_t l,uint32_t n,const uint8_t *in){
     (void)d;CHECK(l+n<=CAP);++operation;++writes;
+    if(l>=store.data_base && n>max_data_write)max_data_write=n;
     if(operation==fail_operation && !fail_after)return FV_BLOCK_ERROR_IO;
     memcpy(disk+l*512,in,n*512);memset(dirty+l,1,n);
     return operation==fail_operation?FV_BLOCK_ERROR_IO:FV_BLOCK_OK;
@@ -45,8 +47,8 @@ static void fresh(void){
 }
 static void restart(void){memcpy(disk,durable,CAP*512);memset(dirty,0,sizeof(dirty));fail_operation=0;reopen();}
 static void verify(uint64_t lba,uint32_t count){
-    uint64_t unset=0;CHECK(fv_auth_read(&store,lba,count,output,&unset)==FV_BLOCK_OK);
-    for(unsigned i=0;i<count;i++)for(unsigned j=0;j<512;j++)CHECK(output[i*512+j]==((unset>>i)&1?0:0x53));
+    fv_auth_unset_mask unset;CHECK(fv_auth_read_batch(&store,lba,count,output,&unset)==FV_BLOCK_OK);
+    for(unsigned i=0;i<count;i++)for(unsigned j=0;j<512;j++)CHECK(output[i*512+j]==(fv_auth_sector_unset(&unset,i)?0:0x53));
 }
 int main(void){
     disk=malloc(CAP*512);durable=malloc(CAP*512);CHECK(disk && durable);memset(input,0x53,sizeof(input));
@@ -62,10 +64,10 @@ int main(void){
     const uint64_t lba=4095u*15u+13u;
     for(unsigned after=0;after<2;after++)for(unsigned step=1;step<=7;step++){
         fresh();fail_operation=step;fail_after=after;
-        CHECK(fv_auth_write(&store,lba,64,input)==FV_BLOCK_ERROR_IO);CHECK(!store.ready);
-        restart();verify(lba,64);verify(0,15);
+        CHECK(fv_auth_write(&store,lba,128,input)==FV_BLOCK_ERROR_IO);CHECK(!store.ready);
+        restart();verify(lba,128);verify(0,15);
     }
-    fresh();CHECK(fv_auth_write(&store,lba,64,input)==FV_BLOCK_OK);restart();verify(lba,64);
+    fresh();CHECK(fv_auth_write(&store,lba,128,input)==FV_BLOCK_OK);restart();verify(lba,128);
     CHECK(disk[16*512+511]&128);CHECK(disk[17*512]&1);
     /* Lost bitmap bits are deletion under the existing threat model; forged bits
      * must not bypass ciphertext authentication. */
@@ -75,6 +77,34 @@ int main(void){
     /* Valid new ciphertext with a forged tag must also fail. */
     fresh();CHECK(fv_auth_write(&store,0,1,input)==FV_BLOCK_OK);
     disk[store.base*512+32]^=1;reopen();CHECK(fv_auth_read(&store,0,1,output,&unset)==FV_BLOCK_ERROR_INTEGRITY);
+    /* Worst metadata alignment uses ten cache sectors, including mask bits 8/9.
+     * Confirm one physical data operation, not two hidden 64-sector requests. */
+    fresh();fv_auth_unset_mask wide;
+    CHECK(fv_auth_read_batch(&store,14,128,output,&wide)==FV_BLOCK_OK);
+    CHECK(wide.words[0]==UINT64_MAX && wide.words[1]==UINT64_MAX);
+    CHECK(store.cache_count==10);
+    max_data_read=max_data_write=0;
+    CHECK(fv_auth_write(&store,14,128,input)==FV_BLOCK_OK);
+    CHECK(store.cache_initialized==1023 && max_data_write==128);
+    CHECK(sync_disk(&device)==FV_BLOCK_OK);restart();verify(14,128);
+    CHECK(store.cache_initialized==1023 && max_data_read==128);
+    /* Mixed unset/written sectors on both sides of the old 64-bit boundary. */
+    fresh();const unsigned marked[]={0,63,64,127};
+    for(unsigned i=0;i<4;i++)CHECK(fv_auth_write(&store,14+marked[i],1,input)==FV_BLOCK_OK);
+    CHECK(sync_disk(&device)==FV_BLOCK_OK);restart();
+    CHECK(fv_auth_read_batch(&store,14,128,output,&wide)==FV_BLOCK_OK);
+    CHECK(wide.words[0]==UINT64_C(0x7ffffffffffffffe) && wide.words[1]==wide.words[0]);verify(14,128);
+    /* Corruption in the upper half must wipe the entire output and mask. */
+    disk[(store.data_base+14+127)*512]^=1;reopen();memset(output,0xa5,sizeof(output));
+    CHECK(fv_auth_read_batch(&store,14,128,output,&wide)==FV_BLOCK_ERROR_INTEGRITY);
+    CHECK(!wide.words[0] && !wide.words[1]);
+    for(unsigned i=0;i<sizeof(output);i++)CHECK(!output[i]);
+    CHECK(fv_auth_read_batch(&store,0,129,output,&wide)==FV_BLOCK_ERROR_INVALID_ARGUMENT);
+    CHECK(fv_auth_read(&store,0,65,output,&unset)==FV_BLOCK_ERROR_INVALID_ARGUMENT);
+    /* Actual USB-sized request has a partially used upper mask word. */
+    fresh();CHECK(fv_auth_read_batch(&store,14,127,output,&wide)==FV_BLOCK_OK);
+    CHECK(wide.words[0]==UINT64_MAX && wide.words[1]==UINT64_MAX/2);
+    CHECK(fv_auth_write(&store,14,127,input)==FV_BLOCK_OK);restart();verify(14,127);
     fv_volume_descriptor d={.layout_version=2,.volume_id={1},.logical_blocks=2048,.layer_count=1,.cipher_ids={1}},decoded;
     uint8_t encoded[128],bad[128];CHECK(fv_volume_descriptor_encode(&d,4250,encoded));
     CHECK(!fv_volume_descriptor_encode(&d,4249,bad));CHECK(fv_volume_descriptor_decode(encoded,128,4250,&decoded));CHECK(decoded.layout_version==2);

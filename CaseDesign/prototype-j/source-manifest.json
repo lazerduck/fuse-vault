@@ -1,0 +1,104 @@
+{
+  "revision": "J",
+  "date": "2026-10-21",
+  "inputs_sha256": {
+    "build_case_j.py": "9cabcf5708341ebe7d53d4a1aa9407c6294638ddc9e5dd765fee45f68b347c6a",
+    "check_case_j_details.py": "95fe2b6b593b96959ba72f429c8747a211181c03232b9d8db482d12465fba0d9",
+    "check_case_f_closure.py": "f6d0238b189c29db30690183f31c9a6ce93e3fad60c467c808212bda292ddf4e",
+    "render_case_j.py": "8119d3fada6e3bf6617d9aefbd7f3bdc22ae60a62c7fee505b94bd57120c3e4b",
+    "render_case_j_cutaway.py": "f90d214d522f496b90349ed6183ef668fd81d573d22f5dbc8123ae01758185de",
+    "package_case_j.py": "41e4e28bba3d5e0d4cdc1aeb125c2f2ce4e0a8b007e6b567a456408839e5186c",
+    "pcb-print-model/source-board.step": "d97f7ce3ed3cdead1e8991b5cbf42a414267e23d3b3c7587e826eae2609b5cee",
+    "pcb-print-model/measurements.json": "2a25157412199866dfe974578eb6e7061792ed9ee18f5be600276775fe25589b",
+    "prototype-f/base.step": "99d9ecb03774acb79db97b3da9329c5e2b9d32da15f96ef13d3cdf299a32fea0",
+    "prototype-f/lid.step": "536b905bd6d4b09b095a885d126008d101e64d830a67d8973dd44c918c3e0675",
+    "prototype-f/dpad.step": "6d1e3f5bfeb01a4ed27b68b39f0c7bce4702f8ea7e23a861b8ed7722bcf84405",
+    "prototype-f/select.step": "c2ffde8c31681113aa726f973dbbbe98719e2cbc53aa2b3c3d957f2897a56c86",
+    "prototype-f/back.step": "ae146cd71b7068285054e51ed864c47c41e9664dbb1566670f628193cf7b6863",
+    "prototype-f/usb_c_collar.step": "8dda366d6d2ed2b76947ee458a08f37f7536cb5b08c759d21fcaf97a0da56213"
+  },
+  "print_files": {
+    "base": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        77.30000305175781,
+        26.200000762939453,
+        9.600000381469727
+      ],
+      "sha256": "39cc511a2057f61f4443fdbb1261aa17ef883327afdaca4efcd0728bffdeca65"
+    },
+    "lid": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        77.30000305175757,
+        26.200000662939452,
+        5.450000186102294
+      ],
+      "sha256": "c20842bc2fd38abf0e9e7f131c6f06a97f4af4ba438451d0755c96ee7efc0e44"
+    },
+    "dpad": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        18.200000662939452,
+        18.200000662939452,
+        6.40000009536743
+      ],
+      "sha256": "3d2300ac4c8dc7ee24bbc113b852f4280f70650d3f6035cfb7d4b28dbf27d682"
+    },
+    "select": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        6.199999809265137,
+        6.198072910308838,
+        5.099999904632568
+      ],
+      "sha256": "60adbf81948fe5505c0ec0ac527ac5e0e7c8ed359dea0c66c316c10bd85882cc"
+    },
+    "back": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        6.199999809265137,
+        6.198072910308838,
+        5.099999904632568
+      ],
+      "sha256": "682cf304aa36e71b5eb9957a52716d6d0db7184520221731ba9e889ab9356e37"
+    },
+    "usb_c_collar": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        7.400000095367432,
+        14.197699546813965,
+        3.9000000953674316
+      ],
+      "sha256": "b89a819788b1fd8bad44368c974f7a02fea7ec363077d142c92ae31b762d032a"
+    },
+    "usb_c_end_cap": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        10.850000381469727,
+        26.200000762939453,
+        21.549999237060547
+      ],
+      "sha256": "7544136469d01c4a2e41960d03465e708f7f1ed775aa2c55b6d0100620bb8418"
+    },
+    "usb_a_end_cap": {
+      "watertight": true,
+      "one_body": true,
+      "size_mm": [
+        10.850000381469727,
+        26.200000762939453,
+        21.549999237060547
+      ],
+      "sha256": "d38ca6f686388f43ab5ef32fe3bd547fb8e6c456dcbb77494bd662231f084780"
+    }
+  },
+  "cap_print_instruction": "Print two copies of universal_end_cap.stl; identical cap fits either end.",
+  "physical_fit_tested": false
+}

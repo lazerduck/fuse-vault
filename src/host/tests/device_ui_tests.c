@@ -147,7 +147,7 @@ static void standard_controls_tests(void){
     CHECK(u.screen==UI_HOME && !u.pending);
     u.screen=UI_OPTIONS;u.cursor=0;u.job.attempts=10;u.job.action=1;
     key(&u,UI_DOWN);CHECK(u.cursor==1 && u.job.attempts==10 && u.job.action==1);
-    key(&u,UI_RIGHT);CHECK(u.job.action==2 && u.job.attempts==10);
+    key(&u,UI_RIGHT);CHECK(u.job.action==1 && u.job.attempts==10);
     key(&u,UI_DOWN);key(&u,UI_RIGHT);CHECK(u.cursor==2 && u.screen==UI_OPTIONS);
     key(&u,UI_SELECT);CHECK(u.screen==UI_REVIEW && !u.cursor && !u.pending);
     u.screen=UI_STACK;u.cursor=0;u.job.count=2;u.job.algorithms[0]=1;u.job.algorithms[1]=1;
@@ -209,6 +209,7 @@ int main(int argc,char **argv){
     sequence(&u);sequence(&u);CHECK(u.screen==UI_STACK);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==2);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==3);
+    key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==4);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==1);
     key(&u,UI_SELECT);CHECK(u.job.algorithms[0]==2);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==2);
@@ -219,7 +220,7 @@ int main(int argc,char **argv){
     for(unsigned i=0;i<150;i++){key(&u,UI_RIGHT);}CHECK(u.job.attempts==100);
     for(unsigned i=0;i<150;i++){key(&u,UI_LEFT);}CHECK(u.job.attempts==1);
     for(unsigned i=0;i<9;i++)key(&u,UI_RIGHT);
-    key(&u,UI_DOWN);key(&u,UI_RIGHT);CHECK(u.job.action==2);key(&u,UI_DOWN);key(&u,UI_SELECT);
+    key(&u,UI_DOWN);key(&u,UI_RIGHT);CHECK(u.job.action==1);key(&u,UI_DOWN);key(&u,UI_SELECT);
     CHECK(u.screen==UI_REVIEW && !u.pending);
     if(argc>1)snapshot(&u,argv[1]);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.pending && u.job.op==UI_CREATE && u.job.length==8);

@@ -10,7 +10,7 @@ static void begin_policy(fv_ui *u) {
     ui_clear_input(u);
     u->flow = UI_FLOW_POLICY;
     u->job.attempts = u->device.attempts;
-    u->job.action = u->device.action;
+    u->job.action = 1; /* Only destruction is offered for a new policy. */
     u->job.profile = u->device.profile ? u->device.profile : 2;
     ui_scene_show(u, UI_SECRET);
 }

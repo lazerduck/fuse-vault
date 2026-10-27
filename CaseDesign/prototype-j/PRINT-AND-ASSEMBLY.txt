@@ -1,0 +1,73 @@
+FUSE VAULT CASE J — 21 October 2026 — PHYSICAL FIT PROTOTYPE
+
+PRINT NEW: base.stl, lid.stl, dpad.stl, and TWO copies of universal_end_cap.stl.
+REUSE: your successful F Select and Back buttons and USB-C collar.
+The three replacement files in REUSE-OR-PRINT are byte-identical to F.
+Revision I is withdrawn: its fixed D-pad bearing could not be assembled.
+Do not combine the F/I D-pad or lid with the J parts.
+
+100% SCALE — millimetres. The case has been redesigned, not globally scaled.
+Body: 77.3 x 26.2 x 10.85 mm (F: 77.3 x 27.6 x 12.1 mm).
+Height with existing round buttons: 12.45 mm.
+Both caps fitted: 112.4 mm overall length. Equal cap lengths deliberately
+accommodate the longer connector at either end. Caps match the body width and
+height, with a 0.15 mm axial seam, instead of overlapping its exterior.
+USB-A opening: 6.7 mm high. SD card access is closed.
+
+D-PAD
+One rigid part inserted from below the lid. Its wider underside flange cannot
+pass upward through the smaller cross opening. Four thickened roof corners
+limit lift near the pivot while leaving arm ends clear to rock.
+Opening clearance is 0.35 mm per side (F: 0.75 mm). CAD blocks a 0.40 mm upward
+shift and permits the sampled +/-3 degree cardinal/diagonal rocking range.
+Contact posts are 0.10 mm nearer the switches than F. Their tips sit at Z=3.65,
+about 0.088 mm above the library switch tops. The centre heel still meets PCB
+Z=1.6; its reach relative to the contact tips is reduced by 0.10 mm.
+This is intentionally not a preloaded, zero-clearance fit. An opposite arm
+rises when another is pressed. Actual switch travel and return need testing.
+The small orientation dot faces USB-A.
+
+CAPS
+Print TWO copies of universal_end_cap.stl in TPU, using the material that
+worked for your previous covers. Either cap fits either end, right-side-up.
+No A/C labels are needed because the caps are identical.
+Two concealed side tongues slide into matching wall channels;
+small TPU bumps seat in pockets. Recessed finger grips help removal.
+Do not print these caps in rigid PLA: the detents require flexibility.
+No separate fasteners, glue, bearing or retaining pieces are required.
+
+PRINT ORIENTATION
+All print files are on the bed. Base: floor down. Lid: outer face down.
+D-pad: thumb face down. Cap: closed end down, tongues pointing upward.
+Use the same rigid material as the working F controls for the D-pad.
+Suggested starting point: 0.4 mm nozzle, 0.12 mm layers for lid/D-pad,
+0.16 mm for base, at least 3 walls. Check slicer preview around the cap's
+horizontal detent channels; these have 1 mm spans. Clean strings/burrs from
+channels and D-pad opening without enlarging the bearing surfaces.
+Do not scale individual parts to compensate for fit.
+
+ASSEMBLY
+1. With the lid off the board, insert D-pad, Select and Back from underneath.
+   The cross passes through its opening; its flange stays beneath the roof.
+   Dot toward USB-A. The loose lid does not retain controls against falling
+   out underneath: support them while handling it.
+2. Fit the SD card, then the PCB and original USB-C collar into the base.
+3. DRY-FIT THE DISPLAY FLEX. The reduced floor reserves 2.4 mm below PCB rather
+   than the earlier provisional 3.0 mm. Actual folded flex thickness is not
+   measured. Arrange a gentle fold and never use the snaps to compress it.
+4. Hold the controls in place, engage the USB-C lid hooks, and lower the lid
+   over the board. Check free movement before fully engaging the four snaps.
+5. Test all six controls with the diagnostic firmware. Every control must
+   release, and none should register when untouched. If a switch remains
+   pressed or the D-pad binds, stop and inspect the fit before use.
+6. Slide either TPU cap straight onto either end. Grip the recessed sides to
+   pull it off. Caps are removed before opening the case.
+
+CHECKS AND LIMITS
+CAD checks include solid validity, watertight meshes, 278 electronics solids,
+board loading, actual underside control insertion, sampled lid closure,
+D-pad rocking and positive lift/side stops, button travel, cap interchange,
+rigid cap insertion/removal and SD wall continuity. TPU detent deformation is
+intentional and isolated in removal checks; its force/wear is not simulated.
+These are CAD checks, not a printed fit trial. Switch feel, printer tolerance,
+cap retention, snap strength and the display flex remain physical checks.

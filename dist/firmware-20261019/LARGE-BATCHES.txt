@@ -1,0 +1,49 @@
+Larger end-to-end storage batches — 2026-10-19
+
+Image: fuse-vault-large-batches-ram-debug.uf2
+SHA-256: b83006b7dd2d3b3a7196902ebc29c60cfba2fec441d39edf050fb53d1b081e05
+Source: d7c5206 plus local OTP routing, buffer and large-batch changes.
+Build directory: build-board-large-batches, Release, FV_USB_IO_BYTES=65024.
+
+This replaces the previous buffer-only experiment's 64+63-sector split.
+The 127-sector USB request is now passed to the vault as ONE batch. The
+authenticated storage layer writes its ciphertext as one SD operation and
+its affected metadata as one operation, retaining existing publication/sync
+ordering. Native SD permits 256 sectors, so it does not split this request.
+The vault/storage maximum is 128 sectors (64 KiB); USB remains limited to
+127 whole sectors (63.5 KiB) by its 16-bit transfer length.
+
+The read path uses two 64-bit unset-sector mask words. The metadata cache
+holds ten sectors, and its initialized-sector mask is now 16 bits. Existing
+single-word authenticated-read callers retain the 64-sector API. Reads still
+authenticate the whole batch before decryption; failed valid reads are wiped.
+There is no new multi-sector atomicity guarantee and no disk-format change.
+
+UI, physical TFT, USB storage and FIDO are enabled. RAM/debug screen and OTP
+inspection are enabled; all other debug flags remain off, as in the baseline.
+Flash via BOOTSEL after safely ejecting. Reconnect and unlock the existing
+vault; do not perform fresh setup. Existing data/passkeys remain compatible.
+
+Expected fixed RAM: 434.1 KiB, 6 KiB above the buffer-only experiment due to
+expanded metadata caches. At the previous 14.9 KiB heap reservation, about
+71 KiB remains uncommitted. Hardware stack usage is not measured by this.
+
+Repeat the same file, cipher stack, connector and viewer workload. Compare
+the steady device upload rate and elapsed time through the final flush.
+Safely eject/reconnect and verify the copy. Retest FIDO during transfer.
+Actual speed improvement still needs measurement on hardware.
+
+Validation:
+- Full 45/45 host/FIDO tests passed with assertions, ASan and UBSan.
+  ASAN_OPTIONS=detect_leaks=0; no leak-check claim.
+- Full physical-UI/MSC/FIDO firmware build passed; UF2 identity checked.
+- Large-batch tests cover 127/128 sectors, mixed unset/written sectors across
+  bit 63/64, all ten metadata-cache entries, upper-half corruption and whole
+  output wiping, reopen/decrypt, bounds, and interrupted bitmap publication.
+- SD mock counters confirm a 128-sector data operation; USB worker test
+  confirms its 127-sector request is passed through without splitting.
+- Actual TinyUSB BOT tests passed with 4/16/32/63.5 KiB buffers under ASan/UBSan.
+
+Rollback builds in this directory:
+fuse-vault-buffer-635k-ram-debug.uf2 (large buffers, split vault operations)
+fuse-vault-d7c5206-ram-debug.uf2 (original 32 KiB buffers and batches)

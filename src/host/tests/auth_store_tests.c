@@ -67,7 +67,7 @@ int main(void) {
     CHECK(fv_auth_read(&store,127,1,data,&unset)==FV_BLOCK_OK && !memcmp(data,saved,512));
     CHECK(fv_auth_read(&store,128,1,data,&unset)==FV_BLOCK_ERROR_OUT_OF_RANGE);
     CHECK(fv_auth_write(&store,127,2,saved)==FV_BLOCK_ERROR_OUT_OF_RANGE);
-    CHECK(fv_auth_write(&store,0,65,saved)==FV_BLOCK_ERROR_INVALID_ARGUMENT);
+    CHECK(fv_auth_write(&store,0,129,saved)==FV_BLOCK_ERROR_INVALID_ARGUMENT);
     CHECK(fv_auth_write(&store,0,1,saved+1)==FV_BLOCK_ERROR_INVALID_ARGUMENT);
     /* Corruption and volume/key mismatch release no bytes; reopen drops cache. */
     disk[12][5]^=1;reopen(&store);

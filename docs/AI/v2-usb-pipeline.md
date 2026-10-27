@@ -1,10 +1,14 @@
 # USB storage pipeline
 
-The MSC transport now uses two 32 KiB buffers: TinyUSB owns the endpoint buffer,
-and the storage worker owns an aligned scratch buffer. This replaces the two
-4 KiB buffers; the net buffer increase is 56 KiB. The vault's current maximum
-batch is 64 sectors (32 KiB), so larger buffers would also require changing that
-contract. No volume, credential, OTP or flash-journal format changes are involved.
+The MSC transport defaults to two 32 KiB buffers: TinyUSB owns the endpoint
+buffer, and the storage worker owns an aligned scratch buffer. Firmware CMake
+option `FV_USB_IO_BYTES` can select a whole-sector size up to 65024 bytes
+(63.5 KiB), constrained by TinyUSB's 16-bit transfer length. The 2026-10-19
+larger-batch experiment selects that size and passes all 127 sectors to the
+vault in one operation. Vault/authenticated storage now accept up to 128 sectors,
+with a two-word unset mask and ten-sector metadata cache. The SD driver permits
+up to 256 sectors per native operation, so it does not split this request.
+No volume, credential, OTP or flash-journal format changes are involved.
 
 ## Writes
 
@@ -62,7 +66,7 @@ ASAN_OPTIONS=detect_leaks=0 python3 src/host/tools/test_usb_pipeline_driver.py \
   --sdk /home/adam/pico-sdk --firmware-build build-pico-device-ui --sanitize
 ```
 
-The script exercises 4, 16 and 32 KiB buffers. These are correctness tests, not
+The script exercises 4, 16, 32 and 63.5 KiB buffers. These are correctness tests, not
 hardware throughput measurements. Leak checking is disabled for the sandbox's
 ptrace restriction; address and undefined-behaviour instrumentation remain active.
 

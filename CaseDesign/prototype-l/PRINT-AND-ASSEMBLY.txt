@@ -1,0 +1,105 @@
+FUSE VAULT CASE L — 22 October 2026
+Full-case print trial for a Bambu P1S with its standard 0.4 mm nozzle.
+Assumed material: ordinary PLA, matching revision K. These are starting settings,
+not a physically qualified production profile.
+
+PRINT
+Print base.stl, lid.stl, dpad.stl, select.stl, back.stl, screen_shim.stl,
+and TWO copies of universal_end_cap.stl. Reuse the existing USB-C collar;
+a replacement usb_c_collar.stl is included. K round buttons are unchanged and may be reused if identified confidently.
+Print the new L caps to get the stronger detents; old K caps will not gain retention.
+Use the new L base, lid and D-pad together.
+
+All STLs are millimetres, at 100% scale and already oriented on the bed.
+Base and shim: underside down. Lid and buttons: outside/thumb face down.
+Caps: closed end down, opening up. Collar: flange/end face down.
+Do not auto-orient the controls or scale individual parts to adjust fit.
+
+Suggested first print in Bambu Studio:
+- Select P1S / 0.4 nozzle and your actual PLA filament and build plate.
+- Use 0.12 mm layers for lid and controls; 0.16 mm for base, shim and caps.
+- Four walls; five top/bottom layers. Use 100% infill for the D-pad and shim,
+  and 20% infill for the shell/caps. Most thin features will already be solid.
+- Keep the established filament temperature/flow profile. Use normal speed mode.
+- Start with supports off; inspect the layer preview around the control flanges,
+  shell snaps and cap stop ramps before printing. No support should fill guides.
+- Keep normal elephant-foot compensation; do not add global XY scaling or hole
+  compensation for this first trial. Remove first-layer burrs and strings only.
+- Avoid placing a seam blob on the D-pad sides, button stems or snap beads.
+
+The stock 0.4 mm nozzle is confirmed in Bambu's P1S quick-start specification:
+https://cdn1.bambulab.com/documentation/quick-start-59b0cefdc0fc4/P1S/English%20version-Quick%20Start%20Guide%20for%20P1S.pdf
+The settings above are our prototype starting values, not Bambu's case-specific advice.
+
+WHAT CHANGED
+D-pad contacts now follow the upper actuator surfaces in the PCB STEP model,
+rather than the component placement origins. Corrections are about 0.35 mm:
+SW5/SW7 toward negative Y, SW6 toward the screen, SW8 toward USB-A.
+The contact noses are 2.2 mm diameter, with tapered shoulders, instead of K's
+3.2 mm flat pads. The nominal rest height remains Z=3.65: no deliberate preload.
+The central heel and orientation dot are retained. Low retaining-corner material
+is relieved to allow the sampled +/-4-degree tilt while retaining the D-pad.
+This may improve contact and available travel; it cannot change a switch's feel.
+
+Screen: a 2.4 mm solid platform lifts the module off the PCB. Its shorter footprint
+leaves the flex-exit end open. Screen nominal thickness is 1.5 mm per the supplied
+drawing, not the obsolete 2.5 mm placeholder. With a 1.6 mm module and 0.2 mm TOTAL
+adhesive allowance, the face is at Z=5.8; the relieved lid reserve reaches Z=5.95.
+The bezel opening is flared for a less tunnel-like view. Do not add another shim
+or thick foam tape: there is limited remaining clearance.
+
+Pocket edges: outer-envelope vertical corners are rounded to 0.8 mm where they
+intersect the shell; exposed top/bottom perimeter edges receive a 0.55 mm bevel.
+The projecting SD shoulder corners receive a 0.5 mm bevel. Internal PCB locators,
+USB support and the seam remain functional fit surfaces.
+
+Closure: four existing ramped snap beads now have 0.35 mm nominal engagement,
+up from 0.25 mm, with matching pockets. This gives a defined retention feature;
+physical closing force and wear are still to be tried. Layer-line friction may
+still contribute.
+
+Cap retention: rounded bump radius is now 0.85 mm instead of 0.55 mm, with
+matching 1.0 mm-radius case pockets instead of 0.70 mm. The pocket depth into
+the case wall increases from 0.25 to 0.55 mm. Nominal sleeve-wall flex
+is 0.40 mm per side instead of 0.10 mm. This is intentionally a more substantial
+snap, using the broad sleeve walls to flex. Caps remain identical at either end
+and in either 180-degree roll orientation. Fit and fatigue still need the print
+trial; do not ram a reluctant cap against the connector.
+
+ASSEMBLE
+1. Before fitting the D-pad, press the four bare switches gently and compare them.
+   If the screen-facing switch is already mushy, note that before judging the case.
+2. Fit the SD card, PCB and USB-C collar into the base. Confirm the PCB is seated.
+3. Dry-fit the shim on the clear screen area of the PCB: its long axis follows
+   the display, with its short end stopping short of the flex exit/cutout.
+   Assembly coordinates: X=19.1..44.5, Y=-18.0..-5.5, PCB top Z=1.6.
+4. Place the display on the shim, aligned with the window, and check the cable
+   route while gently lowering the lid. Do not tension, sharply crease or pinch
+   the flex. The display must not carry lid-closing force.
+5. Once aligned and clearance is confirmed, secure the platform and display with
+   thin adhesive appropriate to your existing screen-mounting method. Allow no
+   more than 0.2 mm total thickness across both adhesive interfaces. Remove old
+   glue build-up from the stack; do not force the lid down onto the glass.
+6. Insert Select, Back and the L D-pad from under the detached lid. The D-pad dot
+   faces USB-A, away from the screen. The contacts are intentionally asymmetric;
+   do not rotate the D-pad by 90 or 180 degrees.
+7. Engage the USB-C hooks and lower the lid. Check all controls before snapping
+   shut. Close each snap gently. A switch must not be held down at rest.
+8. Test individual presses and releases in every direction, especially toward
+   the screen. Then fit the two caps. Remove the caps before reopening the case.
+
+REPORT AFTER THIS FULL PRINT
+Does the screen-facing direction now click as cleanly as the others? Does every
+press release? Is the screen readable without awkward angles? Does the shell
+close without glass pressure and stay closed without excessive force? Are any
+remaining corners uncomfortable in the hand or pocket?
+A quick comparison with the bare switches helps distinguish case geometry from
+switch hardware. No special test coupon is required for this iteration.
+
+VALIDATION
+See validation.json and detail-validation.json for actual results. CAD checks
+cover solids, pairwise fit, source electronics, screen/SD reserves, control
+insertion and movement, sampled shell closure, fixed lower switch housings,
+source actuator contact centres, and cap removal. STLs are checked for watertight,
+single-body meshes. These checks do not establish physical tactile feel, switch
+compression/force, glue thickness, print accuracy or snap durability.

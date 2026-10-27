@@ -1,0 +1,31 @@
+{
+  "revision": "L",
+  "files": {
+    "base.stl": "37d86233b3af80411a3170c7b57c4c5df0d5fa37e6ff132e5932acfe0649b1a0",
+    "lid.stl": "f233cd2a485f737289739d357a127bd23a19b0aa5af3511a6e7916f5b8ad229c",
+    "dpad.stl": "7768dbc74ef18aceccb286f1cd15672ede673088946a26e2fe0cb17af1cdd6db",
+    "select.stl": "80b6466c6e17a17ba69d90b2d62d6e402a61c3821148eed41168cc38639bdf58",
+    "back.stl": "cdec98a87c205573e07292b6cee7c1297963b01f14eaeebe1c7129a6615c49dc",
+    "screen_shim.stl": "c5f23bc860c6d8fc2dfd0ccc83b3e65ea38eda037f315ec5ad59eaeb6cef351f",
+    "universal_end_cap.stl": "3ba1116158a4842e25a4c4c8d1998b2e89f0d6baa17e49ec49b7c526ed9e9436",
+    "usb_c_collar.stl": "04c619eaa53bee97d23940f717c0aa041b70736743eb3c9a15e0e2c7782c24e7",
+    "PRINT-AND-ASSEMBLY.txt": "e2a7c0410e7f02bab697aed8694b734932a657d5e94d61525ba6581de3275c73",
+    "README.md": "62b4b5fa0d2d016b946eb90140d1b642cf7e614ad8887107f9935ec48b86c844",
+    "assembled.png": "86265e410e14c16ec72c6434b177e49ba3b687c36d177ce3d311568b05a1c446",
+    "exploded.png": "44f2c196ac5b77ce2ea530db3f0fc5c1d428ab624faf786de084cac4eb79c5cd",
+    "contacts.png": "66a7f8273ca27e164d907e8218bed8253d612b26dbd7468792de8c2e936cb5a6",
+    "validation.json": "d04c25996e42c26e5158fc03c049b818d88cd35a08a14030a5e0a3bf2269333a",
+    "detail-validation.json": "42be92ecb5fc54e248dd3e97c87d1abcc5f1965f7f7292b1968eb73ecfdc62bf"
+  },
+  "sources": {
+    "build_case_l.py": "8a24c5fd584e18790dfeefae91a49779161bf81df477927dad5481741f1b2b4a",
+    "check_case_l_details.py": "d1c2da0783e81a7c98f424b52cfc7a52c29620aace8635161228aedbd323bda1",
+    "render_case_l.py": "09272ded224b25abbf8eedd2c70715df8b6cb1634cf3291f437092752b8fc666",
+    "package_case_l.py": "5682b426144902fc9d9339ef39f11d50ab7c75a307edaa9d8dc7c917b7c8a397"
+  },
+  "print_counts": {
+    "universal_end_cap.stl": 2
+  },
+  "default_material": "PLA",
+  "physical_trial": "User confirmed assembly fits well on 2026-10-22; remaining button feel suspected switch-quality limited, unconfirmed."
+}

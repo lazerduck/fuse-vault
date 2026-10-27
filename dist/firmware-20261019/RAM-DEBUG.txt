@@ -1,0 +1,34 @@
+RAM telemetry firmware — 2026-10-19
+
+Image: fuse-vault-d7c5206-ram-debug.uf2
+SHA-256: 68856bac14d487e615fafe74b5496317cc6164d1d6c858fb0bf8575fe404a653
+Source: d7c5206 plus the local OTP command-routing fix in commands.c.
+Build directory: build-board-ram-debug, Release, custom fuse_vault board.
+UI, physical TFT, USB storage and FIDO enabled.
+FV_DEBUG_SCREEN and FV_DEBUG_OTP_INSPECT enabled; other debug flags disabled.
+
+Flash using BOOTSEL after safely ejecting the vault. No fresh setup is needed:
+the existing enrollment, vault and passkeys use the same format.
+
+The existing desktop viewer shows current RAM figures:
+python3 src/host/tools/device_ui.py --device 9365BE6AC2B6D6E4
+
+For one snapshot with RAM metadata printed as JSON:
+python3 src/host/tools/device_ui.py --device 9365BE6AC2B6D6E4 \
+  --snapshot /tmp/fuse-vault-ram.ppm
+
+Capture after boot, after unlock, after FIDO registration/sign-in and after
+file transfers. Heap peak is retained until reboot, including allocations
+that occur between screen polls.
+
+Figures: total RAM, fixed allocation including reserved stacks, current and
+peak heap reservation, and uncommitted RAM. Heap reservation includes reusable
+allocator space; this is not a live-allocation or stack high-water measurement.
+
+Debug screen access exposes displayed credential entry and permits remote
+button injection. Use this as a testing image; return to the full build when
+finished. OTP snapshots remain read-only; normal device lifecycle is unchanged.
+
+Validation: firmware build passed, UF2 identity checked, RAM telemetry and
+allocator wrapper symbols present, host ram_debug accounting test passed.
+Live RAM figures have not yet been captured from this firmware on hardware.

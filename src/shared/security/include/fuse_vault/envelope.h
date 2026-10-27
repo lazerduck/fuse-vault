@@ -14,8 +14,9 @@ typedef int (*fv_random_bytes)(void *context,uint8_t *out,size_t bytes);
 /* Cost limits are trusted platform policy. No default production iteration count. */
 bool fv_envelope_parse(const uint8_t *,size_t,uint64_t capacity,fv_kdf_limits,fv_envelope_config *);
 /* Low-level primitives for the authority adapter/session only; not host commands.
- * Input/output spans must be disjoint. A binding key requires both root and token. */
-int fv_vault_binding(const uint8_t root[32],const uint8_t token[32],uint32_t slot,
+ * Output must not overlap inputs. Token-only enrollment supplies the same token
+ * as HMAC key and input material; the two input spans may alias. */
+int fv_vault_binding(const uint8_t binding_key[32],const uint8_t token[32],uint32_t slot,
     const uint8_t volume_id[16],uint8_t binding[32]);
 int fv_envelope_seal(const fv_envelope_config *,uint64_t capacity,fv_kdf_limits,
     const uint8_t binding[32],const uint8_t *secret,size_t secret_bytes,const uint8_t vmk[32],
