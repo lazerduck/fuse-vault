@@ -12,7 +12,10 @@
 #define FV_MAX_LAYERS 4u
 
 typedef enum { FV_OK = 0, FV_INVALID = -1, FV_CRYPTO_ERROR = -2 } fv_status;
-typedef enum { FV_AES_256_XTS = 1, FV_CAMELLIA_256_XTS = 2, FV_SM4_128_XTS = 3, FV_ARIA_256_XTS = 4 } fv_algorithm;
+typedef enum { FV_AES_256_XTS = 1, FV_CAMELLIA_256_XTS = 2, FV_SM4_128_XTS = 3, FV_ARIA_256_XTS = 4, FV_TWOFISH_256_XTS = 5 } fv_algorithm;
+
+/* Twofish key context: 4 key-dependent S-boxes (4096 bytes) + 40 subkeys (160 bytes). */
+typedef struct { uint32_t sbox[4][256]; uint32_t k[40]; } fv_twofish_ctx;
 
 /* Backend storage is concrete for stack/static allocation: no heap, no opaque
  * byte-buffer casts. Treat all fields as private. Do not copy initialized keys. */
@@ -21,6 +24,7 @@ typedef union {
     struct { mbedtls_camellia_context enc, dec, tweak; } camellia;
     struct { SM4_KEY enc, dec, tweak; } sm4;
     struct { mbedtls_aria_context enc, dec, tweak; } aria;
+    fv_twofish_ctx twofish[3];
 } fv_key_context;
 struct fv_cipher_ops;
 typedef struct { const struct fv_cipher_ops *ops; fv_key_context key; } fv_cipher;

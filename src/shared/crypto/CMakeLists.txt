@@ -3,7 +3,7 @@ if(NOT EXISTS "${FV_MBEDTLS_DIR}/library/aes.c")
   message(FATAL_ERROR "Set FV_MBEDTLS_DIR to an existing Mbed TLS 3.6 source checkout")
 endif()
 set(FV_SM4_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../third_party/gmssl_sm4")
-add_library(fv_crypto STATIC backends/sm4.c
+add_library(fv_crypto STATIC backends/sm4.c backends/twofish.c
   ${FV_SM4_DIR}/sm4_common.c ${FV_SM4_DIR}/sm4_enc.c ${FV_SM4_DIR}/sm4_setkey.c
   hmac.c hmac_self_test.c cipher.c pipeline.c backends/mbedtls.c
   ${FV_MBEDTLS_DIR}/library/aes.c
