@@ -8,6 +8,9 @@
 _Static_assert(FV_FIDO_STORE_BYTES%512u==0, "whole sectors required");
 _Static_assert(1u+META_SECTORS+FV_FIDO_IMAGE_SECTORS<=FV_FIDO_BANK_SECTORS, "bank capacity");
 _Static_assert(FV_FIDO_REGION_BASE+2u*FV_FIDO_BANK_SECTORS==FV_VOLUME_METADATA_BASE, "FIDO region boundary");
+/* Migration nests two bank contexts plus I/O scratch on a 64 KiB worker stack. */
+_Static_assert(sizeof(fv_pipeline) <= 10000, "pipeline exceeds device migration budget");
+
 typedef struct {
     fv_pipeline pipeline;
     fv_auth_store sectors;

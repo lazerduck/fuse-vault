@@ -1,6 +1,7 @@
 #include "fuse_vault/envelope.h"
 #include "../../shared/security/key_wrap.h"
 #include "fixtures/envelope_vectors.h"
+#include "fixtures/twofish_vectors.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -61,7 +62,19 @@ static void wrap_vector(uint16_t id,const uint8_t key[32],const uint8_t share[32
     CHECK(!fv_share_unwrap(id,key,wrapped,out));CHECK(!memcmp(out,share,32));
     for(unsigned i=0;i<40;i++){wrapped[i]^=1;CHECK(fv_share_unwrap(id,key,wrapped,out));CHECK(zero(out,32));wrapped[i]^=1;}
 }
+static void twofish_envelope(void) {
+    fv_envelope_config config;fv_kdf_limits limits={1,100};
+    uint8_t binding[32]={1},vmk[32]={2},header[512],out[32];
+    CHECK(fv_envelope_parse(aria_header,512,2133,limits,&config));
+    for(unsigned i=0;i<config.volume.layer_count;i++)config.volume.cipher_ids[i]=5;
+    random_state rng={0};
+    CHECK(!fv_envelope_seal(&config,2133,limits,binding,secret,sizeof(secret),vmk,random_bytes,&rng,header));
+    CHECK(!fv_envelope_open(header,2133,limits,binding,secret,sizeof(secret),out));
+    CHECK(!memcmp(out,vmk,32));
+}
 int main(void) {
+    wrap_vector(5,tf_wrap_key,tf_share,tf_wrapped);
+    twofish_envelope();
     vector(aes_header,aes_bad_kw,aes_binding);vector(cam_header,cam_bad_kw,cam_binding);
     vector(pair_header,pair_bad_kw,pair_binding);vector(three_header,three_bad_kw,three_binding);vector(four_header,four_bad_kw,four_binding);
     vector(sm4_header,sm4_bad_kw,sm4_binding);vector(mixed_sm4_header,mixed_sm4_bad_kw,mixed_sm4_binding);

@@ -376,6 +376,9 @@ int main(void) {
     algorithms[1]=3;algorithms[3]=3;
     large_batches();
     lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
+    algorithms[1]=5;algorithms[3]=5;
+    large_batches();
+    lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
     puts("Vault: file-backed lifecycle, rewrap/replay, attempt/destruction and commit/SD failure injection passed");
     return 0;
 }

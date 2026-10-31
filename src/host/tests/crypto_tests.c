@@ -5,7 +5,30 @@
 #include <string.h>
 #define CHECK(x) do { if (!(x)) { fprintf(stderr,"%s:%d: %s\n",__FILE__,__LINE__,#x); exit(1); } } while (0)
 
-/* --- Local Twofish-256 reference (independent from backend) for XTS vectors --- */
+#include "fixtures/twofish_vectors.h"
+static void twofish_vectors(void) {
+    fv_twofish_ctx ctx;
+    uint8_t zero[16]={0}, out[512], plain[512];
+    CHECK(!fv_twofish_setkey(&ctx,tf_kat_key));
+    fv_twofish_encrypt(&ctx,zero,out);
+    CHECK(!memcmp(out,tf_kat_cipher,16));
+    fv_twofish_decrypt(&ctx,tf_kat_cipher,out);
+    CHECK(!memcmp(out,zero,16));
+    const uint8_t *keys[]={tf_xts_key_0,tf_xts_key_1,tf_xts_key_2};
+    const uint8_t *inputs[]={tf_plain_0,tf_plain_1,tf_plain_2};
+    const uint8_t *answers[]={tf_cipher_0,tf_cipher_1,tf_cipher_2};
+    const uint64_t lbas[]={0,UINT64_C(0x123456789abcdef0),UINT64_MAX};
+    for(unsigned i=0;i<3;i++) {
+        fv_cipher cipher={0};
+        CHECK(fv_cipher_init(&cipher,FV_TWOFISH_256_XTS,keys[i],64)==FV_OK);
+        CHECK(fv_cipher_encrypt(&cipher,lbas[i],inputs[i],out)==FV_OK);
+        CHECK(!memcmp(out,answers[i],512));
+        CHECK(fv_cipher_decrypt(&cipher,lbas[i],answers[i],plain)==FV_OK);
+        CHECK(!memcmp(plain,inputs[i],512));
+        fv_cipher_clear(&cipher);
+    }
+}
+/* --- Local Twofish-256 reference (supplemented by fixed libgcrypt vectors) for XTS vectors --- */
 static uint8_t tf_sbox[2][256];
 static int tf_sbox_ready = 0;
 
@@ -78,10 +101,10 @@ static uint32_t tf_h(const uint8_t in[4], const uint8_t *key, int offset) {
     y[1]=(uint8_t)(tf_sbox[1][y[1]]^key[4*(4+offset)+1]);
     y[2]=(uint8_t)(tf_sbox[0][y[2]]^key[4*(4+offset)+2]);
     y[3]=(uint8_t)(tf_sbox[0][y[3]]^key[4*(4+offset)+3]);
-    y[0]=tf_sbox[1][tf_sbox[0][tf_sbox[0][y[0]]^key[4*(0+offset)+0]]^key[4*(2+offset)+0]];
-    y[1]=tf_sbox[0][tf_sbox[0][tf_sbox[1][y[1]]^key[4*(0+offset)+1]]^key[4*(2+offset)+1]];
-    y[2]=tf_sbox[1][tf_sbox[1][tf_sbox[0][y[2]]^key[4*(0+offset)+2]]^key[4*(2+offset)+2]];
-    y[3]=tf_sbox[0][tf_sbox[1][tf_sbox[1][y[3]]^key[4*(0+offset)+3]]^key[4*(2+offset)+3]];
+    y[0]=tf_sbox[1][tf_sbox[0][tf_sbox[0][y[0]]^key[4*(2+offset)+0]]^key[4*(0+offset)+0]];
+    y[1]=tf_sbox[0][tf_sbox[0][tf_sbox[1][y[1]]^key[4*(2+offset)+1]]^key[4*(0+offset)+1]];
+    y[2]=tf_sbox[1][tf_sbox[1][tf_sbox[0][y[2]]^key[4*(2+offset)+2]]^key[4*(0+offset)+2]];
+    y[3]=tf_sbox[0][tf_sbox[1][tf_sbox[1][y[3]]^key[4*(2+offset)+3]]^key[4*(0+offset)+3]];
     uint32_t m=0;
     for (int i=0;i<4;i++) m^=tf_mds_col(y[i],i);
     return m;
@@ -210,36 +233,7 @@ int main(void) {
     for(unsigned i=1;i<1000000;i++)sm4_encrypt(&schedule,block,block);
     CHECK(!memcmp(block,million,16));
     sm4_set_decrypt_key(&schedule,k);sm4_encrypt(&schedule,answer,block);CHECK(!memcmp(block,k,16));
-    /* Twofish-256 known answers via XTS reference (Schneier et al. ECB KAT).
-     * Single-block ECB isn't directly reachable through the XTS sector API, so
-     * we verify the block cipher through the sector-level XTS path: for LBA=0
-     * and an all-zero sector, the first output block is E_data(tweak)^tweak
-     * where tweak=E_tweak(0). The local tf_xts_encrypt reference computes this
-     * independently. */
-    {
-        const uint8_t tf_key[64] = {
-            0x01,0x23,0x45,0x67,0x89,0xAB,0xCD,0xEF,
-            0xFE,0xDC,0xBA,0x98,0x76,0x54,0x32,0x10,
-            0x00,0x11,0x22,0x33,0x44,0x55,0x66,0x77,
-            0x88,0x99,0xAA,0xBB,0xCC,0xDD,0xEE,0xFF,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        };
-        uint8_t sector[512];
-        memset(sector, 0, 512);
-        uint8_t encrypted[512], expected[512];
-        fv_cipher c = {0};
-        CHECK(fv_cipher_init(&c, FV_TWOFISH_256_XTS, tf_key, 64) == FV_OK);
-        tf_xts_encrypt(tf_key, 0, sector, expected);
-        CHECK(fv_cipher_encrypt(&c, 0, sector, encrypted) == FV_OK);
-        CHECK(!memcmp(encrypted, expected, 512));
-        CHECK(fv_cipher_decrypt(&c, 0, encrypted, sector) == FV_OK);
-        /* Verify sector is all zeros after decrypt. */
-        for (int i = 0; i < 512; i++) CHECK(sector[i] == 0);
-        fv_cipher_clear(&c);
-    }
+    twofish_vectors();
     /* Library's published known-answer cases supplement differential tests. */
     CHECK(mbedtls_aes_self_test(0)==0);
     CHECK(mbedtls_camellia_self_test(0)==0);
