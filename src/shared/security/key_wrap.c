@@ -1,4 +1,5 @@
 #include "key_wrap.h"
+#include "fuse_vault/crypto.h"
 #include "keywrap_compat.h"
 #include <mbedtls/aes.h>
 #include <mbedtls/aria.h>
@@ -6,7 +7,7 @@
 #include <gmssl/sm4.h>
 typedef struct {
     uint16_t id;int decrypt;int *error;
-    union {mbedtls_aes_context aes;mbedtls_aria_context aria;mbedtls_camellia_context camellia;SM4_KEY sm4;} cipher;
+    union {mbedtls_aes_context aes;mbedtls_aria_context aria;mbedtls_camellia_context camellia;SM4_KEY sm4;fv_twofish_ctx twofish;} cipher;
 } block_context;
 static void crypt(const void *opaque,size_t n,uint8_t *out,const uint8_t *in) {
     const block_context *c=opaque;int r=-1;
@@ -14,6 +15,11 @@ static void crypt(const void *opaque,size_t n,uint8_t *out,const uint8_t *in) {
         /* Library ECB interfaces are non-const even with prepared schedules. */
         if(c->id==1)r=mbedtls_aes_crypt_ecb((mbedtls_aes_context *)&c->cipher.aes,
             c->decrypt?MBEDTLS_AES_DECRYPT:MBEDTLS_AES_ENCRYPT,in,out);
+        else if(c->id==5){
+            if(c->decrypt)fv_twofish_decrypt(&c->cipher.twofish,in,out);
+            else fv_twofish_encrypt(&c->cipher.twofish,in,out);
+            r=0;
+        }
         else if(c->id==4)r=mbedtls_aria_crypt_ecb((mbedtls_aria_context *)&c->cipher.aria,in,out);
         else if(c->id==3){sm4_encrypt(&c->cipher.sm4,in,out);r=0;}
         else r=mbedtls_camellia_crypt_ecb((mbedtls_camellia_context *)&c->cipher.camellia,
@@ -26,10 +32,12 @@ static int run(uint16_t id,const uint8_t *key,const uint8_t *in,uint8_t *out,int
     memset(out,0,decrypt?32:40);int error=0,result=-1;
     block_context c={.id=id,.decrypt=decrypt,.error=&error};
     const uint8_t iv[8]={0xa6,0xa6,0xa6,0xa6,0xa6,0xa6,0xa6,0xa6};
-    if(!key || !in || (id!=1 && id!=2 && id!=3 && id!=4))goto done;
+    if(!key || !in || (id!=1 && id!=2 && id!=3 && id!=4 && id!=5))goto done;
     if(id==1) {
         mbedtls_aes_init(&c.cipher.aes);
         if(decrypt?mbedtls_aes_setkey_dec(&c.cipher.aes,key,256):mbedtls_aes_setkey_enc(&c.cipher.aes,key,256))goto done;
+    } else if(id==5) {
+        if(fv_twofish_setkey(&c.cipher.twofish,key))goto done;
     } else if(id==4) {
         mbedtls_aria_init(&c.cipher.aria);
         if(decrypt?mbedtls_aria_setkey_dec(&c.cipher.aria,key,256):mbedtls_aria_setkey_enc(&c.cipher.aria,key,256))goto done;

@@ -140,3 +140,20 @@ board builds; software remains the desktop implementation and on-board reference
 Neither backend is a claim of constant-time execution or
 physical side-channel resistance; evaluate the target implementation before
 using it with real secrets.
+
+### Twofish-256
+
+Algorithm ID 5 selects Twofish-256-XTS (64 bytes: separate 32-byte data and
+tweak keys). The same ID selects Twofish-256 key wrapping for envelope shares.
+The device setup menu includes Twofish; the maximum stack depth remains four.
+
+Each Twofish block context uses 1,024 bytes of keyed byte S-boxes and 160 bytes
+of round keys. XTS stores two contexts, sharing the data schedule between
+encryption and decryption. Public q/MDS tables are immutable and reside in flash.
+This keeps the pipeline below 10,000 bytes, including when existing algorithms
+are selected, and avoids the original PR's large nested FIDO migration frames.
+
+Host tests include fixed ECB, XTS and key-wrap vectors generated with libgcrypt;
+`src/host/tests/fixtures/generate_twofish.py` regenerates these fixtures. Normal
+builds do not depend on libgcrypt. The local XTS reference supplements these
+fixed vectors; it is not the sole correctness oracle.

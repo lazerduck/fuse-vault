@@ -12,7 +12,15 @@
 #define FV_MAX_LAYERS 4u
 
 typedef enum { FV_OK = 0, FV_INVALID = -1, FV_CRYPTO_ERROR = -2 } fv_status;
-typedef enum { FV_AES_256_XTS = 1, FV_CAMELLIA_256_XTS = 2, FV_SM4_128_XTS = 3, FV_ARIA_256_XTS = 4 } fv_algorithm;
+typedef enum { FV_AES_256_XTS = 1, FV_CAMELLIA_256_XTS = 2, FV_SM4_128_XTS = 3, FV_ARIA_256_XTS = 4, FV_TWOFISH_256_XTS = 5 } fv_algorithm;
+
+/* Twofish key context: 4 byte S-boxes (1024 bytes) + 40 subkeys (160 bytes). */
+typedef struct { uint8_t sbox[4][256]; uint32_t k[40]; } fv_twofish_ctx;
+
+/* Raw Twofish-256 block API for the internal key-wrap backend. */
+int fv_twofish_setkey(fv_twofish_ctx *, const uint8_t *key);
+void fv_twofish_encrypt(const fv_twofish_ctx *, const uint8_t in[16], uint8_t out[16]);
+void fv_twofish_decrypt(const fv_twofish_ctx *, const uint8_t in[16], uint8_t out[16]);
 
 /* Backend storage is concrete for stack/static allocation: no heap, no opaque
  * byte-buffer casts. Treat all fields as private. Do not copy initialized keys. */
@@ -21,12 +29,13 @@ typedef union {
     struct { mbedtls_camellia_context enc, dec, tweak; } camellia;
     struct { SM4_KEY enc, dec, tweak; } sm4;
     struct { mbedtls_aria_context enc, dec, tweak; } aria;
+    fv_twofish_ctx twofish[2];
 } fv_key_context;
 struct fv_cipher_ops;
 typedef struct { const struct fv_cipher_ops *ops; fv_key_context key; } fv_cipher;
 typedef struct { size_t count; fv_cipher layers[FV_MAX_LAYERS]; } fv_pipeline;
 
-/* Actual key bytes: AES/Camellia 64, SM4 32, unknown algorithm 0. */
+/* Actual key bytes: AES/Camellia/ARIA/Twofish 64, SM4 32, unknown 0. */
 size_t fv_cipher_key_bytes(fv_algorithm);
 
 /* Objects must be zero-initialized before first use. Init replaces previous
