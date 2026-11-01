@@ -108,6 +108,11 @@ int main(void){
     u.screen=UI_OPTIONS;u.cursor=0;save(&u,"23-security");
     u.cursor=1;save(&u,"23a-failed-attempts");
     u.cursor=2;save(&u,"23b-auto-lock");
+    u.cursor=3;save(&u,"23e-screen-until-lock");
+    u.job.screen_sleep_seconds=UINT16_MAX;save(&u,"23f-screen-never");
+    u.job.screen_sleep_seconds=30;save(&u,"23g-screen-timed");
+    u.cursor=4;save(&u,"23h-security-review-row");
+    u.job.screen_sleep_seconds=0;
     u.job.action=5;u.job.attempts=0;u.cursor=0;save(&u,"23c-destruction-off");
     u.screen=UI_REVIEW;u.flow=UI_FLOW_POLICY;save(&u,"23d-security-off-review");
     u.job.action=1;u.job.attempts=100;

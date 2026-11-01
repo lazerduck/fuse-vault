@@ -31,7 +31,7 @@ static void options_key(fv_ui *u, fv_ui_key key) {
         ui_go_home(u);
         return;
     }
-    ui_selection_move(&u->cursor, 4, key);
+    ui_selection_move(&u->cursor, 5, key);
     if (key == UI_LEFT || key == UI_RIGHT) {
         if (u->cursor == 0) {
             u->job.action = u->job.action == 5 ? 1 : 5;
@@ -48,10 +48,17 @@ static void options_key(fv_ui *u, fv_ui_key key) {
                 if (durations[i] == u->job.auto_lock_seconds) choice = i;
             choice = key == UI_RIGHT ? (choice + 1) % 7 : (choice + 6) % 7;
             u->job.auto_lock_seconds = durations[choice];
+        } else if (u->cursor == 3) {
+            static const uint16_t durations[] = {0, 30, 60, 120, 300, 600, UINT16_MAX};
+            unsigned choice = 0;
+            for (unsigned i = 0; i < sizeof(durations) / sizeof(durations[0]); ++i)
+                if (durations[i] == u->job.screen_sleep_seconds) choice = i;
+            choice = key == UI_RIGHT ? (choice + 1) % 7 : (choice + 6) % 7;
+            u->job.screen_sleep_seconds = durations[choice];
         }
     }
     if (key == UI_SELECT) {
-        if (u->cursor < 3)
+        if (u->cursor < 4)
             ++u->cursor;
         else
             ui_scene_show(u, UI_REVIEW);
@@ -93,22 +100,41 @@ static void render_stack(fv_ui *u) {
     ui_draw_footer(u, "\005 BACK", "\006 SELECT");
 }
 
+static void screen_sleep_label(char *label, size_t size, uint16_t seconds) {
+    if (!seconds)
+        snprintf(label, size, "SCREEN: UNTIL LOCK");
+    else if (seconds == UINT16_MAX)
+        snprintf(label, size, "SCREEN: NEVER SLEEP");
+    else if (seconds < 60)
+        snprintf(label, size, "SCREEN SLEEP: %u SEC", (unsigned)seconds);
+    else
+        snprintf(label, size, "SCREEN SLEEP: %u MIN", (unsigned)(seconds / 60));
+}
+
 static void render_options(fv_ui *u) {
     char b[40];
-    ui_draw_header(u, "SECURITY", NULL);
-    snprintf(b, sizeof(b), "DESTROY KEYS: %s", u->job.action == 5 ? "OFF" : "ON");
-    ui_draw_choice(u, 16, b, u->cursor == 0);
-    snprintf(b, sizeof(b), "AFTER: %u FAILURES", (unsigned)u->job.attempts);
-    ui_draw_choice(u, 27, u->job.action == 5 ? "UNLIMITED ATTEMPTS" : b, u->cursor == 1);
-    if (u->job.auto_lock_seconds)
-        snprintf(b, sizeof(b), "AUTO LOCK: %u MIN", (unsigned)(u->job.auto_lock_seconds / 60));
-    else
-        snprintf(b, sizeof(b), "AUTO LOCK: OFF");
-    ui_draw_choice(u, 38, b, u->cursor == 2);
-    ui_draw_choice(u, 49, "REVIEW", u->cursor == 3);
+    snprintf(b, sizeof(b), "%u/5", u->cursor + 1);
+    ui_draw_header(u, "SECURITY", b);
+    unsigned first = u->cursor >= 4 ? u->cursor - 3 : 0;
+    for (unsigned item = first; item < 5 && item < first + 4; ++item) {
+        if (item == 0)
+            snprintf(b, sizeof(b), "DESTROY KEYS: %s", u->job.action == 5 ? "OFF" : "ON");
+        else if (item == 1) {
+            if (u->job.action == 5) snprintf(b, sizeof(b), "UNLIMITED ATTEMPTS");
+            else snprintf(b, sizeof(b), "AFTER: %u FAILURES", (unsigned)u->job.attempts);
+        } else if (item == 2) {
+            if (u->job.auto_lock_seconds)
+                snprintf(b, sizeof(b), "AUTO LOCK: %u MIN", (unsigned)(u->job.auto_lock_seconds / 60));
+            else snprintf(b, sizeof(b), "AUTO LOCK: OFF");
+        } else if (item == 3)
+            screen_sleep_label(b, sizeof(b), u->job.screen_sleep_seconds);
+        else snprintf(b, sizeof(b), "REVIEW");
+        ui_draw_choice(u, 16 + (item - first) * 11, b, u->cursor == item);
+    }
     const char *hint = u->cursor == 2 ? "AFTER INACTIVITY"
                      : u->cursor == 1 && u->job.action == 1 ? "CONSECUTIVE FAILURES"
-                     : u->cursor == 3 ? "CHECK BEFORE SAVING" : "\003\001 CHANGE";
+                     : u->cursor == 3 ? "DISPLAY ONLY"
+                     : u->cursor == 4 ? "CHECK BEFORE SAVING" : "\003\001 CHANGE";
     ui_draw_text_at(u, 4, 60, hint, 1, UI_COLOUR_MUTED);
     ui_draw_footer(u, "\005 BACK", "\006 SELECT");
 }
@@ -121,7 +147,7 @@ static void render_review(fv_ui *u) {
                    : (u->flow == UI_FLOW_POLICY) ? "SAVE SECURITY?"
                                                  : "CREATE VAULT?",
                    u->flow == UI_FLOW_SETUP ? layers : NULL);
-    ui_draw_text_at(u, 4, 16,
+    ui_draw_text_at(u, 4, 14,
                     (u->flow == UI_FLOW_CHANGE)   ? "KEEPS FILES AND PASSKEYS"
                     : (u->flow == UI_FLOW_POLICY) ? "CHECKS CURRENT CREDENTIAL"
                                                   : "ERASES EXISTING SD DATA",
@@ -131,12 +157,14 @@ static void render_review(fv_ui *u) {
     else
         snprintf(b, sizeof(b), "%u FAILURES: %s", (unsigned)u->job.attempts,
                  u->job.action == 1 ? "DESTROY KEYS" : "LOCKOUT");
-    ui_draw_text_at(u, 4, 26, b, 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 4, 22, b, 1, UI_COLOUR_TEXT);
     if (u->job.auto_lock_seconds)
         snprintf(b, sizeof(b), "AUTO LOCK: %u MIN IDLE", (unsigned)(u->job.auto_lock_seconds / 60));
     else
         snprintf(b, sizeof(b), "AUTO LOCK: OFF");
-    ui_draw_text_at(u, 4, 36, b, 1, UI_COLOUR_TEXT);
+    ui_draw_text_at(u, 4, 30, b, 1, UI_COLOUR_TEXT);
+    screen_sleep_label(b, sizeof(b), u->job.screen_sleep_seconds);
+    ui_draw_text_at(u, 4, 38, b, 1, UI_COLOUR_TEXT);
     if (u->flow == UI_FLOW_SETUP) ui_draw_danger_choices(u, "CREATE VAULT");
     else ui_draw_confirm_choices(u, "SAVE");
 }

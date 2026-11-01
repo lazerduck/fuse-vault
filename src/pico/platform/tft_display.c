@@ -25,10 +25,17 @@ static bool startup_active;
 static unsigned startup_frame;
 static uint64_t last_activity;
 static bool sleeping;
+static uint16_t sleep_seconds;
+static bool session_unlocked;
 
-bool fv_tft_activity(void) {
-    uint64_t now = time_us_64();
-    bool waking = sleeping || now - last_activity >= FV_TFT_IDLE_US;
+static bool idle_expired(uint64_t now) {
+    if (sleep_seconds == UINT16_MAX || (!sleep_seconds && session_unlocked))
+        return false;
+    uint64_t timeout = sleep_seconds ? (uint64_t)sleep_seconds * 1000000 : FV_TFT_IDLE_US;
+    return now - last_activity >= timeout;
+}
+
+static void restart_activity(uint64_t now, bool waking) {
     last_activity = now;
     sleeping = false;
     if (waking) {
@@ -37,7 +44,33 @@ bool fv_tft_activity(void) {
         backlight = false;
         row = 0; first = true; next_frame = 0;
     }
-    return waking;
+}
+
+bool fv_tft_activity(void) {
+    uint64_t now = time_us_64();
+    bool waking = sleeping || idle_expired(now);
+    bool dark = !backlight;
+    restart_activity(now, waking);
+    /* A policy/state change may already be refreshing a dark screen. Consume
+     * physical input until that refresh becomes visible, without restarting it. */
+    return waking || dark;
+}
+
+void fv_tft_set_sleep(uint16_t seconds, bool unlocked) {
+    switch (seconds) {
+    case 0: case 30: case 60: case 120: case 300: case 600: case UINT16_MAX:
+        break;
+    default:
+        seconds = 0;
+        break;
+    }
+    if (seconds == sleep_seconds && unlocked == session_unlocked)
+        return;
+    uint64_t now = time_us_64();
+    bool waking = sleeping || idle_expired(now);
+    sleep_seconds = seconds;
+    session_unlocked = unlocked;
+    restart_activity(now, waking);
 }
 
 static void command(uint8_t cmd, const uint8_t *data, size_t size) {
@@ -85,11 +118,12 @@ void fv_tft_init(void) {
     memset(sent, 0, sizeof(sent));
     startup_active = false;
     row = 0; first = true; backlight = false; next_frame = 0;
+    sleep_seconds = 0; session_unlocked = false;
     sleeping = false; last_activity = time_us_64();
 }
 
 void fv_tft_poll(const uint8_t *framebuffer) {
-    if (time_us_64() - last_activity >= FV_TFT_IDLE_US) {
+    if (idle_expired(time_us_64())) {
         sleeping = true;
         if (backlight) {
             gpio_put(FUSE_VAULT_TFT_BACKLIGHT_PIN, !FUSE_VAULT_TFT_BACKLIGHT_ENABLE_LEVEL);

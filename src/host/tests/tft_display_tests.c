@@ -36,6 +36,138 @@ int spi_write_blocking(void *s,const uint8_t *d,size_t n){
     else if(cmd==0x2c){assert(n==320 && x0==0 && x1==159);memcpy(panel[y],d,n);writes++;}
     return (int)n;
 }
+
+static void flush_frame(const uint8_t *fb) {
+    for (unsigned i = 0; i < 80; ++i) fv_tft_poll(fb);
+    assert(lit);
+}
+
+static void configurable_sleep_tests(void) {
+    uint8_t fb[12800];
+    static const uint16_t seconds[] = {30, 60, 120, 300, 600};
+    for (unsigned choice = 0; choice < sizeof(seconds) / sizeof(seconds[0]); ++choice) {
+        memset(fb, 0, sizeof(fb));
+        fv_tft_init();
+        fv_tft_set_sleep(seconds[choice], true);
+        flush_frame(fb);
+        uint64_t start = now;
+        uint64_t duration = (uint64_t)seconds[choice] * 1000000;
+
+        /* Adapter polling must not renew an unchanged timed setting. */
+        now = start + duration / 2;
+        fv_tft_set_sleep(seconds[choice], true);
+        now = start + duration - 1;
+        fv_tft_set_sleep(seconds[choice], true);
+        fv_tft_poll(fb); assert(lit);
+        now++;
+        fv_tft_set_sleep(seconds[choice], true);
+        unsigned before = writes;
+        fv_tft_poll(fb); assert(!lit && writes == before);
+
+        /* A dark-screen key only wakes, and changed pixels refresh before light. */
+        memset(fb, 255, sizeof(fb));
+        assert(fv_tft_activity()); assert(!lit);
+        assert(fv_tft_activity()); /* Still dark while the new frame is pending. */
+        for (unsigned i = 0; i < 79; ++i) { fv_tft_poll(fb); assert(!lit); }
+        fv_tft_poll(fb); assert(lit && writes == before + 80);
+        for (unsigned y = 0; y < 80; ++y)
+            for (unsigned x = 0; x < 320; ++x) assert(panel[y][x] == 255);
+
+        /* The first key at the deadline also wakes before poll observes sleep. */
+        now += duration;
+        assert(fv_tft_activity()); assert(!lit);
+        flush_frame(fb);
+    }
+
+    /* Until lock ignores elapsed display inactivity while unlocked, including
+     * changing/zero countdown pixels: only the explicit lock state matters. */
+    memset(fb, 0, sizeof(fb));
+    fv_tft_init();
+    fv_tft_set_sleep(0, true);
+    flush_frame(fb);
+    now += UINT64_C(3600000000);
+    fv_tft_set_sleep(0, true);
+    fb[0] = 255;
+    fv_tft_poll(fb); assert(lit);
+    assert(!fv_tft_activity());
+    now += UINT64_C(3600000000);
+    fv_tft_poll(fb); assert(lit);
+    uint64_t locked_at = now;
+    fv_tft_set_sleep(0, false);
+    now = locked_at + FV_TFT_IDLE_US - 1;
+    fv_tft_set_sleep(0, false);
+    fv_tft_poll(fb); assert(lit);
+    now++;
+    fv_tft_set_sleep(0, false);
+    fv_tft_poll(fb); assert(!lit);
+
+    /* Unlocking wakes the screen without waiting for a physical key. */
+    memset(fb, 255, sizeof(fb));
+    unsigned before = writes;
+    fv_tft_set_sleep(0, true); assert(!lit);
+    assert(fv_tft_activity()); /* Automatic wake has not made the UI visible. */
+    for (unsigned i = 0; i < 79; ++i) {
+        if (i == 40) assert(fv_tft_activity()); /* Consume without restarting scan. */
+        fv_tft_poll(fb); assert(!lit);
+    }
+    fv_tft_poll(fb); assert(lit && writes == before + 80);
+    assert(!fv_tft_activity()); /* A visible-screen press can operate the UI. */
+    for (unsigned y = 0; y < 80; ++y)
+        for (unsigned x = 0; x < 320; ++x) assert(panel[y][x] == 255);
+
+    /* Never stays awake even while locked and never consumes a lit-screen key. */
+    fv_tft_set_sleep(UINT16_MAX, false);
+    now += UINT64_C(7200000000);
+    fv_tft_set_sleep(UINT16_MAX, false);
+    fv_tft_poll(fb); assert(lit);
+    assert(!fv_tft_activity());
+
+    /* A changed setting starts its own full interval, including while dark. */
+    fv_tft_set_sleep(30, false);
+    now += UINT64_C(30000000);
+    fv_tft_poll(fb); assert(!lit);
+    fv_tft_set_sleep(120, false); assert(!lit);
+    assert(fv_tft_activity()); /* Changing policy while dark is also wake-only. */
+    flush_frame(fb);
+    assert(!fv_tft_activity());
+    now += UINT64_C(119999999);
+    fv_tft_poll(fb); assert(lit);
+    now++;
+    fv_tft_poll(fb); assert(!lit);
+    fv_tft_set_sleep(UINT16_MAX, false);
+    flush_frame(fb);
+
+    /* Lock-state transitions restart timed settings too, to show the new state. */
+    fv_tft_set_sleep(30, false);
+    now += UINT64_C(29999999);
+    fv_tft_set_sleep(30, true);
+    now += UINT64_C(29999999);
+    fv_tft_poll(fb); assert(lit);
+    fv_tft_set_sleep(30, false);
+    now += UINT64_C(29999999);
+    fv_tft_poll(fb); assert(lit);
+    now++;
+    fv_tft_poll(fb); assert(!lit);
+
+    /* Invalid settings normalize to Until lock rather than an arbitrary delay. */
+    fv_tft_set_sleep(1, true);
+    flush_frame(fb);
+    now += UINT64_C(3600000000);
+    fv_tft_poll(fb); assert(lit);
+    assert(!fv_tft_activity());
+    fv_tft_set_sleep(1, false);
+    now += FV_TFT_IDLE_US;
+    fv_tft_set_sleep(65534, false); /* Same normalized setting must not renew it. */
+    fv_tft_poll(fb); assert(!lit);
+
+    /* Reinitializing restores Until lock and locked, even after Never/unlocked. */
+    fv_tft_set_sleep(UINT16_MAX, true);
+    fv_tft_init();
+    flush_frame(fb);
+    now += FV_TFT_IDLE_US;
+    fv_tft_poll(fb); assert(!lit);
+}
+
 int main(void){
     uint8_t fb[12800]={0};fb[0]=255;fb[7]=255;fb[12799]=255;
     fv_tft_init();assert(!lit && cs && inversion_off);
@@ -90,9 +222,9 @@ int main(void){
     now+=1000000;
     for(unsigned i=0;i<160;i++)fv_tft_poll(fb);
     assert(!lit && writes==before);
-    /* Wake is reported once, and stale pixels stay dark until a full refresh. */
+    /* Dark-screen keys are consumed; stale pixels stay dark until a full refresh. */
     assert(fv_tft_activity());assert(!lit);
-    assert(!fv_tft_activity());
+    assert(fv_tft_activity()); /* Further dark-screen keys are consumed too. */
     for(unsigned i=0;i<79;i++){fv_tft_poll(fb);assert(!lit);}
     fv_tft_poll(fb);assert(lit && writes==before+80);
     for(unsigned y=0;y<80;y++)for(unsigned x=0;x<320;x++)assert(panel[y][x]==0);
@@ -104,5 +236,6 @@ int main(void){
     now+=FV_TFT_IDLE_US/2;assert(!fv_tft_activity());
     now+=FV_TFT_IDLE_US/2;fv_tft_poll(fb);assert(lit);
     now+=FV_TFT_IDLE_US/2;fv_tft_poll(fb);assert(!lit);
+    configurable_sleep_tests();
     return 0;
 }

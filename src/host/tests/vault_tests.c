@@ -158,13 +158,13 @@ static void attempts(void) {
     f.present=false;f.fail_destroy=true;CHECK(fv_vault_recover(&f.platform)==FV_VAULT_STATE);
     CHECK(!load(&f,&s));CHECK(s.status==FV_ENROLLMENT_DESTROY_PENDING);
     f.fail_destroy=false;CHECK(fv_vault_recover(&f.platform)==FV_VAULT_DENIED);CHECK(f.destroyed);finish(&f);
-    init(&f);create(&f,(fv_auth_policy){2,FV_LIMIT_LOCKOUT,0});
+    init(&f);create(&f,(fv_auth_policy){2,FV_LIMIT_LOCKOUT,0,0});
     CHECK(unlock(&f,(const uint8_t*)"wrong",5)==FV_VAULT_AUTH);
     CHECK(unlock(&f,(const uint8_t*)"wrong",5)==FV_VAULT_DENIED);CHECK(!f.destroyed);
     CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_DENIED);finish(&f);
 }
 static void unlimited_attempts(void) {
-    fixture f;init(&f);fv_auth_policy unlimited={0,FV_LIMIT_NONE,60};create(&f,unlimited);
+    fixture f;init(&f);fv_auth_policy unlimited={0,FV_LIMIT_NONE,60,0};create(&f,unlimited);
     fv_device_state before,after;CHECK(!load(&f,&before));unsigned commits=f.commits;
     /* More than the protocol's byte-sized retry count, with a reboot after
      * every rejected guess. No journal writes, wraparound or revocation. */
@@ -190,7 +190,7 @@ static void unlimited_attempts(void) {
     CHECK(!load(&f,&after) && after.policy.auto_lock_seconds==120);
     CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK && !memcmp(vmk,f.session.vmk,32));
     /* Re-enable destruction without reenrollment or replacing the data key. */
-    changed=(fv_auth_policy){2,FV_LIMIT_DESTROY,300};
+    changed=(fv_auth_policy){2,FV_LIMIT_DESTROY,300,0};
     CHECK(fv_vault_change_credential(&f.session,&f.platform,password,sizeof(password)-1,
         password,sizeof(password)-1,1,3,changed,true)==FV_VAULT_OK);
     CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK && !memcmp(vmk,f.session.vmk,32));
@@ -216,6 +216,44 @@ static void unlimited_attempts(void) {
     CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_IO);
     persist(&f,&before);CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
     finish(&f);
+}
+static void screen_sleep_policy(void) {
+    fixture f;init(&f);
+    fv_auth_policy policy={0,FV_LIMIT_NONE,300,0};create(&f,policy);
+    CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+    uint8_t vmk[32];memcpy(vmk,f.session.vmk,sizeof(vmk));
+    alignas(4) uint8_t data[1024];
+    for(unsigned i=0;i<sizeof(data);i++)data[i]=(uint8_t)(i*7);
+    CHECK(fv_vault_write(&f.session,7,2,data)==FV_BLOCK_OK);
+    const uint16_t sleeps[]={30,UINT16_MAX,0};
+    for(unsigned i=0;i<sizeof(sleeps)/sizeof(*sleeps);i++) {
+        fv_device_state before,after;CHECK(!load(&f,&before));
+        policy.screen_sleep_seconds=sleeps[i];
+        /* A display-only policy change still needs fresh verification and
+         * explicit approval, and leaves the data key and lock timer intact. */
+        CHECK(fv_vault_change_credential(&f.session,&f.platform,password,sizeof(password)-1,
+            password,sizeof(password)-1,1,3,policy,false)==FV_VAULT_INVALID);
+        CHECK(!load(&f,&after) && after.sequence==before.sequence &&
+              after.policy.screen_sleep_seconds==before.policy.screen_sleep_seconds);
+        CHECK(fv_vault_change_credential(&f.session,&f.platform,(const uint8_t *)"wrong",5,
+            password,sizeof(password)-1,1,3,policy,true)==FV_VAULT_AUTH);
+        CHECK(!load(&f,&after) && after.sequence==before.sequence);
+        CHECK(fv_vault_change_credential(&f.session,&f.platform,password,sizeof(password)-1,
+            password,sizeof(password)-1,1,3,policy,true)==FV_VAULT_OK);
+        CHECK(!f.session.unlocked && fv_vault_recover(&f.platform)==FV_VAULT_OK);
+        CHECK(!load(&f,&after) && after.policy.screen_sleep_seconds==sleeps[i] &&
+              after.policy.auto_lock_seconds==300);
+        CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+        CHECK(f.session.config.policy.screen_sleep_seconds==sleeps[i] && !memcmp(vmk,f.session.vmk,32));
+        check_plaintext(&f);
+    }
+    fv_device_state before,after;CHECK(!load(&f,&before));
+    after=before;after.policy.screen_sleep_seconds=600;persist(&f,&after);
+    CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_IO && !f.session.unlocked);
+    after=before;after.policy.screen_sleep_seconds=1;persist(&f,&after);
+    CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_STATE && !f.session.unlocked);
+    persist(&f,&before);CHECK(unlock(&f,password,sizeof(password)-1)==FV_VAULT_OK);
+    check_plaintext(&f);finish(&f);
 }
 static void failures(void) {
     /* Before charge: no credential evaluation. Uncertain commit retains charge. */
@@ -364,9 +402,9 @@ static void batches_and_policy(void) {
     for(unsigned i=0;i<sizeof(data);i++)CHECK(data[i]==(uint8_t)(i*19+7));
     CHECK(fv_vault_read(&f.session,63,2,data)==FV_BLOCK_ERROR_OUT_OF_RANGE);CHECK(zero(data,1024));CHECK(f.session.unlocked);
     CHECK(fv_vault_change_credential(&f.session,&f.platform,password,sizeof(password)-1,replacement,sizeof(replacement)-1,
-        1,3,(fv_auth_policy){20,FV_LIMIT_LOCKOUT,0},false)==FV_VAULT_INVALID);CHECK(!f.session.unlocked);
+        1,3,(fv_auth_policy){20,FV_LIMIT_LOCKOUT,0,0},false)==FV_VAULT_INVALID);CHECK(!f.session.unlocked);
     CHECK(fv_vault_change_credential(&f.session,&f.platform,password,sizeof(password)-1,replacement,sizeof(replacement)-1,
-        1,3,(fv_auth_policy){20,FV_LIMIT_LOCKOUT,0},true)==FV_VAULT_OK);
+        1,3,(fv_auth_policy){20,FV_LIMIT_LOCKOUT,0,0},true)==FV_VAULT_OK);
     fv_device_state s;CHECK(!load(&f,&s));CHECK(s.policy.max_attempts==20 && s.policy.limit_action==FV_LIMIT_LOCKOUT);
     CHECK(unlock(&f,replacement,sizeof(replacement)-1)==FV_VAULT_OK);
     finish(&f);
@@ -375,7 +413,7 @@ static void batches_and_policy(void) {
 static void legacy_volume(void) {
     fixture f;init(&f);fv_device_state state;CHECK(!load(&f,&state));
     fv_envelope_config c={.volume={.layout_version=1,.volume_id={7},.logical_blocks=64,.layer_count=4},
-        .credential_generation=1,.credential_profile=1,.iterations=3,.token_slot=3,.policy={10,FV_LIMIT_DESTROY}};
+        .credential_generation=1,.credential_profile=1,.iterations=3,.token_slot=3,.policy={10,FV_LIMIT_DESTROY,0,0}};
     memcpy(c.device_id,state.device_id,16);memcpy(c.volume.cipher_ids,algorithms,sizeof(algorithms));
     uint8_t vmk[32]={8},bound[32];alignas(4) uint8_t header[512],data[512];
     CHECK(!binding(&f,c.volume.volume_id,3,bound));
@@ -463,6 +501,7 @@ static void session_permissions(void) {
 int main(void) {
     session_permissions();
     unlimited_attempts();
+    screen_sleep_policy();
     large_batches();
     lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
     algorithms[1]=3;algorithms[3]=3;

@@ -11,6 +11,9 @@ typedef struct {
     fv_limit_action limit_action;
     /* Zero preserves the original no-timer behavior of existing vaults. */
     uint32_t auto_lock_seconds;
+    /* Display preference only: zero stays lit until lock, UINT16_MAX never
+     * sleeps; timed choices are 30, 60, 120, 300 or 600 seconds. */
+    uint16_t screen_sleep_seconds;
 } fv_auth_policy;
 fv_auth_policy fv_auth_policy_default(void);
 bool fv_auth_policy_encode(const fv_auth_policy *,uint8_t out[FV_AUTH_POLICY_BYTES]);

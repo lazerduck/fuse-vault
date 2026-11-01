@@ -49,7 +49,7 @@ static void init_device(fv_enrollment_device *d,media *m) {
     fv_enrollment_init(d,(fv_otp_io){m,raw_read,raw_write,read_secret,write_secret,can_program},flash_io(m),id);
 }
 static fv_device_state fresh(uint64_t seq) {
-    fv_device_state s={.status=FV_ENROLLMENT_EMPTY,.sequence=seq,.policy={10,FV_LIMIT_DESTROY}};
+    fv_device_state s={.status=FV_ENROLLMENT_EMPTY,.sequence=seq,.policy={10,FV_LIMIT_DESTROY,0,0}};
     memcpy(s.device_id,id,16);return s;
 }
 static void journals(void) {
@@ -210,12 +210,13 @@ static void full_pipeline(void) {
     /* Header rollback cannot reset flash attempts or restore the old credential. */
     uint8_t current_headers[8192];memcpy(current_headers,card,8192);memcpy(card,old_headers,8192);
     CHECK(fv_vault_unlock(&v,&p,secret,8)==FV_VAULT_IO);memcpy(card,current_headers,8192);
-    /* Disabling destruction and setting a timer survives reopening the real
+    /* Disabling destruction and setting both timers survives reopening the real
      * OTP-backed journal. Unlimited guesses leave flash and OTP untouched. */
-    CHECK(!fv_vault_change_credential(&v,&p,next,11,next,11,1,3,(fv_auth_policy){0,FV_LIMIT_NONE,120},true));
+    CHECK(!fv_vault_change_credential(&v,&p,next,11,next,11,1,3,(fv_auth_policy){0,FV_LIMIT_NONE,120,600},true));
     fv_enrollment_clear(&d);init_device(&d,&m);CHECK(!fv_enrollment_open(&d));
     CHECK(!p.authority.load(p.authority.context,&state));
-    CHECK(state.policy.limit_action==FV_LIMIT_NONE && !state.policy.max_attempts && state.policy.auto_lock_seconds==120);
+    CHECK(state.policy.limit_action==FV_LIMIT_NONE && !state.policy.max_attempts && state.policy.auto_lock_seconds==120 &&
+          state.policy.screen_sleep_seconds==600);
     unsigned programs=m.programs,erases=m.erases,otp_writes=m.otp_writes;
     for(unsigned i=0;i<12;i++) {
         CHECK(fv_vault_unlock(&v,&p,secret,8)==FV_VAULT_AUTH);
@@ -224,6 +225,7 @@ static void full_pipeline(void) {
     }
     CHECK(m.programs==programs && m.erases==erases && m.otp_writes==otp_writes);
     CHECK(!fv_vault_unlock(&v,&p,next,11));CHECK(fv_vault_read(&v,5,2,data)==FV_BLOCK_OK);
+    CHECK(v.config.policy.screen_sleep_seconds==600 && v.config.policy.auto_lock_seconds==120);
     for(unsigned i=0;i<sizeof(data);i++)CHECK(data[i]==37);
     CHECK(!fv_vault_change_credential(&v,&p,next,11,next,11,1,3,fv_auth_policy_default(),true));
     /* Durable final pending attempt resumes without any SD and burns the token. */

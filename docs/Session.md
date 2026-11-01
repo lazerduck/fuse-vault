@@ -53,6 +53,33 @@ The dashboard shows remaining minutes/seconds and a small circular indicator. Th
 
 Storage writes are committed in batches. An executing batch can finish before the worker checks expiry; no later batch or stale result is authorized after revocation. Host-side cached data has not necessarily reached the device, so eject before leaving a writable volume idle if applications have unsaved or cached writes. Locking cannot erase data already delivered to the host.
 
+## Display sleep
+
+Settings → Security includes a Screen setting saved across power cycles. It is
+separate from automatic locking:
+
+| Choice | Screen behaviour |
+| --- | --- |
+| Until lock (default) | Stays on while unlocked, including the countdown; sleeps 60 seconds after locking. |
+| 30 seconds, 1/2/5/10 minutes | Sleeps after that period without display activity, even while unlocked. |
+| Never | Stays on while the device is powered. |
+
+Existing vaults without a screen preference use Until lock. If automatic locking
+is Off, that choice keeps the screen on until the session is locked another way.
+Changing it uses the same current-credential and Review → Save flow as other
+Security settings.
+
+Physical buttons and accepted FIDO operations/prompts wake the display and renew
+its display timer. File traffic, countdown redraws and discovery polling do not.
+A lock/unlock transition starts a fresh display interval. A physical press while
+the display is dark or being refreshed only wakes it; press again once visible
+to navigate or approve. The current frame is refreshed before the backlight turns
+on.
+
+Display activity alone never renews the vault's inactivity timer. Keeping the
+screen on cannot keep the vault unlocked, and turning it off does not lock the
+vault. Physical button activity still renews the session as described above.
+
 ## Power loss and restart
 
 RAM is volatile, so a full power-off loses the live session state. The device starts locked and needs the credential again to recover the VMK.

@@ -179,7 +179,7 @@ int main(void){
             static const uint8_t secret[]="fixture secret";
             fv_fido_lock_session();
             assert(fv_vault_change_credential(&fixture.vault,&fixture.platform,secret,sizeof(secret)-1,
-                secret,sizeof(secret)-1,1,2,(fv_auth_policy){0,FV_LIMIT_NONE,300},true)==FV_VAULT_OK);
+                secret,sizeof(secret)-1,1,2,(fv_auth_policy){0,FV_LIMIT_NONE,300,0},true)==FV_VAULT_OK);
             fv_device_ui_media_changed(false);puts("ok");
         }
         else if(!strcmp(line,"authority-sequence\n")){printf("%llu\n",(unsigned long long)fixture.authority.sequence);}

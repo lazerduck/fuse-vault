@@ -63,7 +63,8 @@ static bool matches(const fv_envelope_config *c,const fv_device_state *s) {
     return c->credential_generation==s->credential_generation && c->token_slot==s->token_slot &&
         !memcmp(c->device_id,s->device_id,16) && !memcmp(c->volume.volume_id,s->volume_id,16) &&
         c->policy.max_attempts==s->policy.max_attempts && c->policy.limit_action==s->policy.limit_action &&
-        c->policy.auto_lock_seconds==s->policy.auto_lock_seconds;
+        c->policy.auto_lock_seconds==s->policy.auto_lock_seconds &&
+        c->policy.screen_sleep_seconds==s->policy.screen_sleep_seconds;
 }
 static fv_vault_result select_header(const fv_vault_platform *p,const fv_device_state *s,
                                      uint8_t h[512],fv_envelope_config *c,unsigned *slot) {
@@ -214,7 +215,8 @@ fv_vault_result fv_vault_change_credential(fv_vault *v,const fv_vault_platform *
        select_header(p,&s,header,&old,&slot)!=FV_VAULT_OK || s.credential_generation==UINT64_MAX)goto done;
     r=FV_VAULT_INVALID;
     if(!p->random || (!approved && (policy.max_attempts!=s.policy.max_attempts ||
-        policy.limit_action!=s.policy.limit_action || policy.auto_lock_seconds!=s.policy.auto_lock_seconds)))goto done;
+        policy.limit_action!=s.policy.limit_action || policy.auto_lock_seconds!=s.policy.auto_lock_seconds ||
+        policy.screen_sleep_seconds!=s.policy.screen_sleep_seconds)))goto done;
     fv_envelope_config c=v->config;
     c.credential_generation++;c.credential_profile=profile;c.iterations=iterations;c.policy=policy;
     if(p->authority.binding(p->authority.context,c.volume.volume_id,c.token_slot,binding) ||

@@ -146,6 +146,10 @@ void fv_device_ui_poll(void) {
         fv_ui_wipe(&c, sizeof(c));
     }
 #if FV_TFT_DISPLAY
+    /* Apply display policy after consuming any dark-screen key. Keeping the
+     * screen lit cannot renew or authorize the worker-owned vault session. */
+    fv_tft_set_sleep(ui.device.screen_sleep_seconds,
+                     ui.device.unlocked && !fv_usb_session_invalidated());
     fv_tft_poll(ui.framebuffer);
 #endif
 }

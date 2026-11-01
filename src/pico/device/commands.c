@@ -373,7 +373,8 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         }
     }
     if(job->op==UI_CREATE || job->op==UI_POLICY){
-        fv_auth_policy policy={job->attempts,(fv_limit_action)job->action,job->auto_lock_seconds};
+        fv_auth_policy policy={job->attempts,(fv_limit_action)job->action,job->auto_lock_seconds,
+                               job->screen_sleep_seconds};
         uint8_t encoded[FV_AUTH_POLICY_BYTES];
         if(!fv_auth_policy_encode(&policy,encoded) ||
            (job->action!=FV_LIMIT_DESTROY && job->action!=FV_LIMIT_NONE) ||
@@ -415,7 +416,8 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         goto done;
     }
     if(!start_random()){r=FV_VAULT_IO;goto done;}
-    fv_auth_policy policy={job->attempts,(fv_limit_action)job->action,job->auto_lock_seconds};
+    fv_auth_policy policy={job->attempts,(fv_limit_action)job->action,job->auto_lock_seconds,
+                           job->screen_sleep_seconds};
     if(job->op==UI_CHANGE){
         r=persistent_platform.authority.load(persistent_platform.authority.context,&state);
         if(!r)r=fv_vault_change_credential(&usb_session,&persistent_platform,job->current,job->current_length,
@@ -452,7 +454,8 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     if(!opened){
         int loaded=persistent_platform.authority.load(persistent_platform.authority.context,&state);
         if(!loaded){out->status=state.status;out->attempts=state.policy.max_attempts;
-            out->action=state.policy.limit_action;out->auto_lock_seconds=state.policy.auto_lock_seconds;}
+            out->action=state.policy.limit_action;out->auto_lock_seconds=state.policy.auto_lock_seconds;
+            out->screen_sleep_seconds=state.policy.screen_sleep_seconds;}
         else if(!out->result)out->result=loaded;
     }else if(opened!=1 && opened!=2 && !out->result)out->result=opened;
     if(!out->result && out->status==FV_ENROLLMENT_ACTIVE){

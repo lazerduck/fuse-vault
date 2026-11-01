@@ -31,18 +31,25 @@ need their host partition-manager step. Full-feature test firmware is built in
 
 ## Backlight inactivity
 
-The physical screen switches its LED backlight off after 60 seconds without
-button interaction or a FIDO operation. TFT transfers also pause while dark;
-USB storage and FIDO continue normally, and this does not lock the vault.
-The first physical button press wakes the screen only. A subsequent press
-operates the UI. Wake refreshes the full current frame before lighting the LED.
+Settings → Security now saves screen sleep with the authenticated policy.
+Until lock (zero/default) keeps the screen lit while unlocked, then switches its
+LED backlight off 60 seconds after locking. Timed choices are 30 seconds or
+1/2/5/10 minutes without button interaction or an accepted FIDO operation; Never
+keeps it lit while powered. Existing zero-valued policy bytes use Until lock.
+TFT transfers pause while dark; USB storage and FIDO continue normally, and this
+does not lock the vault. A physical press while dark or refreshing wakes only;
+a press after the display is visible operates the UI. Wake refreshes the full
+current frame before lighting the LED.
 
 Accepted FIDO operations and newly displayed approval/verification prompts wake
 the display and restart its timer. HID initialization and GetInfo discovery do
 not, nor do disk traffic, dashboard updates or debug screen polling. Accepted
 debug key injection wakes the display and delivers the key normally, since the
-desktop viewer is already visible. The timeout is `FV_TFT_IDLE_US` in the TFT
-header. This controls the backlight; it does not put the LCD controller to sleep.
+desktop viewer is already visible. `fv_tft_set_sleep()` applies the saved setting
+and session state on core 0. Identical calls do not renew the timer; policy and
+lock/unlock transitions do. `FV_TFT_IDLE_US` is the one-minute locked timeout for
+Until lock. Display updates never renew the worker's auto-lock timer. This controls
+the backlight; it does not put the LCD controller to sleep.
 
 ## Debug RAM readout
 

@@ -14,6 +14,7 @@ static void begin_policy(fv_ui *u) {
     if (u->job.action == 1 && (!u->job.attempts || u->job.attempts > 100))
         u->job.attempts = 10;
     u->job.auto_lock_seconds = u->device.auto_lock_seconds;
+    u->job.screen_sleep_seconds = u->device.screen_sleep_seconds;
     u->job.profile = u->device.profile ? u->device.profile : 2;
     ui_scene_show(u, UI_SECRET);
 }
@@ -25,6 +26,7 @@ static void begin_change(fv_ui *u) {
     u->job.attempts = u->device.attempts;
     u->job.action = u->device.action;
     u->job.auto_lock_seconds = u->device.auto_lock_seconds;
+    u->job.screen_sleep_seconds = u->device.screen_sleep_seconds;
     ui_scene_show(u, UI_SECRET);
 }
 

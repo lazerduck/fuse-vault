@@ -16,14 +16,14 @@ The wheels have more possible values than the four-word method, but a direction 
 
 The user first enters and confirms their credential, then selects the encryption stack. They can select one to four layers from AES-256, Camellia-256 and SM4-128. These layers build the pipeline through which content is encrypted and decrypted. Additional layers can reduce transfer speeds. Changing the stack currently requires creating a fresh vault. Credential changes preserve the existing vault.
 
-The Security screen lets the user enable key destruction after 1–100 consecutive failed attempts, or turn destruction off for unlimited attempts. It also sets the inactivity lock timer to Off or 1, 2, 5, 10, 15, or 30 minutes. New vaults default to destruction after ten failures and a five-minute timer. Permanent lockout is no longer selectable.
+The Security screen lets the user enable key destruction after 1–100 consecutive failed attempts, or turn destruction off for unlimited attempts. It also sets the inactivity lock timer to Off or 1, 2, 5, 10, 15, or 30 minutes, and screen sleep to Until lock, 30 seconds, 1/2/5/10 minutes, or Never. New vaults default to destruction after ten failures, a five-minute lock timer and Until lock screen sleep. Permanent lockout is no longer selectable.
 
 The current setup order is:
 
 1. Choose the credential entry method.
 2. Enter and confirm the credential.
 3. Select the encryption stack.
-4. Choose whether failed attempts destroy the keys, the attempt limit when enabled, and the automatic lock duration.
+4. Choose whether failed attempts destroy the keys, the attempt limit when enabled, the automatic lock duration and screen sleep.
 5. Review the choices and explicitly confirm creation, which replaces the existing SD layout.
 6. Provision OTP enrollment material if needed. Each enrollment gets one fresh random token and a fresh authenticated journal. There is no permanent device root.
 7. Generate a random VMK and protect it using the credential and device-held secrets, with the selected cipher families.
@@ -76,7 +76,9 @@ Fully unlock the vault, open Settings → Security, enter the current credential
 
 Existing vaults keep their saved attempt policy and have auto-lock Off until explicitly changed. The timer is stored with the authenticated policy and survives power cycles. The dashboard shows a small countdown ring and remaining time while it is enabled; see [Session](Session.md#automatic-locking) for what counts as activity.
 
-Firmware predating these settings cannot read policies with a nonzero timer or disabled destruction. Once either has been saved, keep this firmware or a compatible newer version: restoring destruction enabled and auto-lock Off does not make downgrade safe, because unsupported policy records can remain in the authenticated journal history. This also applies to vaults newly enrolled by this firmware, whose initial journal uses the new defaults. Current-format vaults do not need re-enrollment to use this update.
+Screen sleep is saved in the same policy and also survives unplugging. Until lock is the default for existing vaults without a saved screen preference: the screen stays on throughout an unlocked session, then sleeps a minute after locking. Timed choices use display inactivity; Never keeps it on while powered. These choices do not change the vault's auto-lock timer or permissions. See [Display sleep](Session.md#display-sleep).
+
+Firmware predating these settings cannot read policies containing options it does not support, including a nonzero lock timer, disabled destruction or a non-default screen-sleep value. Keep this firmware or a compatible newer version after saving these options: restoring defaults does not make downgrade safe, because unsupported policy records can remain in the authenticated journal history. This also applies to vaults newly enrolled by this firmware, whose initial journal uses the new defaults. Current-format vaults do not need re-enrollment to use this update.
 
 ## Reaching the attempt limit
 

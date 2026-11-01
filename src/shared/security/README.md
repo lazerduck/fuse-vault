@@ -23,6 +23,10 @@ implemented for development/testing, not frozen for production use.
 - Authenticated inactivity duration stored in the policy (Off or 1/2/5/10/15/30
   minutes). New policies default to five minutes; legacy zero bytes mean Off.
   The portable monotonic timer cannot be revived by activity after expiry.
+- Authenticated display-sleep preference in policy bytes 14–15: Until lock (zero,
+  default), 30/60/120/300/600 seconds, or Never (65535). It survives restart and
+  uses the existing approved policy-save flow. It controls the backlight only;
+  the vault session timer remains independent.
 - Exact header hash/generation anchored on the device. Credential changes write,
   sync and verify the other SD header before committing the new authority record.
   Mirroring follows commit; its failure never rolls the anchor back.

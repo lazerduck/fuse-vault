@@ -41,6 +41,8 @@ typedef struct {
     uint8_t current[FV_UI_SECRET_MAX], current_length;
     uint16_t algorithms[4], profile;
     uint32_t attempts, action, auto_lock_seconds;
+    /* 0: until lock, UINT16_MAX: never, otherwise display-idle seconds. */
+    uint16_t screen_sleep_seconds;
     uint8_t fido_policy;
     uint16_t passkey_index;
     uint8_t passkey_id[42];
@@ -52,6 +54,7 @@ typedef struct {
     fv_access_mode mode;
     uint64_t blocks;
     uint32_t attempts, action, auto_lock_seconds;
+    uint16_t screen_sleep_seconds;
     uint8_t fido_policy;
     uint16_t passkey_index, passkey_count;
     uint8_t passkey_id[42];
