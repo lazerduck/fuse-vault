@@ -3,7 +3,7 @@
 These are earlier AI-generated design notes, proposals and implementation records.
 They are retained for reference and may contain stale status or superseded decisions.
 For the documentation currently being reconciled with the implementation, start with
-the [project README](../../README.md) and [key handling](../KeyHandling.md).
+the [project README](../../README.md), [threat model](../ThreatModel.md) and [key handling](../KeyHandling.md).
 A proposal or completion claim in this archive is not by itself an accepted current requirement.
 
 ## Previous project overview

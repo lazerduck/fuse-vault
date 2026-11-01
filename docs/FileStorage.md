@@ -69,7 +69,7 @@ XTS encrypts the content but does not by itself detect tampering. We use HMAC-SH
 
 This does not prevent rollback. An attacker can restore an older ciphertext sector and its matching tag to the same location in the same vault. They do not learn the plaintext, but they can undo changes. They could also mix valid sectors from different points in time, which may leave an inconsistent filesystem rather than a usable older snapshot.
 
-The device's internal security state separately records which vault header is accepted. Restoring an old SD image does not simply restore an old credential or reset the attempt count. Restoring the device's internal flash is a separate attack, outside the agreed protection scope.
+The device's internal security state separately records which vault header is accepted. Restoring an old SD image does not simply restore an old credential or reset the attempt count. Restoring the device's internal flash is a separate attack, outside the existing SD rollback protection. The [threat model](ThreatModel.md) defines this boundary and the protections required against an untrusted host.
 
 The intended boundary is that someone controlling the SD card cannot read the encrypted contents or manufacture arbitrary new plaintext that passes authentication, assuming the keys and cryptographic functions remain secure. They can still delete, corrupt or restore older data. There is also an explicit zeroing case in the unset-sector handling below.
 

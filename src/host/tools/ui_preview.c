@@ -23,6 +23,13 @@ int main(void){
     save(&u,"00-startup");
     fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.attempts=10,.action=1});
     save(&u,"01-locked");
+    {
+        fv_ui locked = u;
+        locked.flipped = true; save(&locked, "01a-locked-flipped");
+        locked.flipped = false; locked.fido_enabled = false;
+        save(&locked, "01b-locked-files-only");
+        locked.flipped = true; save(&locked, "01c-locked-files-only-flipped");
+    }
     fv_ui_keypress(&u,UI_SELECT);
     save(&u,"02a-pattern-empty");
     for(unsigned i=0;i<8;i++)fv_ui_keypress(&u,(fv_ui_key)(i%4+1));

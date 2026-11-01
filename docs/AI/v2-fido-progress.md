@@ -1,5 +1,7 @@
 # V2 FIDO delivery ledger
 
+> The [current threat model](../ThreatModel.md) supersedes security-scope statements in this historical delivery record.
+
 This is the persistent implementation plan and handoff record. Read this file
 before resuming FIDO work after compaction or in another task. Update the current
 step, evidence, and next action when work stops; do not infer completion from a

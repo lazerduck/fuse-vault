@@ -44,11 +44,13 @@ The locked home screen offers three choices before credential entry:
 
 | Button | Session mode | Files over USB | Passkeys |
 | --- | --- | --- | --- |
-| Select | Full unlock | Read and write | Enabled |
 | Up | Passkeys only | No medium available | Enabled |
+| Select | Full unlock | Read and write | Enabled |
 | Down | Read-only files | Read only | Disabled |
 
-Up is offered when FIDO support is built in. Left/Right still flip the screen;
+The choices are arranged vertically to match the controls: Up at the top, Select
+in the centre and Down at the bottom. Up is offered when FIDO support is built in.
+Left/Right still flip the screen;
 directions follow its displayed orientation. Setup on a fresh device still starts
 with Select. The chosen scope appears during entry and while unlocked. Back
 cancels it. Each session uses the same credential and persistent attempt budget.

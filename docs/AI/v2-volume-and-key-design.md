@@ -1,3 +1,5 @@
+> Current security scope: [Threat model](../ThreatModel.md). The design and status below are historical and include superseded decisions.
+
 > **Implementation update:** [volume layout version 2](v2-lazy-metadata.md)
 
 > Historical root-based design. The token-only enrollment allocation, journal version 2 and recovery ordering supersede its root and enrollment-lifecycle details. See [current key handling](../KeyHandling.md#token-only-otp-enrollment).

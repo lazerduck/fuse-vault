@@ -14,6 +14,7 @@ The software is written in C with the Pico SDK and controls and coordinates the 
 
 ### Subsections
 
+- [Threat model](docs/ThreatModel.md)
 - [Key handling](docs/KeyHandling.md)
 - [File storage](docs/FileStorage.md)
 - [Setup, unlock and enrollment](docs/Setup.md)

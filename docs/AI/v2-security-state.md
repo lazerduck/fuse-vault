@@ -1,5 +1,7 @@
 # V2 storage and device-state boundary
 
+> Historical design and implementation record. The [current threat model](../ThreatModel.md) supersedes scope statements here; implementation status below records earlier milestones.
+
 Agreed scope: controlling, cloning, replacing or restoring SD contents must not
 reveal secrets, reset authentication controls, buy extra attempts or undo
 cryptographic destruction. Destruction/corruption and

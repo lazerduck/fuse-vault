@@ -2,7 +2,7 @@
 
 Fuse Vault can act as a USB FIDO2 authenticator. This lets you register it with a website or service and then use it to sign in. FIDO uses a public and private key pair for each credential. The service holds the public key, and the device uses the private key to sign a challenge during authentication. The service can check that signature without receiving the private key. The browser connects this exchange to the website being visited. See the [WebAuthn specification](https://www.w3.org/TR/webauthn-2/) for the protocol model.
 
-The FIDO store lives in the private SD card region described in [File storage](FileStorage.md). Its protection depends on the VMK. Full unlock and Passkeys only sessions authorize FIDO; Read-only files sessions do not. This page describes the current firmware with FIDO enabled.
+The FIDO store lives in the private SD card region described in [File storage](FileStorage.md). Its protection depends on the VMK. Full unlock and Passkeys only sessions authorize FIDO; Read-only files sessions do not. This page describes the current firmware with FIDO enabled. The [threat model](ThreatModel.md) distinguishes protected device secrets from protocol outputs and website sessions held by an untrusted host.
 
 ## Registering and signing in
 

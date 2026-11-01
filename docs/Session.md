@@ -2,7 +2,7 @@
 
 Unlocking recovers the VMK into RAM and derives the working keys needed for storage. These remain available while the device is unlocked, allowing files and FIDO credentials to be used without entering the vault credential for every operation.
 
-The persistent copy of the VMK remains encrypted in the SD card headers. The unlocked session is the temporary state that lets the device use it. [Key handling](KeyHandling.md) explains how the credential and enrollment secrets protect that persistent copy.
+The persistent copy of the VMK remains encrypted in the SD card headers. The unlocked session is the temporary state that lets the device use it. [Key handling](KeyHandling.md) explains how the credential and enrollment secrets protect that persistent copy. The [threat model](ThreatModel.md) defines the boundary between authorized use by an untrusted computer and access after the session ends.
 
 ## What stays in RAM
 
@@ -69,7 +69,7 @@ In that design, a fault in a less-privileged USB or UI component would have a re
 
 ## Improvements not yet completed
 
-A full TrustZone split is deferred during pre-alpha under the current threat model. Prioritize trusted boot and update policies, debug and OTP access restrictions, hostile-input validation, and hardware testing of key cleanup and interrupted operations. Revisit component isolation if protecting keys after a successful USB or FIDO firmware exploit becomes a product requirement. That would require defining the trusted components and configuring every relevant memory-access path; the current firmware does not provide that isolation.
+A full TrustZone split is deferred during pre-alpha under the [current threat model](ThreatModel.md#trusted-components-and-remaining-protections). Hostile USB/FIDO input remains in scope: a firmware exploit that exposes secrets or bypasses authorization would violate that model. Isolation could contain the damage from a compromised component, but the current firmware does not provide it. Prioritize trusted boot and update policies, debug and OTP access restrictions, hostile-input validation, and hardware testing of key cleanup and interrupted operations. Revisit component isolation as additional containment, including the trusted components and every relevant memory-access path.
 
 Audit and test cleanup beyond the main session objects: temporary stack copies, library contexts, error exits, cancellation and work interrupted by USB events. The current explicit wipes establish the intended lifecycle, but a complete RAM-cleanup claim needs that wider evidence.
 

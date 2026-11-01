@@ -1,5 +1,7 @@
 # V2 production checklist
 
+> Use the [current threat model](../ThreatModel.md) for agreed security scope. This checklist includes historical milestones and outstanding work; neither a checked item nor an old scope statement establishes the complete current guarantee.
+
 Development continues with diagnostics enabled. This checklist separates **code
 implemented**, **hardware verified**, and **release configuration**. An unchecked
 item does not mean it blocks the next development step; it means we must not claim
