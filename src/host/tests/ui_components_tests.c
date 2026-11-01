@@ -88,7 +88,7 @@ static void scene_tests(void) {
     CHECK(!ui_scene_get((fv_ui_screen)-1));
     CHECK(!ui_scene_get(UI_SCREEN_COUNT));
 
-    fv_ui_complete(&u, (fv_ui_result){.status = 2, .profile = 3, .unlocked = true});
+    fv_ui_complete(&u, (fv_ui_result){.status = 2, .profile = 3, .unlocked = true, .mode = FV_ACCESS_FULL});
     u.job.profile = 3;
     u.entry.values[0] = 91;
     ui_scene_show(&u, UI_SECRET);
@@ -120,7 +120,7 @@ static void scene_tests(void) {
 static void dashboard_tests(void) {
     fv_ui u;
     fv_ui_init(&u);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL});
     CHECK(u.screen==UI_DASHBOARD && !u.dashboard_bars);
     fv_ui_activity(&u,1024,2048,500000);
     CHECK(u.read_kib_tenths==20 && u.write_kib_tenths==40 && u.history_count==1);
@@ -142,7 +142,7 @@ static void dashboard_tests(void) {
     fv_ui_complete(&u,(fv_ui_result){.status=2});
     CHECK(u.screen==UI_HOME && !u.history_count && !u.read_kib_tenths && u.dashboard_bars);
     fv_ui_activity(&u,1024,1024,500000);CHECK(!u.history_count);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL});
     CHECK(u.screen==UI_DASHBOARD && u.dashboard_bars);
     fv_ui_activity(&u,UINT32_MAX,UINT32_MAX,1);
     CHECK(u.read_kib_tenths==UINT32_MAX);

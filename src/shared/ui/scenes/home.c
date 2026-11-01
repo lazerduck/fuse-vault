@@ -16,7 +16,7 @@ static const ui_menu_item home_items[] = {
 };
 static const ui_menu home_menu = {home_items, 2, 43, 12, 9, 1, 2};
 
-static void begin_vault_flow(fv_ui *u) {
+static void begin_vault_flow(fv_ui *u, fv_access_mode mode) {
     memset(&u->job, 0, sizeof(u->job));
     u->error = 0;
     u->job.count = 1;
@@ -26,6 +26,7 @@ static void begin_vault_flow(fv_ui *u) {
     u->job.profile = u->device.profile ? u->device.profile : 2;
     if (u->device.status == 2) {
         u->flow = UI_FLOW_UNLOCK;
+        u->job.mode = mode;
         if (u->job.profile == 1) {
             u->error = -6;
             ui_scene_show(u, UI_ERROR);
@@ -49,9 +50,13 @@ static void home_key(fv_ui *u, fv_ui_key key) {
             ui_go_home(u);
     } else if (u->device.unlocked) {
         ui_menu_key(u, &home_menu, key);
+    } else if (u->device.status == 2) {
+        if (key == UI_SELECT) begin_vault_flow(u, FV_ACCESS_FULL);
+        else if (key == UI_UP && u->fido_enabled) begin_vault_flow(u, FV_ACCESS_PASSKEYS_ONLY);
+        else if (key == UI_DOWN) begin_vault_flow(u, FV_ACCESS_FILES_READ_ONLY);
     } else if (key == UI_SELECT && (u->device.status == 0 || u->device.status == 1 ||
-                                    u->device.status == 2 || u->device.status == 5)) {
-        begin_vault_flow(u);
+                                    u->device.status == 5)) {
+        begin_vault_flow(u, FV_ACCESS_LOCKED);
     }
 }
 
@@ -63,16 +68,18 @@ static void render_home(fv_ui *u) {
                     u->device.unlocked ? UI_COLOUR_SUCCESS : UI_COLOUR_WARNING);
     ui_draw_rule(u, 12);
     if (u->device.unlocked) {
-        uint64_t tenths = u->device.blocks * 10 / 2097152;
-        snprintf(b, sizeof(b), "%llu.%llu GIB VAULT", (unsigned long long)(tenths / 10),
-                 (unsigned long long)(tenths % 10));
-        ui_draw_text_at(u, 4, 17, b, 1, UI_COLOUR_TEXT);
+        ui_draw_text_at(u, 4, 17, ui_mode_label(u->device.mode), 1, UI_COLOUR_TEXT);
         /* Arrows point into the vault for writes, out of it for reads. */
         snprintf(b, sizeof(b), "\001\007 %u  \003\007 %u KIB/S",
                  (unsigned)(u->write_kib_tenths / 10), (unsigned)(u->read_kib_tenths / 10));
-        ui_draw_text_at(u, 4, 26, b, 1, UI_COLOUR_TEXT);
+        ui_draw_text_at(u, 4, 26, fv_access_files(u->device.mode) ? b : "FILES NOT EXPOSED", 1, UI_COLOUR_TEXT);
         ui_draw_rule(u, 36);
         ui_menu_render(u, &home_menu);
+    } else if (u->device.status == 2) {
+        ui_draw_text_at(u, 10, 20, "\006 FULL ACCESS", 1, UI_COLOUR_TEXT);
+        if (u->fido_enabled)
+            ui_draw_text_at(u, 10, 35, "\004 PASSKEYS ONLY", 1, UI_COLOUR_TEXT);
+        ui_draw_text_at(u, 10, 50, "\002 FILES READ ONLY", 1, UI_COLOUR_TEXT);
     } else {
         ui_draw_vault(u, 68, 17, u->device.status == 2 ? UI_COLOUR_ACCENT : UI_COLOUR_WARNING);
         const char *title = u->device.status == 2                              ? "VAULT LOCKED"
@@ -87,7 +94,7 @@ static void render_home(fv_ui *u) {
     }
     ui_draw_rule(u, 67);
     ui_draw_text_at(u, 4, 71, u->device.unlocked ? "\005 BACK" : "\003\001 FLIP", 1, UI_COLOUR_TEXT);
-    if (u->device.unlocked)
+    if (u->device.unlocked && fv_access_files(u->device.mode))
         ui_draw_text_at(u, 76, 71, "EJECT FIRST", 1, UI_COLOUR_TEXT);
 }
 

@@ -44,6 +44,31 @@ build inputs.
 
 ## Current and previous designs
 
+### Cosmetic alternatives to L — 31 October 2026
+
+- [Sculpted panel study](prototype-l-sculpted/README.md): a further design pass
+  with real 0.40 mm panel relief, bevelled grey panels, an integrated orange joint
+  tongue, eased control tops and recessed cap faces. Retains the smooth SD
+  shoulder and L's internal fit. Includes actual CAD studio views, a dimensioned
+  joint section and a three-colour 3MF. Requires a print trial; L remains the
+  physically confirmed baseline.
+- [Panelled v2 with smooth SD shoulder](prototype-l-panelled-v2/README.md): revised
+  after feedback on the first styling pass. A tangent outer curve replaces the
+  visible SD step; a fine dark perimeter, simpler joint and framed inset bring
+  the face closer to the mockup. Requires a matching new base and lid; existing
+  L caps and controls can be reused. CAD checks pass; physical print trial pending.
+- [Precision instrument](prototype-l-precision/README.md): slate face, original
+  Vault emblem and shallow reversible cap grooves.
+- [Panelled technical](prototype-l-panelled/README.md): light-grey face, original
+  Vault emblem and one stepped diagonal seam with an orange accent.
+
+These preserve L's functional CAD geometry and provide editable STEP, registered
+multipart lid 3MF, print STLs and actual CAD renders. The logo is the existing
+polygon reconstruction, uniformly scaled to 80% for cap clearance. Independent
+export checks pass; physical cosmetic print trials are pending. L remains the
+confirmed assembly baseline. The variant READMEs contain rebuild instructions;
+generated STEP/3MF/ZIP files stay local, while printable STLs are retained in Git.
+
 - [L editable case assembly](prototype-l/case-assembly.step)
 - [L print pack](prototype-l/fuse-vault-case-l-print-pack.zip)
 - [L print and assembly instructions](prototype-l/PRINT-AND-ASSEMBLY.txt)

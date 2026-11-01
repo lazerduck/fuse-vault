@@ -24,16 +24,27 @@ static atomic_uint prompt_state; /* 0 idle, 1 publish, 2 UI, 3 answer, 4 dismiss
 static struct {bool secret,approved;uint16_t profile;uint8_t value[64],length;char label[128];} prompt;
 static bool discard,initialized;
 static bool completed_unlocked;
+static uint32_t completed_generation;
+/* Core 0 owns the permission lifetime of a fragmented worker response. */
+static bool response_scoped;
+static uint32_t response_generation;
+/* Published with done: cancellation only owns sessions used by this request. */
+static bool cancellation_locks_session;
+/* Core 0 owns this across the verification and presence prompts of one request. */
+static bool request_ui_owned;
 static uint32_t keepalive_at;
 static fv_fido_journal store;
 static fv_fido_verification_t verification;
 static bool engine_open,executing,invalidated;
 static char request_label[128];
 static uint8_t uv_policy;
+static bool fido_authorized(void){
+    return !fv_usb_session_invalidated() && fv_fido_vault()->unlocked && fv_access_fido(fv_fido_access_mode());
+}
 static uint32_t now(void *context){(void)context;return (uint32_t)(time_us_64()/1000);}
 bool fv_fido_busy(void){return atomic_load(&busy);}
 bool fv_fido_disk_available(void){unsigned s=atomic_load(&prompt_state);return s==1 || s==2;}
-bool fv_fido_cancelled(void *ctx){(void)ctx;return atomic_load(&cancel) || invalidated;}
+bool fv_fido_cancelled(void *ctx){(void)ctx;return atomic_load(&cancel) || invalidated || fv_usb_session_invalidated();}
 void fv_fido_disconnect(void){atomic_store(&cancel,true);atomic_store(&disconnected,true);atomic_store(&enumerated,false);}
 void tud_mount_cb(void){atomic_store(&enumerated_at,now(NULL));atomic_store(&enumerated,true);}
 void fv_fido_close(void){
@@ -45,13 +56,21 @@ void fv_fido_close(void){
 void fv_fido_unlocked(void){fv_fido_verification_begin(&verification,now(NULL));}
 void fv_fido_ui_poll(fv_ui *ui){
     unsigned state=atomic_load(&prompt_state);
-    if(state==1){fv_ui_fido_begin(ui,prompt.secret,prompt.profile,prompt.label);fv_device_ui_wake();atomic_store(&prompt_state,2);}
+    if(state==1){
+        /* A host request must not discard an in-progress local unlock choice. */
+        if(!request_ui_owned && !fv_device_ui_fido_available()){
+            prompt.approved=false;prompt.length=0;atomic_store(&prompt_state,3);
+        }else{
+            request_ui_owned=true;
+            fv_ui_fido_begin(ui,prompt.secret,prompt.profile,prompt.label);fv_device_ui_wake();atomic_store(&prompt_state,2);
+        }
+    }
     else if(state==2 && (ui->fido_done || atomic_load(&prompt_abort))){
         prompt.approved=ui->fido_approved && !atomic_load(&prompt_abort);prompt.length=ui->job.length;
         memcpy(prompt.value,ui->job.secret,sizeof(prompt.value));
         fv_ui_wipe(ui->job.secret,sizeof(ui->job.secret));fv_ui_wipe(&ui->entry,sizeof(ui->entry));
         atomic_store(&prompt_state,3);
-    }else if(state==4){fv_ui_fido_end(ui);atomic_store(&prompt_state,0);}
+    }else if(state==4){if(ui->fido_modal)fv_ui_fido_end(ui);atomic_store(&prompt_state,0);}
 }
 static bool ask(bool secret,uint16_t profile){
     memset(&prompt,0,sizeof(prompt));prompt.secret=secret;prompt.profile=profile;
@@ -72,24 +91,26 @@ static bool ask(bool secret,uint16_t profile){
 static bool verify(void *ctx,const uint8_t *rp){
     (void)ctx;
     if(fv_fido_cancelled(NULL))return false;
-    if(fv_fido_vault()->unlocked && fv_fido_verification_use_policy(&verification,now(NULL),rp,(fv_fido_uv_policy)uv_policy))return true;
+    fv_access_mode mode=fv_fido_access_mode();
+    if(mode!=FV_ACCESS_LOCKED && !fido_authorized())return false;
+    if(fido_authorized() && fv_fido_verification_use_policy(&verification,now(NULL),rp,(fv_fido_uv_policy)uv_policy))return true;
     uint16_t profile=fv_fido_profile();
     bool ok=profile>=2 && profile<=4 && ask(true,profile);
     if(ok)ok=fv_fido_verify_secret(prompt.value,prompt.length)==0;
     fv_ui_wipe(prompt.value,sizeof(prompt.value));prompt.length=0;
-    if(!ok || fv_fido_cancelled(NULL)){fv_fido_verification_clear(&verification);return false;}
+    if(!ok || !fido_authorized() || fv_fido_cancelled(NULL)){fv_fido_verification_clear(&verification);return false;}
     fv_fido_unlocked();return fv_fido_verification_use_policy(&verification,now(NULL),rp,(fv_fido_uv_policy)uv_policy);
 }
-static int presence(void *ctx){(void)ctx;return ask(false,0)?0:2;}
-static bool commit_disk(void *ctx){(void)ctx;return (!executing || !fv_fido_cancelled(NULL)) && fv_fido_journal_commit(&store);}
+static int presence(void *ctx){(void)ctx;return fido_authorized() && ask(false,0)?0:2;}
+static bool commit_disk(void *ctx){(void)ctx;return fido_authorized() && (!executing || !fv_fido_cancelled(NULL)) && fv_fido_journal_commit(&store);}
 static uint8_t retries(void *ctx){
     (void)ctx;fv_device_state state;fv_vault *v=fv_fido_vault();
-    if(!v->unlocked || v->platform->authority.load(v->platform->authority.context,&state) || state.status!=FV_ENROLLMENT_ACTIVE)return 0;
+    if(!fido_authorized() || v->platform->authority.load(v->platform->authority.context,&state) || state.status!=FV_ENROLLMENT_ACTIVE)return 0;
     uint32_t remaining=state.policy.max_attempts>state.attempts?state.policy.max_attempts-state.attempts:0;
     return remaining>255?255:(uint8_t)remaining;
 }
 static bool reset_allowed(void *ctx){(void)ctx;return atomic_load(&enumerated) && (uint32_t)(now(NULL)-atomic_load(&enumerated_at))<10000;}
-static bool local(void *ctx){(void)ctx;return (!executing || !fv_fido_cancelled(NULL)) && fv_fido_vault()->unlocked;}
+static bool local(void *ctx){(void)ctx;return (!executing || !fv_fido_cancelled(NULL)) && fido_authorized();}
 /* Display only bounded printable RP IDs. Refuse ambiguous/truncated labels.
  * This is host-supplied RP context, not independently verified browser origin. */
 static bool field(CborValue *map,int key,CborValue *out){
@@ -111,6 +132,7 @@ static bool label(const uint8_t *request,size_t size){
     snprintf(request_label,sizeof(request_label),"%s %s",request[0]==1?"REGISTER":"SIGN IN",name);return true;
 }
 static bool ensure_engine(void){
+    if(!fido_authorized())return false;
     if(!engine_open){
         uint8_t key[32];
         if(fv_fido_journal_open(&store,fv_fido_vault())!=0)return false;
@@ -125,16 +147,17 @@ static bool ensure_engine(void){
     return fv_fido_engine_uv_policy(false,&uv_policy);
 }
 uint8_t fv_fido_policy_get(void){
-    if(fv_fido_vault()->unlocked && !ensure_engine()){fv_fido_close();return 0;}
+    if(!fido_authorized())return 0;
+    if(!ensure_engine()){fv_fido_close();return 0;}
     return uv_policy;
 }
 int fv_fido_policy_set(uint8_t mode){
-    if(mode>1 || !fv_fido_vault()->unlocked || !ensure_engine())return -1;
+    if(mode>1 || !fido_authorized() || !ensure_engine())return -1;
     if(!fv_fido_engine_uv_policy(true,&mode)){fv_fido_close();return -1;}
     uv_policy=mode;fv_fido_verification_clear(&verification);return 0;
 }
 int fv_fido_manage(bool remove,uint16_t *index,uint16_t *count,fv_passkey_t *entry){
-    if(!fv_fido_vault()->unlocked || !ensure_engine())return -1;
+    if(!fido_authorized() || !ensure_engine())return -1;
     uint8_t wanted[42];memcpy(wanted,entry->id,42);
     bool ok=fv_fido_engine_manage(FV_PASSKEY_BEGIN,index,count,entry);
     if(ok && remove){
@@ -148,6 +171,7 @@ int fv_fido_manage(bool remove,uint16_t *index,uint16_t *count,fv_passkey_t *ent
     return 0;
 }
 int fv_fido_initialize(void){
+    if(!fido_authorized())return -1;
     fv_fido_close();int r=fv_fido_journal_initialize(&store,fv_fido_vault(),true);
     fv_fido_journal_close(&store);return r;
 }
@@ -156,7 +180,15 @@ int fv_fido_prepare_new(const fv_vault *vault){
     return fv_fido_journal_prepare_new(&store,vault);
 }
 void fv_fido_execute(void){
-    size_t n=1;response[0]=0x7f;invalidated=false;executing=true;
+    size_t n=1;response[0]=0x7f;invalidated=false;executing=true;cancellation_locks_session=false;
+    /* Discovery is public. Every other command, including malformed requests,
+     * is denied before prompts, token handling or private SD access in file-only mode. */
+    if(!(hid.rx_size==1 && hid.rx[0]==4)){
+        if(fv_usb_session_invalidated()){response[0]=0x2d;goto finish;}
+        fv_access_mode mode=fv_fido_access_mode();
+        if(mode!=FV_ACCESS_LOCKED && !fido_authorized()){response[0]=0x27;goto finish;}
+        cancellation_locks_session=true;
+    }
     if(fv_fido_cancelled(NULL))goto finish;
     uint16_t profile=fv_fido_profile();
     if(hid.rx_size==1 && hid.rx[0]==4){n=fv_fido_engine_info(profile>=2 && profile<=4,response,sizeof(response));goto finish;}
@@ -166,9 +198,12 @@ void fv_fido_execute(void){
     if(!ensure_engine()){response[0]=0x30;goto finish;}
     n=fv_fido_engine_command_channel(hid.active_channel,hid.rx,hid.rx_size,response,sizeof(response));
  finish:
+    /* Capture before cleanup can advance the generation. An old result must
+     * never be relabelled as belonging to the subsequent locked session. */
+    completed_generation=fv_usb_session_generation();
     executing=false;
     if(fv_fido_cancelled(NULL) || !fv_fido_vault()->unlocked || response[0]==0x7f)fv_fido_close();
-    if(atomic_load(&cancel))fv_vault_lock(fv_fido_vault());
+    if(fv_usb_session_invalidated() || (atomic_load(&cancel) && cancellation_locks_session))fv_fido_lock_session();
     completed_unlocked=fv_fido_vault()->unlocked;
     atomic_store(&done,(unsigned)(n?n:1));
 }
@@ -177,37 +212,59 @@ void fv_fido_poll(void){
     if(atomic_exchange(&disconnected,false)){discard=true;if(!fv_fido_busy()){fv_fido_hid_reset(&hid);discard=false;}}
     unsigned n=atomic_exchange(&done,0);
     if(n){
+        request_ui_owned=false;
+        bool same_generation=completed_generation==fv_usb_session_generation();
+        if(!same_generation || fv_usb_session_invalidated()){
+            hid.cancelled=true;completed_unlocked=false;
+        }
         if(atomic_load(&cancel)){
             hid.cancelled=true;
             /* CANCEL can arrive after the worker published done. Serialize a
              * lock now so that this completion race cannot retain UV tokens. */
             atomic_store(&busy,false);
-            (void)fv_usb_rpc((fv_usb_request){.op=FV_USB_LOCK});
-            completed_unlocked=false;
+            if(cancellation_locks_session && same_generation){
+                (void)fv_usb_rpc((fv_usb_request){.op=FV_USB_LOCK});
+                completed_unlocked=false;
+            }
         }
         if(!completed_unlocked)fv_usb_storage_clear_transport();
         fv_device_ui_media_changed(completed_unlocked);
         if(discard){fv_fido_hid_reset(&hid);discard=false;}
-        else fv_fido_hid_complete(&hid,response,n);
+        else {
+            fv_fido_hid_complete(&hid,response,n);
+            /* A cancelled reply contains only its public error status. */
+            response_scoped=!hid.cancelled;
+            response_generation=completed_generation;
+        }
         fv_ui_wipe(response,sizeof(response));atomic_store(&busy,false);
     }
     if(discard)return;
     if(hid.cancelled)atomic_store(&cancel,true);
     fv_fido_hid_tick(&hid,now(NULL));
     if(hid.pending && !fv_fido_busy() && !atomic_load(&fv_ui_maintenance) && fv_usb_worker_idle()){
+        if(!(hid.rx_size==1 && hid.rx[0]==4) && !fv_device_ui_fido_available()){
+            const uint8_t denied=0x27;
+            fv_fido_hid_complete(&hid,&denied,1);
+            goto send_report;
+        }
         fv_command c={0};c.fido=true;
         atomic_store(&cancel,hid.cancelled);atomic_store(&busy,true);
         if(queue_try_add(&commands,&c)){
-            /* GetInfo is background discovery, not user interaction. */
-            if(hid.rx_size && hid.rx[0]!=4)fv_device_ui_wake();
             hid.pending=false;keepalive_at=now(NULL);
         }
         else atomic_store(&busy,false);
     }
+ send_report:
+    if(response_scoped && (response_generation!=fv_usb_session_generation() || fv_usb_session_invalidated())){
+        /* A lock can occur after the first HID report. Never emit the remaining
+         * bytes (including authorization tokens) from the previous session. */
+        fv_ui_wipe(hid.tx,sizeof(hid.tx));hid.transmitting=false;
+        hid.tx_size=hid.tx_used=0;hid.tx_sequence=0;response_scoped=false;
+    }
     if(!tud_hid_ready())return;
     uint8_t report[64];
     if(hid.control_pending){if(tud_hid_report(0,hid.control_report,64))hid.control_pending=false;}
-    else if(fv_fido_hid_peek(&hid,report)){if(tud_hid_report(0,report,64))fv_fido_hid_sent(&hid);}
+    else if(fv_fido_hid_peek(&hid,report)){if(tud_hid_report(0,report,64)){fv_fido_hid_sent(&hid);if(!hid.transmitting)response_scoped=false;}}
     else if(hid.processing && (uint32_t)(now(NULL)-keepalive_at)>=50){
         memset(report,0,sizeof(report));uint32_t c=hid.active_channel;
         report[0]=c>>24;report[1]=c>>16;report[2]=c>>8;report[3]=c;report[4]=0xbb;report[6]=1;

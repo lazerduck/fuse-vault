@@ -1,0 +1,32 @@
+FUSE VAULT L — PANELLED TECHNICAL
+
+Use the existing working L internals, base, buttons, D-pad, screen shim and collar.
+Do not disturb the bonded display to try a cosmetic lid. Follow L assembly notes
+if building a complete second device. All full-set parts are included for that use.
+
+NEW PRINTS
+- Lid: load lid-ams.3mf as one multipart object in Bambu Studio.
+- Assign lid to light grey, lid_inlay_dark to charcoal,
+  lid_inlay_orange to orange. Print Select orange and D-pad/Back charcoal if desired.
+- Reuse both L caps. Included cap files preserve L geometry.
+
+P1S / 0.4 mm nozzle / compatible PLA colours from the same material family.
+Use the established L settings; 0.12 mm layers for the lid, four walls, five
+solid top/bottom layers. Inlays extend 0.36 mm from the face. This is a model,
+not a pre-sliced printer project. Check the preview and actual first-layer height.
+
+The lid and colour bodies already share a face-down print transform. Preserve
+their registration; do not auto-arrange them separately. The three STL colour
+bodies must all be present. lid.stl by itself contains empty colour pockets.
+Use lid_single_colour.stl for a one-colour alternative with no visible logo.
+
+The panel seam, if present, is 0.24 mm deep. With the lid face down, its floor
+bridges a narrow groove; inspect first layers and do not put supports in it.
+The precision cap channels are 0.24 mm deep, 1 mm wide, on both broad faces.
+Caps print closed end down, opening up, as in L; inspect the channel ends in
+preview. No supports should occupy detents, guides or inlays.
+
+Dry-fit the lid and check every control presses and releases. Keep the D-pad's
+orientation dot facing USB-A. Use the existing L shell snaps without forcing
+closure. Check cap retention and texture on a physical print. Shallow cosmetic
+cuts retain CAD backing, but force, wear and multi-colour bonding are untested.

@@ -1,4 +1,5 @@
 #include "fuse_vault/vault.h"
+#include "fuse_vault/session_access.h"
 #include <stdio.h>
 #include <mbedtls/sha256.h>
 #include <stdlib.h>
@@ -370,7 +371,42 @@ static void credential_methods(void){
     CHECK(f.commits==commits); /* Forged method hints do not consume attempts. */
     finish(&f);
 }
+static void session_permissions(void) {
+    fixture f;init(&f);create(&f,fv_auth_policy_default());
+    fv_session_access access={0};
+    const fv_access_mode modes[]={FV_ACCESS_FULL,FV_ACCESS_PASSKEYS_ONLY,FV_ACCESS_FILES_READ_ONLY};
+    unsigned commits=f.commits;
+    CHECK(fv_session_unlock(&access,&f.session,&f.platform,password,sizeof(password)-1,(fv_access_mode)99)==FV_VAULT_INVALID);
+    CHECK(f.commits==commits && !f.session.unlocked && !access.generation);
+    uint8_t vmk[32]={0};
+    for(unsigned i=0;i<3;i++) {
+        CHECK(fv_session_mode(&access,&f.session)==FV_ACCESS_LOCKED);
+        CHECK(fv_session_unlock(&access,&f.session,&f.platform,password,sizeof(password)-1,modes[i])==FV_VAULT_OK);
+        CHECK(fv_session_mode(&access,&f.session)==modes[i]);
+        if(!i)memcpy(vmk,f.session.vmk,32);else CHECK(!memcmp(vmk,f.session.vmk,32));
+        uint32_t generation=access.generation;commits=f.commits;
+        /* A second unlock cannot silently replace or broaden live permissions. */
+        CHECK(fv_session_unlock(&access,&f.session,&f.platform,password,sizeof(password)-1,FV_ACCESS_FULL)==FV_VAULT_DENIED);
+        CHECK(access.mode==modes[i] && access.generation==generation && commits==f.commits);
+        if(modes[i]==FV_ACCESS_FILES_READ_ONLY) {
+            CHECK(fv_session_reverify_fido(&access,&f.session,password,sizeof(password)-1)==FV_VAULT_DENIED);
+            CHECK(commits==f.commits && f.session.unlocked);
+        } else {
+            CHECK(fv_session_reverify_fido(&access,&f.session,password,sizeof(password)-1)==FV_VAULT_OK);
+            CHECK(access.mode==modes[i] && access.generation==generation);
+            CHECK(fv_session_reverify_fido(&access,&f.session,(const uint8_t *)"wrong",5)==FV_VAULT_AUTH);
+            fv_device_state state;CHECK(!load(&f,&state));CHECK(state.attempts==1);
+            CHECK(!f.session.unlocked && access.mode==FV_ACCESS_LOCKED && access.generation!=generation);
+        }
+        fv_session_lock(&access,&f.session);
+        CHECK(zero(&f.session,sizeof(f.session)) && access.mode==FV_ACCESS_LOCKED);
+        CHECK(fv_session_unlock(&access,&f.session,&f.platform,(const uint8_t *)"wrong",5,modes[i])==FV_VAULT_AUTH);
+        CHECK(!f.session.unlocked && access.mode==FV_ACCESS_LOCKED);
+    }
+    finish(&f);
+}
 int main(void) {
+    session_permissions();
     large_batches();
     lifecycle();attempts();failures();automatic_header_repair();batches_and_policy();legacy_volume();credential_methods();
     algorithms[1]=3;algorithms[3]=3;

@@ -70,10 +70,22 @@ static void render_dashboard(fv_ui *u) {
         if (u->read_history[i] > peak) peak = u->read_history[i];
         if (u->write_history[i] > peak) peak = u->write_history[i];
     }
-    ui_draw_header(u, "VAULT OPEN", u->dashboard_bars ? "LIVE" : "30S");
-    speed_label(u, 16, "UP", u->write_kib_tenths, UI_COLOUR_ACCENT);
+    if (u->device.mode == FV_ACCESS_PASSKEYS_ONLY) {
+        ui_draw_header(u, ui_mode_label(u->device.mode), NULL);
+        ui_draw_vault(u, 68, 20, UI_COLOUR_ACCENT);
+        ui_draw_text_at(u, 29, 53, "FILES NOT EXPOSED", 1, UI_COLOUR_TEXT);
+        ui_draw_footer(u, "\005 LOCK", "\006 SETTINGS");
+        return;
+    }
+    ui_draw_header(u, ui_mode_label(u->device.mode), u->dashboard_bars ? "LIVE" : "30S");
+    if (fv_access_writable(u->device.mode)) {
+        speed_label(u, 16, "UP", u->write_kib_tenths, UI_COLOUR_ACCENT);
+        chart(u, u->write_history, u->write_kib_tenths, peak, 39, UI_COLOUR_ACCENT);
+    } else {
+        ui_draw_text_at(u, 4, 20, "HOST WRITES BLOCKED", 1, UI_COLOUR_MUTED);
+        ui_draw_text_at(u, 4, 31, "PASSKEYS DISABLED", 1, UI_COLOUR_MUTED);
+    }
     speed_label(u, 42, "DOWN", u->read_kib_tenths, UI_COLOUR_WARNING);
-    chart(u, u->write_history, u->write_kib_tenths, peak, 39, UI_COLOUR_ACCENT);
     chart(u, u->read_history, u->read_kib_tenths, peak, 65, UI_COLOUR_WARNING);
     ui_draw_footer(u, "\005 LOCK", "\006 SETTINGS");
 }
@@ -85,7 +97,7 @@ static void dashboard_setting_key(fv_ui *u, fv_ui_key key) {
     if (key == UI_UP || key == UI_DOWN) u->cursor = !u->cursor;
     else if (key == UI_SELECT || key == UI_BACK) {
         if (key == UI_SELECT) u->dashboard_bars = u->cursor != 0;
-        ui_settings_return(u, u->fido_enabled ? UI_SETTING_DASHBOARD : UI_SETTING_FIDO_INIT);
+        ui_settings_return(u, UI_SETTING_DASHBOARD);
     }
 }
 static void dashboard_setting_render(fv_ui *u) {

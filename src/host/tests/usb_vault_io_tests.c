@@ -19,14 +19,24 @@ int main(void) {
     for(unsigned write=0;write<2;write++)for(unsigned fail=0;fail<2;fail++) {
         fv_usb_request request={.op=write?FV_USB_WRITE:FV_USB_READ,.lba=20,.count=127,.data=data};
         calls=0;fail_at=fail;next_lba=20;next_data=data;writing=write;
-        assert(fv_usb_vault_io(&vault,&request)==(fail?FV_BLOCK_ERROR_IO:FV_BLOCK_OK));
+        assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_FULL,0)==(fail?FV_BLOCK_ERROR_IO:FV_BLOCK_OK));
         assert(calls==1);
     }
     fv_usb_request request={.op=FV_USB_WRITE,.lba=900,.count=127,.data=data};calls=0;
-    assert(fv_usb_vault_io(&vault,&request)==FV_BLOCK_ERROR_OUT_OF_RANGE && !calls);
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_FULL,0)==FV_BLOCK_ERROR_OUT_OF_RANGE && !calls);
     request.lba=0;request.count=128;
-    assert(fv_usb_vault_io(&vault,&request)==FV_BLOCK_ERROR_INVALID_ARGUMENT && !calls);
-    request.count=127;vault.unlocked=false;
-    assert(fv_usb_vault_io(&vault,&request)==FV_BLOCK_ERROR_NOT_READY && !calls);
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_FULL,0)==FV_BLOCK_ERROR_INVALID_ARGUMENT && !calls);
+    request.count=127;
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_FILES_READ_ONLY,0)==FV_BLOCK_ERROR_READ_ONLY && !calls);
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_PASSKEYS_ONLY,0)==FV_BLOCK_ERROR_NOT_READY && !calls);
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_LOCKED,0)==FV_BLOCK_ERROR_NOT_READY && !calls);
+    assert(fv_usb_vault_io(&vault,&request,(fv_access_mode)99,0)==FV_BLOCK_ERROR_NOT_READY && !calls);
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_FULL,1)==FV_BLOCK_ERROR_NOT_READY && !calls);
+    request.op=FV_USB_READ;
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_PASSKEYS_ONLY,0)==FV_BLOCK_ERROR_NOT_READY && !calls);
+    writing=false;fail_at=0;next_lba=0;next_data=data;
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_FILES_READ_ONLY,0)==FV_BLOCK_OK && calls==1);
+    calls=0;vault.unlocked=false;
+    assert(fv_usb_vault_io(&vault,&request,FV_ACCESS_FULL,0)==FV_BLOCK_ERROR_NOT_READY && !calls);
     return 0;
 }

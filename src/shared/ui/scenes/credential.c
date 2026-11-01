@@ -37,6 +37,8 @@ static void render_method(fv_ui *u) {
 }
 
 static void credential_enter(fv_ui *u) {
+    /* Selecting an unlock mode cannot count as the first credential input. */
+    ++u->fido_generation;
     fv_entry_begin(&u->entry, u->job.profile);
 }
 
@@ -174,13 +176,13 @@ static void credential_controls(fv_ui *u) {
 
 static const char *credential_title(const fv_ui *u) {
     if (u->fido_modal)
-        return "FIDO: VERIFY UNLOCK";
+        return u->device.unlocked ? "VERIFY PASSKEYS" : "PASSKEYS ONLY";
     if (u->screen == UI_CONFIRM)
         return "CONFIRM CREDENTIAL";
     if (u->flow == UI_FLOW_POLICY || (u->flow == UI_FLOW_CHANGE && !u->job.current_length))
         return "CURRENT CREDENTIAL";
     if (u->flow == UI_FLOW_UNLOCK)
-        return "UNLOCK VAULT";
+        return ui_mode_label(u->job.mode);
     return "NEW CREDENTIAL";
 }
 

@@ -1,0 +1,45 @@
+FUSE VAULT L — PANELLED V2 / SMOOTH SD SHOULDER
+
+Print a NEW BASE and NEW LID as a matching pair. Reuse the working L controls,
+shim, collar and caps. The cap geometry, PCB locators, screen reserve, guides,
+D-pad contacts and shell snaps are unchanged. The new exterior curve is present
+on both shell halves. Do not mix old and new halves for the intended finish.
+
+LID
+Open lid-ams.3mf as ONE multipart object in Bambu Studio.
+Assign lid = light/cool grey, lid_inlay_dark = charcoal,
+lid_inlay_orange = orange. All bodies share a face-down print orientation.
+Do not arrange them separately. Equivalent multipart STEP and STL files included.
+This is a model, not a pre-sliced P1S project.
+
+P1S / 0.4 mm nozzle, compatible PLA colours, established filament profiles.
+Start from L settings: 0.12 mm lid layers, four walls, five top/bottom layers.
+Inspect first layers: logo/perimeter colours extend 0.36 mm into the face;
+the screen surround colour extends through the visible bevel, 0.85 mm deep.
+The panel joint is 0.24 mm deep and bridges across a narrow face-down recess.
+Its orange inset is recessed too. Avoid support inside colour regions/guides.
+Use the actual build-plate and filament settings from your working L prints.
+
+The base is underside down. Start with L's 0.16 mm layers and 20% infill.
+The exterior blend retains L's 0.55 mm top/bottom edge easing. Inspect the layer
+preview at the blend and snaps. Do not globally scale parts to adjust fit.
+
+FILES
+lid.stl alone is incomplete: use it with both lid_inlay_*.stl files.
+lid_single_colour.stl is complete for a one-colour fit print, but has no visible
+logo or coloured perimeter. Do not print it on top of the multipart version.
+The full-set control/cap/shim/collar STLs are included only if replacements are
+needed. universal_end_cap.stl is identical to the working L cap; print twice.
+
+ASSEMBLY
+Transfer the existing PCB, collar, card and display/shim assembly carefully.
+Preserve the bonded display height and free flex route; use L assembly notes
+if building a complete second device. Load the D-pad from beneath the lid with
+its dot toward USB-A. Fit both round buttons; engage the USB-C hooks and close
+the shell gently. Check every direction and button presses and releases.
+The screen must not carry shell-closing force. Fit the unchanged L caps.
+
+WHAT TO CHECK ON THE FIRST PRINT
+Smooth feel at the SD shoulder and seam between the new halves; clean logo and
+recessed joint; screen readability; control return; shell and cap retention.
+CAD checks pass but finish, material bonding and long-term wear are untested.

@@ -6,6 +6,7 @@
 #include "device_ui.h"
 #include "fuse_vault/passkeys.h"
 #include "fuse_vault/vault.h"
+#include "fuse_vault/access_mode.h"
 void fv_fido_poll(void);
 void fv_fido_disconnect(void);
 bool fv_fido_busy(void);
@@ -23,6 +24,8 @@ int fv_fido_policy_set(uint8_t);
 int fv_fido_manage(bool remove,uint16_t *,uint16_t *,fv_passkey_t *);
 /* Single worker adapters; pump only storage while a modal prompt waits. */
 fv_vault *fv_fido_vault(void);
+fv_access_mode fv_fido_access_mode(void);
+void fv_fido_lock_session(void);
 bool fv_fido_random(void *,uint8_t *,size_t);
 int fv_fido_verify_secret(const uint8_t *,size_t);
 void fv_fido_pump(void);

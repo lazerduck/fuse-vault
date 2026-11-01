@@ -10,6 +10,8 @@ void fv_device_ui_poll(void);
 void fv_device_ui_refresh(void);
 void fv_device_ui_media_changed(bool unlocked);
 void fv_device_ui_disconnect(void);
+/* Core 0 only: host requests cannot replace a local credential/settings flow. */
+bool fv_device_ui_fido_available(void);
 bool fv_device_ui_command(const char *,char *,size_t);
 void fv_device_ui_execute(const fv_ui_job *,fv_ui_result *);
 #endif

@@ -29,6 +29,7 @@ def main():
         subprocess.run([
             'cc', '-std=c11', '-Wall', '-Wextra', '-Werror',
             '-I', str(root / 'src/shared/ui'), str(root / 'src/host/tools/ui_preview.c'),
+            '-I', str(root / 'src/shared/storage/include'),
             *sources,
             '-o', str(binary),
         ], check=True)

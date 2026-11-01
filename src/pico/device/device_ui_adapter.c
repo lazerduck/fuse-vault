@@ -45,6 +45,11 @@ void fv_device_ui_media_changed(bool unlocked) {
     if (ui.device.unlocked != unlocked)
         refresh = true;
 }
+bool fv_device_ui_fido_available(void) {
+    return !atomic_load(&disconnected) && !ui.pending && !ui.fido_modal &&
+           !atomic_load(&fv_ui_maintenance) &&
+           (ui.screen == UI_HOME || ui.screen == UI_DASHBOARD);
+}
 void fv_device_ui_init(void) {
     fv_ui_init(&ui);
     ui.fido_enabled = FV_USB_FIDO;

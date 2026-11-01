@@ -50,37 +50,50 @@ static const ui_menu_item settings_items[] = {
     [UI_SETTING_DASHBOARD] = {"DEFAULT DASHBOARD", dashboard_setting},
 };
 
-static ui_menu settings_menu(const fv_ui *u) {
-    static const ui_menu_item basic_items[] = {
-        {"FAILURE POLICY", begin_policy}, {"ERASE AND SET UP", begin_erase},
-        {"UNLOCK METHOD", begin_change}, {"DEFAULT DASHBOARD", dashboard_setting},
-    };
-    return (ui_menu){u->fido_enabled ? settings_items : basic_items,
-                     u->fido_enabled ? UI_SETTING_COUNT : 4,
-                     15,
-                     12,
-                     11,
-                     2,
-                     4};
+static bool setting_allowed(const fv_ui *u, unsigned item) {
+    if (!u->device.unlocked || !fv_access_valid(u->device.mode)) return false;
+    if (item == UI_SETTING_DASHBOARD) return true;
+    if (item >= UI_SETTING_FIDO_INIT && item <= UI_SETTING_PASSKEYS)
+        return u->fido_enabled && fv_access_fido(u->device.mode);
+    return fv_access_admin(u->device.mode);
+}
+
+static ui_menu settings_menu(const fv_ui *u, ui_menu_item *items, unsigned *ids) {
+    unsigned count = 0;
+    for (unsigned item = 0; item < UI_SETTING_COUNT; ++item) {
+        if (!setting_allowed(u, item)) continue;
+        items[count] = settings_items[item];
+        ids[count++] = item;
+    }
+    return (ui_menu){items, count, 15, 12, 11, 2, 4};
 }
 
 void ui_settings_return(fv_ui *u, unsigned item) {
     ui_clear_input(u);
     ui_scene_show(u, UI_SETTINGS);
-    u->cursor = item;
+    ui_menu_item items[UI_SETTING_COUNT];
+    unsigned ids[UI_SETTING_COUNT];
+    ui_menu menu = settings_menu(u, items, ids);
+    for (unsigned index = 0; index < menu.count; ++index)
+        if (ids[index] == item) u->cursor = index;
 }
 
 static void settings_key(fv_ui *u, fv_ui_key key) {
     if (key == UI_BACK)
         ui_go_home(u);
     else {
-        ui_menu menu = settings_menu(u);
+        ui_menu_item items[UI_SETTING_COUNT];
+        unsigned ids[UI_SETTING_COUNT];
+        ui_menu menu = settings_menu(u, items, ids);
+        if (u->cursor >= menu.count) u->cursor = 0;
         ui_menu_key(u, &menu, key);
     }
 }
 
 static void render_settings(fv_ui *u) {
-    ui_menu menu = settings_menu(u);
+    ui_menu_item items[UI_SETTING_COUNT];
+    unsigned ids[UI_SETTING_COUNT];
+    ui_menu menu = settings_menu(u, items, ids);
     char position[16];
     ui_draw_text_at(u, 4, 2, "SETTINGS", 1, UI_COLOUR_TEXT);
     snprintf(position, sizeof(position), "%u/%u", u->cursor + 1, menu.count);
@@ -89,7 +102,8 @@ static void render_settings(fv_ui *u) {
     ui_menu_render(u, &menu);
     ui_draw_rule(u, 67);
     ui_draw_text_at(u, 4, 71, "\005 BACK", 1, UI_COLOUR_TEXT);
-    ui_draw_text_at(u, 76, 71, "EJECT FIRST", 1, UI_COLOUR_TEXT);
+    if (fv_access_files(u->device.mode))
+        ui_draw_text_at(u, 76, 71, "EJECT FIRST", 1, UI_COLOUR_TEXT);
 }
 
 const ui_scene ui_settings_scene = {.key = settings_key, .render = render_settings};

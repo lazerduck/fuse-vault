@@ -1,0 +1,281 @@
+{
+  "style": "panelled",
+  "baseline": "prototype-l",
+  "checks": [
+    {
+      "check": "Snap roof untouched (6.05, 0)",
+      "passed": true
+    },
+    {
+      "check": "Snap roof untouched (6.05, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "Snap roof untouched (69.55, 0)",
+      "passed": true
+    },
+    {
+      "check": "Snap roof untouched (69.55, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "Colour bodies reconstruct cosmetic lid",
+      "passed": true
+    },
+    {
+      "check": "No added material outside L lid",
+      "passed": true
+    },
+    {
+      "check": "L geometry below cosmetic layer unchanged",
+      "passed": true
+    },
+    {
+      "check": "Structural lid remains one solid",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark has continuous backing",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange has continuous backing",
+      "passed": true
+    },
+    {
+      "check": "lid / lid_inlay_dark disjoint",
+      "passed": true
+    },
+    {
+      "check": "lid / lid_inlay_orange disjoint",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark / lid_inlay_orange disjoint",
+      "passed": true
+    },
+    {
+      "check": "base valid",
+      "passed": true
+    },
+    {
+      "check": "base source preserved",
+      "passed": true
+    },
+    {
+      "check": "lid valid",
+      "passed": true
+    },
+    {
+      "check": "dpad valid",
+      "passed": true
+    },
+    {
+      "check": "dpad source preserved",
+      "passed": true
+    },
+    {
+      "check": "select valid",
+      "passed": true
+    },
+    {
+      "check": "select source preserved",
+      "passed": true
+    },
+    {
+      "check": "back valid",
+      "passed": true
+    },
+    {
+      "check": "back source preserved",
+      "passed": true
+    },
+    {
+      "check": "screen_shim valid",
+      "passed": true
+    },
+    {
+      "check": "screen_shim source preserved",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar valid",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar source preserved",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap valid",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap valid",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark valid",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange valid",
+      "passed": true
+    },
+    {
+      "check": "All L source files unchanged",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "source_sha256": {
+    "base.step": "bea5c868988838583181a04ec1ce42e87434cca469bc5deeefcad67a649c48b4",
+    "base.stl": "37d86233b3af80411a3170c7b57c4c5df0d5fa37e6ff132e5932acfe0649b1a0",
+    "lid.step": "0c7e3b40dd9c0e8da166ff328b4f745b4bcf5812cb33d86817b92b1bee5a4219",
+    "lid.stl": "f233cd2a485f737289739d357a127bd23a19b0aa5af3511a6e7916f5b8ad229c",
+    "dpad.step": "011089b22b0ee488f4b42f6836d8e9dde17f1d644480295e1789a05f216ee261",
+    "dpad.stl": "7768dbc74ef18aceccb286f1cd15672ede673088946a26e2fe0cb17af1cdd6db",
+    "select.step": "059b889a46acffe96f204047ee8b21e66b57bfac6e8016a8684d5c4bc1350575",
+    "select.stl": "80b6466c6e17a17ba69d90b2d62d6e402a61c3821148eed41168cc38639bdf58",
+    "back.step": "8ccd775f2ef7a3a3bf499afc3d772a0323286cced0c5e7ae744a6f595528ff7d",
+    "back.stl": "cdec98a87c205573e07292b6cee7c1297963b01f14eaeebe1c7129a6615c49dc",
+    "screen_shim.step": "6f41931b15fdd78a57bb5f9fc078af19c16be58a0a38bb8e00b4d4cb00c41879",
+    "screen_shim.stl": "c5f23bc860c6d8fc2dfd0ccc83b3e65ea38eda037f315ec5ad59eaeb6cef351f",
+    "usb_c_collar.step": "33c9363eb3ad6426abc2ad648107aad2efd8566e03c7c76ccea8458c8e4663fd",
+    "usb_c_collar.stl": "04c619eaa53bee97d23940f717c0aa041b70736743eb3c9a15e0e2c7782c24e7",
+    "usb_c_end_cap.step": "88fda2d4add6cf5290c5e903194cd8ed3d7d5cdf4c04a7e6a1f490fdd153d4c4",
+    "usb_c_end_cap.stl": "3ba1116158a4842e25a4c4c8d1998b2e89f0d6baa17e49ec49b7c526ed9e9436",
+    "usb_a_end_cap.step": "94c0597a6e49f226912e483d6f0951d617e9f51b56c46d696016a38214064fbb",
+    "usb_a_end_cap.stl": "18d0ea9a1b1151beb938258bc7fa306ca3cd79415e7a7e364c7289123f909a68"
+  },
+  "meshes": {
+    "base": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 4815.981276570908
+    },
+    "lid": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 2463.160471940848
+    },
+    "dpad": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 645.7629852164854
+    },
+    "select": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 74.55404084356763
+    },
+    "back": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 74.55404084356763
+    },
+    "screen_shim": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 762.0000188350673
+    },
+    "usb_c_collar": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 164.63971584795294
+    },
+    "usb_c_end_cap": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 3422.173660825218
+    },
+    "usb_a_end_cap": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 3422.1736604412417
+    },
+    "lid_inlay_dark": {
+      "watertight": true,
+      "components": 3,
+      "volume_mm3": 13.525442128024585
+    },
+    "lid_inlay_orange": {
+      "watertight": true,
+      "components": 2,
+      "volume_mm3": 1.4753272203627255
+    },
+    "lid_single_colour": {
+      "watertight": true,
+      "components": 1,
+      "volume_mm3": 2478.161242379681
+    }
+  },
+  "colors": {
+    "base": [
+      0.1,
+      0.115,
+      0.13
+    ],
+    "lid": [
+      0.73,
+      0.76,
+      0.78
+    ],
+    "dpad": [
+      0.16,
+      0.18,
+      0.2
+    ],
+    "select": [
+      1,
+      0.43,
+      0.025
+    ],
+    "back": [
+      0.16,
+      0.18,
+      0.2
+    ],
+    "screen_shim": [
+      0.8,
+      0.6,
+      0.2
+    ],
+    "usb_c_collar": [
+      0.1,
+      0.115,
+      0.13
+    ],
+    "usb_c_end_cap": [
+      0.24,
+      0.27,
+      0.3
+    ],
+    "usb_a_end_cap": [
+      0.24,
+      0.27,
+      0.3
+    ],
+    "lid_inlay_dark": [
+      0.1,
+      0.115,
+      0.13
+    ],
+    "lid_inlay_orange": [
+      1,
+      0.43,
+      0.025
+    ]
+  },
+  "logo_scale": 0.8,
+  "logo_centre_mm": [
+    9.0,
+    -10.6
+  ],
+  "inlay_depth_mm": 0.36,
+  "seam_depth_mm": 0.24,
+  "cap_groove_depth_mm": 0,
+  "limitations": [
+    "CAD preservation does not qualify colour adhesion, surface finish or cap fatigue. Physical print trial required."
+  ]
+}

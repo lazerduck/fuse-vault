@@ -1,0 +1,297 @@
+{
+  "checks": [
+    {
+      "check": "L source unchanged base.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged base.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged lid.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged lid.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged dpad.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged dpad.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged select.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged select.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged back.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged back.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged screen_shim.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged screen_shim.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged usb_c_collar.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged usb_c_collar.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged usb_c_end_cap.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged usb_c_end_cap.stl",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged usb_a_end_cap.step",
+      "passed": true
+    },
+    {
+      "check": "L source unchanged usb_a_end_cap.stl",
+      "passed": true
+    },
+    {
+      "check": "L baseline report passes validation.json",
+      "passed": true
+    },
+    {
+      "check": "L baseline report passes detail-validation.json",
+      "passed": true
+    },
+    {
+      "check": "base exact CAD preservation",
+      "passed": true
+    },
+    {
+      "check": "dpad exact CAD preservation",
+      "passed": true
+    },
+    {
+      "check": "select exact CAD preservation",
+      "passed": true
+    },
+    {
+      "check": "back exact CAD preservation",
+      "passed": true
+    },
+    {
+      "check": "screen_shim exact CAD preservation",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar exact CAD preservation",
+      "passed": true
+    },
+    {
+      "check": "Single-colour alternative equals complete multipart lid",
+      "passed": true
+    },
+    {
+      "check": "No new obstruction anywhere in lid",
+      "passed": true
+    },
+    {
+      "check": "All lid removal limited to outermost 0.24 mm",
+      "passed": true
+    },
+    {
+      "check": "Precision assembled lid exactly equals L",
+      "passed": true
+    },
+    {
+      "check": "Structural lid valid and connected",
+      "passed": true
+    },
+    {
+      "check": "Colour bodies non-overlapping",
+      "passed": true
+    },
+    {
+      "check": "Colour bodies non-overlapping",
+      "passed": true
+    },
+    {
+      "check": "Colour bodies non-overlapping",
+      "passed": true
+    },
+    {
+      "check": "Inlay has L backing",
+      "passed": true
+    },
+    {
+      "check": "Inlay has L backing",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap valid connected",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap no added obstruction",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap entire cavity and sidewalls preserved",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap reversible",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap valid connected",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap no added obstruction",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap entire cavity and sidewalls preserved",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap reversible",
+      "passed": true
+    },
+    {
+      "check": "Caps identical at either end",
+      "passed": true
+    },
+    {
+      "check": "base STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "base STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "lid STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "dpad STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "dpad STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "select STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "select STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "back STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "back STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "screen_shim STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "screen_shim STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_single_colour STL watertight and outward",
+      "passed": true
+    },
+    {
+      "check": "lid_single_colour STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid common print registration",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark common print registration",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange common print registration",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "basis": "Unchanged functional solids, no added lid/cap obstacles, preserved inner roof and cap sleeve. L movement checks inherited by geometric preservation.",
+  "limitations": [
+    "No physical print or fatigue test performed. Multi-material adhesion and surface quality need a trial."
+  ]
+}

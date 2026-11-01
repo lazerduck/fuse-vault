@@ -1,0 +1,3934 @@
+{
+  "checks": [
+    {
+      "check": "L baseline evidence passes validation.json",
+      "passed": true
+    },
+    {
+      "check": "L baseline evidence passes detail-validation.json",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged base.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged base.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged lid.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged lid.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged dpad.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged dpad.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged select.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged select.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged back.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged back.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged screen_shim.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged screen_shim.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged usb_c_collar.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged usb_c_collar.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged usb_c_end_cap.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged usb_c_end_cap.stl",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged usb_a_end_cap.step",
+      "passed": true
+    },
+    {
+      "check": "L input unchanged usb_a_end_cap.stl",
+      "passed": true
+    },
+    {
+      "check": "base valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "lid valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "dpad valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "select valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "back valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "screen_shim valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap valid connected assembly solid",
+      "passed": true
+    },
+    {
+      "check": "screen_shim exactly preserves L",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar exactly preserves L",
+      "passed": true
+    },
+    {
+      "check": "dpad only removes outer thumb-face finish",
+      "passed": true
+    },
+    {
+      "check": "dpad contacts guides and travel geometry unchanged",
+      "passed": true
+    },
+    {
+      "check": "select only removes outer thumb-face finish",
+      "passed": true
+    },
+    {
+      "check": "select contacts guides and travel geometry unchanged",
+      "passed": true
+    },
+    {
+      "check": "back only removes outer thumb-face finish",
+      "passed": true
+    },
+    {
+      "check": "back contacts guides and travel geometry unchanged",
+      "passed": true
+    },
+    {
+      "check": "D-pad orientation dot remains open",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Structural coloured lid connected",
+      "passed": true
+    },
+    {
+      "check": "Disjoint colour bodies lid / lid_panel_logo",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid / lid_panel_main",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid / lid_panel_corner",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid / lid_inlay_dark",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid / lid_inlay_orange",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_logo / lid_panel_main",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_logo / lid_panel_corner",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_logo / lid_inlay_dark",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_logo / lid_inlay_orange",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_main / lid_panel_corner",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_main / lid_inlay_dark",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_main / lid_inlay_orange",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_corner / lid_inlay_dark",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_panel_corner / lid_inlay_orange",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Disjoint colour bodies lid_inlay_dark / lid_inlay_orange",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Single-colour lid matches complete multipart lid",
+      "passed": true
+    },
+    {
+      "check": "base new material confined to exterior shoulder blend",
+      "passed": true
+    },
+    {
+      "check": "base removals confined to exterior/cosmetic layer",
+      "passed": true
+    },
+    {
+      "check": "base SD-side mechanics unchanged",
+      "passed": true
+    },
+    {
+      "check": "base installed SD reserve",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid new material confined to exterior shoulder blend",
+      "passed": true
+    },
+    {
+      "check": "lid removals confined to exterior/cosmetic layer",
+      "passed": true
+    },
+    {
+      "check": "lid SD-side mechanics unchanged",
+      "passed": true
+    },
+    {
+      "check": "lid installed SD reserve",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "PCB vertical loading reserve",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "SD vertical loading reserve",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base raised display reserve",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid raised display reserve",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "usb_c_end_cap only subtractive cosmetics",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap cavity and detents unchanged",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap reversible through 180 degree roll",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap cosmetic floor has 1 mm backing False",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap cosmetic floor has 1 mm backing True",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap only subtractive cosmetics",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap cavity and detents unchanged",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap reversible through 180 degree roll",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap cosmetic floor has 1 mm backing False",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap cosmetic floor has 1 mm backing True",
+      "passed": true
+    },
+    {
+      "check": "Caps retain common geometry at either end",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_logo broad planar bonding interface",
+      "passed": true,
+      "measured": {
+        "footprint_mm2": 292.41870656037446,
+        "backed_mm2": 292.41870656037446,
+        "backed_fraction": 1.0
+      }
+    },
+    {
+      "check": "lid_panel_logo normal roof has 0.59 mm carrier below colour floor",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_logo existing snap roof has 0.44 mm carrier below colour floor",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_main broad planar bonding interface",
+      "passed": true,
+      "measured": {
+        "footprint_mm2": 722.3978780314632,
+        "backed_mm2": 722.3978780314629,
+        "backed_fraction": 0.9999999999999997
+      }
+    },
+    {
+      "check": "lid_panel_corner broad planar bonding interface",
+      "passed": true,
+      "measured": {
+        "footprint_mm2": 8.702112777285418,
+        "backed_mm2": 8.702112777285414,
+        "backed_fraction": 0.9999999999999996
+      }
+    },
+    {
+      "check": "Channel continuous 0.8 mm roof (15.22, 0)",
+      "passed": true
+    },
+    {
+      "check": "Channel continuous 0.8 mm roof (14.35, -4.8)",
+      "passed": true
+    },
+    {
+      "check": "Channel continuous 0.8 mm roof (17.48, -8.3)",
+      "passed": true
+    },
+    {
+      "check": "Channel continuous 0.8 mm roof (17.0, -12)",
+      "passed": true
+    },
+    {
+      "check": "Channel continuous 0.8 mm roof (16.6, -16)",
+      "passed": true
+    },
+    {
+      "check": "Channel continuous 0.8 mm roof (16.1, -20)",
+      "passed": true
+    },
+    {
+      "check": "base snap volume preserved (6.05, 0)",
+      "passed": true
+    },
+    {
+      "check": "lid snap volume preserved (6.05, 0)",
+      "passed": true
+    },
+    {
+      "check": "base snap volume preserved (6.05, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "lid snap volume preserved (6.05, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "base snap volume preserved (69.55, 0)",
+      "passed": true
+    },
+    {
+      "check": "lid snap volume preserved (69.55, 0)",
+      "passed": true
+    },
+    {
+      "check": "base snap volume preserved (69.55, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "lid snap volume preserved (69.55, -23.9)",
+      "passed": true
+    },
+    {
+      "check": "Closing lid 0 / base excluding snap beads",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 0 / collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 0 / display",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 0 / screen shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 0.5 / base excluding snap beads",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 0.5 / collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 0.5 / display",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 0.5 / screen shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 1 / base excluding snap beads",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 1 / collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 1 / display",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 1 / screen shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 2 / base excluding snap beads",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 2 / collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 2 / display",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 2 / screen shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 5 / base excluding snap beads",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 5 / collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 5 / display",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 5 / screen shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 10 / base excluding snap beads",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 10 / collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 10 / display",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 10 / screen shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 15 / base excluding snap beads",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 15 / collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 15 / display",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closing lid 15 / screen shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 0, 0) -4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 0, 0) -2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 0, 0) 0 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 0, 0) 2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 0, 0) 4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (0, 1, 0) -4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (0, 1, 0) -2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (0, 1, 0) 0 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (0, 1, 0) 2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (0, 1, 0) 4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 1, 0) -4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 1, 0) -2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 1, 0) 0 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 1, 0) 2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, 1, 0) 4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, -1, 0) -4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, -1, 0) -2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, -1, 0) 0 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, -1, 0) 2 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "D-pad rock (1, -1, 0) 4 / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "select stroke 0",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "select stroke -0.2",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "select stroke -0.4",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "select stroke -0.6",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "back stroke 0",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "back stroke -0.2",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "back stroke -0.4",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "back stroke -0.6",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / lid",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / dpad",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / select",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / back",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / screen_shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / usb_c_collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / usb_c_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly base / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly lid / dpad",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly lid / select",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly lid / back",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly lid / screen_shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly lid / usb_c_collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly lid / usb_c_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly lid / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly dpad / select",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly dpad / back",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly dpad / screen_shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly dpad / usb_c_collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly dpad / usb_c_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly dpad / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly select / back",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly select / screen_shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly select / usb_c_collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly select / usb_c_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly select / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly back / screen_shim",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly back / usb_c_collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly back / usb_c_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly back / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly screen_shim / usb_c_collar",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly screen_shim / usb_c_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly screen_shim / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly usb_c_collar / usb_c_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly usb_c_collar / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Closed assembly usb_c_end_cap / usb_a_end_cap",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "Face never exceeds L top datum",
+      "passed": true
+    },
+    {
+      "check": "base added blend / source electronics 0",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 1",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 2",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 3",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 4",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 5",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 6",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 7",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 8",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 9",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 10",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 11",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 12",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 13",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 14",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 15",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 16",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 17",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 18",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 19",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 20",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 21",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 22",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 23",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 24",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 25",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 26",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 27",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 28",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 29",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 30",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 31",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 32",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 33",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 34",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 35",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 36",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 37",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 38",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 39",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 40",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 41",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 42",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 43",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 44",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 45",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 46",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 47",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 48",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 49",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 50",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 51",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 52",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 53",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 54",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 55",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 56",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 57",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 58",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 59",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 60",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 61",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 62",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 63",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 64",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 65",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 66",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 67",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 68",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 69",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 70",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 71",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 72",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 73",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 74",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 75",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 76",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 77",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 78",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 79",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 80",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 81",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 82",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 83",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 84",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 85",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 86",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 87",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 88",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 89",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 90",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 91",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 92",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 93",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 94",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 95",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 96",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 97",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 98",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 99",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 100",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 101",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 102",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 103",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 104",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 105",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 106",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 107",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 108",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 109",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 110",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 111",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 112",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 113",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 114",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 115",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 116",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 117",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 118",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 119",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 120",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 121",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 122",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 123",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 124",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 125",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 126",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 127",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 128",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 129",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 130",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 131",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 132",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 133",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 134",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 135",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 136",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 137",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 138",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 139",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 140",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 141",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 142",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 143",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 144",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 145",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 146",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 147",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 148",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 149",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 150",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 151",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 152",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 153",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 154",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 155",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 156",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 157",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 158",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 159",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 160",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 161",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 162",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 163",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 164",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 165",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 166",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 167",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 168",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 169",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 170",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 171",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 172",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 173",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 174",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 175",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 176",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 177",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 178",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 179",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 180",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 181",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 182",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 183",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 184",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 185",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 186",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 187",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 188",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 189",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 190",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 191",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 192",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 193",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 194",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 195",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 196",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 197",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 198",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 199",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 200",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 201",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 202",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 203",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 204",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 205",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 206",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 207",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 208",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 209",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 210",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 211",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 212",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 213",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 214",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 215",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 216",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 217",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 218",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 219",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 220",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 221",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 222",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 223",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 224",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 225",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 226",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 227",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 228",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 229",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 230",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 231",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 232",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 233",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 234",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 235",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 236",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 237",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 238",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 239",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 240",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 241",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 242",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 243",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 244",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 245",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 246",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 247",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 248",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 249",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 250",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 251",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 252",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 253",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 254",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 255",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 256",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 257",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 258",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 259",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 260",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 261",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 262",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 263",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 264",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 265",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 266",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 267",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 268",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 269",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 270",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 271",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 272",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 273",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 274",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 275",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 276",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base added blend / source electronics 277",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 0",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 1",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 2",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 3",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 4",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 5",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 6",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 7",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 8",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 9",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 10",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 11",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 12",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 13",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 14",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 15",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 16",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 17",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 18",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 19",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 20",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 21",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 22",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 23",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 24",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 25",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 26",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 27",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 28",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 29",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 30",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 31",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 32",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 33",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 34",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 35",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 36",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 37",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 38",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 39",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 40",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 41",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 42",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 43",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 44",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 45",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 46",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 47",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 48",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 49",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 50",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 51",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 52",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 53",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 54",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 55",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 56",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 57",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 58",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 59",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 60",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 61",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 62",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 63",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 64",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 65",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 66",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 67",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 68",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 69",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 70",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 71",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 72",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 73",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 74",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 75",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 76",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 77",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 78",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 79",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 80",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 81",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 82",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 83",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 84",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 85",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 86",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 87",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 88",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 89",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 90",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 91",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 92",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 93",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 94",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 95",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 96",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 97",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 98",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 99",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 100",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 101",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 102",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 103",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 104",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 105",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 106",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 107",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 108",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 109",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 110",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 111",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 112",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 113",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 114",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 115",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 116",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 117",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 118",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 119",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 120",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 121",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 122",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 123",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 124",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 125",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 126",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 127",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 128",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 129",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 130",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 131",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 132",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 133",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 134",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 135",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 136",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 137",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 138",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 139",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 140",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 141",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 142",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 143",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 144",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 145",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 146",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 147",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 148",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 149",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 150",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 151",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 152",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 153",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 154",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 155",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 156",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 157",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 158",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 159",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 160",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 161",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 162",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 163",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 164",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 165",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 166",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 167",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 168",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 169",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 170",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 171",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 172",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 173",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 174",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 175",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 176",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 177",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 178",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 179",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 180",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 181",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 182",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 183",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 184",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 185",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 186",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 187",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 188",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 189",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 190",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 191",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 192",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 193",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 194",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 195",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 196",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 197",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 198",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 199",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 200",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 201",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 202",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 203",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 204",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 205",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 206",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 207",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 208",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 209",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 210",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 211",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 212",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 213",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 214",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 215",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 216",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 217",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 218",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 219",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 220",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 221",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 222",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 223",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 224",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 225",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 226",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 227",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 228",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 229",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 230",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 231",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 232",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 233",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 234",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 235",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 236",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 237",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 238",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 239",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 240",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 241",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 242",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 243",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 244",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 245",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 246",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 247",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 248",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 249",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 250",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 251",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 252",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 253",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 254",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 255",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 256",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 257",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 258",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 259",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 260",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 261",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 262",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 263",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 264",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 265",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 266",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 267",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 268",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 269",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 270",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 271",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 272",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 273",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 274",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 275",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 276",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "lid added blend / source electronics 277",
+      "passed": true,
+      "measured": 0.0
+    },
+    {
+      "check": "base watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "base STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "dpad watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "dpad STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "select watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "select STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "back watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "back STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "screen_shim watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "screen_shim STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "usb_c_collar STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "usb_c_end_cap STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "usb_a_end_cap STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_logo watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_logo STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_main watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_main STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_corner watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_corner STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_single_colour watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_single_colour STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_charcoal watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_charcoal STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_grey watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_grey STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_orange watertight outward STL",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_orange STL volume agrees with STEP",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_charcoal reconstructs named source colours",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_grey reconstructs named source colours",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_orange reconstructs named source colours",
+      "passed": true
+    },
+    {
+      "check": "lid shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_logo shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_main shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_panel_corner shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_dark shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_inlay_orange shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_charcoal shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_grey shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "lid_ams_orange shared face-down registration",
+      "passed": true
+    },
+    {
+      "check": "Export bytes unchanged during independent verification",
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "export_sha256": {
+    "back.step": "f4de284ff6200b6371735555b84c00e61e7c32f4cadb08d1d0d1e7b705a5f417",
+    "back.stl": "2b3f595f54263b511db6d12b7720112646ab443c23ae47b257dcb94122d3f1e9",
+    "base.step": "9538d350c540831fafa554d695338c37642bd20a73adb4eebb484651f3f91e15",
+    "base.stl": "edbce106475bc4c145dff9920ec5643dc5b826ea7f60d4c92731bc5e66899c5f",
+    "case-assembly.step": "4a1cc6362a48ea9e7fde4f08205c2df7b5a0c0f5618909806da8989ae65e4be5",
+    "dpad.step": "9b486ce379418870e33a2e196beedaef60aeda1c8fa27278859d8f39562325d2",
+    "dpad.stl": "aec3e913fbd5bbf24b498612b15cd7d136d9f4f887e54a2eb644463cf38d992b",
+    "lid-ams.step": "084f8c11ebd13e07a4725ca3270ec7c84cf3854965f4aafae2076e16de27e01c",
+    "lid.step": "50d08b14fb5add9dfce4016695dfc8328a60e02e631e6480748750f2fe251ff8",
+    "lid.stl": "fef319d95ae82221c72826a27948633e3a0f2c1152dbd35da5aa23d44ccc4a34",
+    "lid_ams_charcoal.step": "712c83020f8c9a0a28257bc02e0924303b4b85ed86737f7b3db2f5bb3390ce43",
+    "lid_ams_charcoal.stl": "401d641fdf0adbf2055e376da3807e4eae0eb291d8ece73f0f84b33ef3faa58e",
+    "lid_ams_grey.step": "cfbf70238f7288bafaaae3741d8d446fbbc5a7ba926e9c1740a88dadff91db29",
+    "lid_ams_grey.stl": "7d31f0c84a2e1c9de4d90323b6c16214523d698a3bfd0702b7ec61f261f58d34",
+    "lid_ams_orange.step": "e55043d86fbb7f9b2062bbd3bd7197bcc4d4bdff08d63a5e49ba690ae96f0198",
+    "lid_ams_orange.stl": "776b02a34f696bbe2ff71ab5ebe315e69b0a26db08cf3b9550fd1d6edf496978",
+    "lid_inlay_dark.step": "e0d876a2bfa7e8483d2e6d520092ceaa443d97ffd0d171b4480904d0e225a762",
+    "lid_inlay_dark.stl": "bf7909243a0a6257f4ad050bf964eb641944ed29b4c73b91792a45ed792a9248",
+    "lid_inlay_orange.step": "5e9519475e569d0ee2db65edfacff4c46f58041e609785f6b72af21747bc67d0",
+    "lid_inlay_orange.stl": "776b02a34f696bbe2ff71ab5ebe315e69b0a26db08cf3b9550fd1d6edf496978",
+    "lid_panel_corner.step": "e59789c71415bdb2af17f7eb28c3f4a3be7bf7115c34d35606b43f4577525f54",
+    "lid_panel_corner.stl": "792eff41e0d1ccb35d30ac14705d17af89b6b5abdecb493cd1787be77f7523ab",
+    "lid_panel_logo.step": "9354a7f868e2dd68423f88582e66d35068452b8b40c2fc9210c7c070d321d38d",
+    "lid_panel_logo.stl": "f236ce57f4d4ffadba2e0f1a9d9f906604547fe46b38d672b17c4a0969cc6dc0",
+    "lid_panel_main.step": "a0d1da0cf162c5b35df34de1735c9011b6dcd7fb723b05bdd3eebc13ae8f8fc7",
+    "lid_panel_main.stl": "beeb584dc5fcf174def2304772c3d917c2967eac3efcceb726047c8d12d13854",
+    "lid_single_colour.step": "9c25a343d974a7f1403cc2699b15f8231d364540279118f71058277ed09700fb",
+    "lid_single_colour.stl": "b0c2fb9b9ca19e11a788f96eba71cd0c7fe95fe984afd461a88952efbeb63b09",
+    "screen_shim.step": "1566856f722af2f755ee31e734aac5c4edd561eaf910d9f5f18495df64003d6d",
+    "screen_shim.stl": "c5f23bc860c6d8fc2dfd0ccc83b3e65ea38eda037f315ec5ad59eaeb6cef351f",
+    "select.step": "c780da5a76ccfc39b7e3412e97c3a1eefe960779f068b63f51539aa89976b305",
+    "select.stl": "bb841544206c8d8b7befd617ddffd9656d708344b37665e5b27e7f486432e1f6",
+    "universal_end_cap.stl": "e667a95f6044bfd31d6ae39161d7f330cc9360b57ba37b8f1eaf5c75068179e4",
+    "usb_a_end_cap.step": "9e4f2baf18179a68d20e00c630f045729fd1ba60c768b4116c4a1eb3b2da4b15",
+    "usb_a_end_cap.stl": "d30dd926efa530aa9674610da238e8dfd6326bdbf8cc36db7344a89e53f9e5d6",
+    "usb_c_collar.step": "f608c41e6e0065271a2175d3385fda4285461173755bfc50cbd20f2eca9e3f62",
+    "usb_c_collar.stl": "04c619eaa53bee97d23940f717c0aa041b70736743eb3c9a15e0e2c7782c24e7",
+    "usb_c_end_cap.step": "593423352adf8b53e168e77971f354c1dab3e77fb4e8ea0591bd399480e7afde",
+    "usb_c_end_cap.stl": "e667a95f6044bfd31d6ae39161d7f330cc9360b57ba37b8f1eaf5c75068179e4",
+    "validation.json": "f65ad187f38d75fd580afcfa6e44df5be0f180b9d4a41b29e6011fe1c46052fb"
+  },
+  "panel_interfaces": [
+    {
+      "part": "lid_panel_logo",
+      "footprint_mm2": 292.41870656037446,
+      "bonded_mm2": 292.41870656037446
+    },
+    {
+      "part": "lid_panel_main",
+      "footprint_mm2": 722.3978780314632,
+      "bonded_mm2": 722.3978780314629
+    },
+    {
+      "part": "lid_panel_corner",
+      "footprint_mm2": 8.702112777285418,
+      "bonded_mm2": 8.702112777285414
+    }
+  ],
+  "basis": "Independent STEP booleans, sampled closure and control movement, added-material checks against source electronics, STL topology and registration.",
+  "limitations": [
+    "Physical print, finish, multi-material adhesion, retention force and fatigue are not simulated.",
+    "Interface checks establish geometric bonding area, not inter-material bond strength."
+  ]
+}

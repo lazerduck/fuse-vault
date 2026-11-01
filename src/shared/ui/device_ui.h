@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "fuse_vault/access_mode.h"
 #include "credential_entry.h"
 /* Row-major RGB332: RRR GGG BB, one byte per pixel. */
 #define FV_SCREEN_WIDTH 160u
@@ -35,6 +36,7 @@ typedef enum {
 } fv_ui_operation;
 typedef struct {
     fv_ui_operation op;
+    fv_access_mode mode;
     uint8_t secret[FV_UI_SECRET_MAX], length, count;
     uint8_t current[FV_UI_SECRET_MAX], current_length;
     uint16_t algorithms[4], profile;
@@ -47,6 +49,7 @@ typedef struct {
     int result, status;
     uint16_t profile;
     bool unlocked;
+    fv_access_mode mode;
     uint64_t blocks;
     uint32_t attempts, action;
     uint8_t fido_policy;

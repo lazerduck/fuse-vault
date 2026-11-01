@@ -8,6 +8,9 @@ file(READ "${msc_source}" msc_code)
 string(REPLACE "#include \"msc_device.h\"" "#include \"class/msc/msc_device.h\"\n#include \"usb_storage.h\"" msc_code "${msc_code}")
 string(REPLACE "} else if (p_cbw->total_bytes) {" "} else if (p_cbw->total_bytes && !fv_usb_storage_begin(p_cbw->lun, SCSI_CMD_WRITE_10 == p_cbw->command[0], rdwr10_get_lba(p_cbw->command), p_cbw->total_bytes, rdwr10_get_blocksize(p_cbw))) {\n          fail_scsi_op(rhport, p_msc, MSC_CSW_STATUS_FAILED);\n        } else if (p_cbw->total_bytes) {" msc_code "${msc_code}")
 string(REPLACE "proc_bot_reset(p_msc); // driver state reset" "fv_usb_storage_clear_transport(); // drain worker before discarding command buffers\n      proc_bot_reset(p_msc); // driver state reset" msc_code "${msc_code}")
+# Callback failures already carry precise application sense (including late
+# write protection). The SDK otherwise replaces it with medium-not-present.
+string(REPLACE "    set_sense_medium_not_present(p_cbw->lun);" "    if (p_msc->sense_key == 0) set_sense_medium_not_present(p_cbw->lun);" msc_code "${msc_code}")
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/msc_device_pipeline.c" "${msc_code}")
 get_target_property(tinyusb_sources tinyusb_device_base INTERFACE_SOURCES)
 list(FILTER tinyusb_sources EXCLUDE REGEX "/class/msc/msc_device\\.c$")

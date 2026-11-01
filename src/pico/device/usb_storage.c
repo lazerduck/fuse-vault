@@ -17,6 +17,8 @@ static void wipe(void *buffer,uint32_t bytes) {
 }
 static bool command_active,command_write,pending,ready,final_write;
 static uint32_t command_lba,command_left,pending_bytes;
+static uint32_t command_generation;
+static fv_access_mode command_mode;
 _Static_assert(FV_USB_IO_BYTES>=512 && FV_USB_IO_BYTES<=65024 && FV_USB_IO_BYTES%512==0,
     "USB batch must be whole sectors and fit a 16-bit USB transfer length");
 static fv_usb_response completed;
@@ -25,22 +27,26 @@ static void clear_pipeline(void){
     fv_usb_async_wait();
     fv_usb_response discarded;(void)fv_usb_async_take(&discarded);
     pending=ready=final_write=command_active=false;
+    command_mode=FV_ACCESS_LOCKED;
     wipe(scratch,sizeof(scratch));
     if(transport_buffer)wipe(transport_buffer,transport_bytes);
 }
 void fv_usb_storage_clear_transport(void) {
     clear_pipeline();activity_read=activity_write=0;
+    fv_usb_forget_status();
 }
 static bool harvest(void){
     if(pending && fv_usb_async_take(&completed)){
         pending=false;ready=true;
-        if(command_write && completed.result==FV_BLOCK_OK && completed.unlocked)activity_write+=pending_bytes;
+        if(command_write && command_generation==fv_usb_session_generation() && completed.result==FV_BLOCK_OK && completed.unlocked &&
+           completed.generation==command_generation && fv_access_writable(completed.mode))activity_write+=pending_bytes;
     }
     return ready;
 }
 static bool start_batch(bool write,uint32_t bytes){
+    if(command_generation!=fv_usb_session_generation())return false;
     if(!fv_usb_async_submit((fv_usb_request){.op=write?FV_USB_WRITE:FV_USB_READ,
-            .lba=command_lba,.count=bytes/512,.data=scratch}))return false;
+            .lba=command_lba,.count=bytes/512,.generation=command_generation,.data=scratch}))return false;
     pending_bytes=bytes;pending=true;ready=false;return true;
 }
 static bool valid_lun(uint8_t lun) {
@@ -48,7 +54,7 @@ static bool valid_lun(uint8_t lun) {
     tud_msc_set_sense(lun,SCSI_SENSE_ILLEGAL_REQUEST,0x25,0);return false;
 }
 static bool available(uint8_t lun,fv_usb_response r) {
-    if(!r.unlocked || !r.blocks) {
+    if(!r.unlocked || !r.blocks || !fv_access_files(r.mode)) {
         tud_msc_set_sense(lun,SCSI_SENSE_NOT_READY,0x3a,0);return false;
     }
     return true;
@@ -58,6 +64,7 @@ static int32_t io_error(uint8_t lun,int result,bool write) {
     case FV_BLOCK_ERROR_NOT_READY:tud_msc_set_sense(lun,SCSI_SENSE_NOT_READY,0x3a,0);break;
     case FV_BLOCK_ERROR_OUT_OF_RANGE:tud_msc_set_sense(lun,SCSI_SENSE_ILLEGAL_REQUEST,0x21,0);break;
     case FV_BLOCK_ERROR_INVALID_ARGUMENT:tud_msc_set_sense(lun,SCSI_SENSE_ILLEGAL_REQUEST,0x24,0);break;
+    case FV_BLOCK_ERROR_READ_ONLY:tud_msc_set_sense(lun,SCSI_SENSE_DATA_PROTECT,0x27,0);break;
     default:tud_msc_set_sense(lun,SCSI_SENSE_MEDIUM_ERROR,write?0x0c:0x11,0);break;
     }
     return -1;
@@ -86,14 +93,19 @@ bool fv_usb_storage_begin(uint8_t lun,bool write,uint32_t lba,uint32_t bytes,uin
     if(block_size!=512 || !bytes || bytes%512){io_error(lun,FV_BLOCK_ERROR_INVALID_ARGUMENT,write);return false;}
     fv_usb_response r=fv_usb_rpc((fv_usb_request){.op=FV_USB_STATUS});
     if(!available(lun,r))return false;
+    if(write && !fv_access_writable(r.mode)){io_error(lun,FV_BLOCK_ERROR_READ_ONLY,true);return false;}
     if(lba>=r.blocks || bytes/512>r.blocks-lba){io_error(lun,FV_BLOCK_ERROR_OUT_OF_RANGE,write);return false;}
     command_active=true;command_write=write;command_lba=lba;command_left=bytes;
+    command_generation=r.generation;command_mode=r.mode;
     return true;
 }
 bool tud_msc_is_writable_cb(uint8_t lun) {
     /* Called before EVERY USB receive: do not wait for the previous SD write. */
-    if(command_active && command_write)return valid_lun(lun);
-    return valid_lun(lun) && available(lun,fv_usb_rpc((fv_usb_request){.op=FV_USB_STATUS}));
+    if(!valid_lun(lun) || fv_usb_session_invalidated())return false;
+    if(command_active && command_write)return fv_access_writable(command_mode) &&
+        command_generation==fv_usb_session_generation();
+    fv_usb_response r=fv_usb_rpc((fv_usb_request){.op=FV_USB_STATUS});
+    return available(lun,r) && fv_access_writable(r.mode);
 }
 static int32_t transfer(uint8_t lun,uint32_t lba,uint32_t offset,void *buffer,uint32_t bytes,bool write) {
     if(!valid_lun(lun))return -1;
@@ -102,12 +114,23 @@ static int32_t transfer(uint8_t lun,uint32_t lba,uint32_t offset,void *buffer,ui
     if(transport_buffer!=buffer){transport_buffer=buffer;transport_bytes=bytes;}
     else if(bytes>transport_bytes)transport_bytes=bytes;
     fv_usb_storage_poll(); /* Suppress publication following reset/disconnect. */
+    if(fv_usb_session_invalidated() || (command_active && command_generation!=fv_usb_session_generation())){
+        /* FIDO may defer the worker-side lock; keep pumping USB until the
+         * outstanding batch relinquishes scratch, then suppress its result. */
+        if(pending && !harvest())return 0;
+        clear_pipeline();wipe(buffer,bytes);return io_error(lun,FV_BLOCK_ERROR_NOT_READY,write);
+    }
     if(!command_active || command_write!=write){wipe(buffer,bytes);return io_error(lun,FV_BLOCK_ERROR_NOT_READY,write);}
     if(lba>UINT32_MAX-offset/512 || lba+offset/512!=command_lba || bytes>command_left)
         return io_error(lun,FV_BLOCK_ERROR_INVALID_ARGUMENT,write);
     if(pending && !harvest())return 0; /* TinyUSB retries; USB IRQs keep running. */
-    if(ready && (completed.result!=FV_BLOCK_OK || !completed.unlocked)){
+    if(ready && (completed.result!=FV_BLOCK_OK || !completed.unlocked || command_generation!=fv_usb_session_generation() ||
+                  !fv_access_files(completed.mode) || completed.generation!=command_generation ||
+                  (write && !fv_access_writable(completed.mode)))){
         int result=completed.result?completed.result:FV_BLOCK_ERROR_NOT_READY;
+        if(completed.result==FV_BLOCK_OK && completed.generation==command_generation &&
+           completed.unlocked && fv_access_files(completed.mode) && write && !fv_access_writable(completed.mode))
+            result=FV_BLOCK_ERROR_READ_ONLY;
         clear_pipeline();return io_error(lun,result,write);
     }
     if(write){

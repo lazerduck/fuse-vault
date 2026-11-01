@@ -1,0 +1,19 @@
+{
+  "renderer": "Mitsuba",
+  "version": "3.9.1",
+  "variant": "llvm_ad_rgb",
+  "samples_per_pixel": 512,
+  "width_px": 1800,
+  "views": [
+    "studio",
+    "top-studio",
+    "detail-studio"
+  ],
+  "geometry": "Exported STEP shapes from validation.json colors; no geometric edits",
+  "materials": "Rough plastic, sRGB CAD colours converted to linear reflectance",
+  "lighting": "Three rectangular area lights and constant fill; diffuse studio floor",
+  "display": "Reference glass envelope only; same as CAD renderer",
+  "limitations": [
+    "Illustrative material roughness and studio lighting; surface finish is not a print prediction."
+  ]
+}

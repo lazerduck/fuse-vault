@@ -1,0 +1,55 @@
+FUSE VAULT L — SCULPTED PANELS
+
+NEW PARTS
+Print the new base and multipart lid as a matching shell. An existing panelled-v2
+base is geometrically equivalent and may be reused if identified confidently.
+Reuse the working L PCB/display/shim assembly and collar. Existing L controls
+still fit; included D-pad and round buttons add 0.20 mm easing only to the exposed
+top edges. Print these if you want the complete tactile finish.
+Original L caps still fit. For the new cap-face treatment, print TWO copies of
+universal_end_cap.stl. Keep previous working parts until the new print is checked.
+
+COLOUR LID
+Open lid-ams.3mf as ONE multipart object in Bambu Studio:
+- lid_ams_charcoal: charcoal structural carrier, logo arms and screen lip.
+- lid_ams_grey: all three bevelled grey face panels.
+- lid_ams_orange: logo centre and diagonal joint tongue.
+
+Alternatively import those THREE grouped STL files together and preserve shared
+placement. Do not arrange the groups separately. The model is already face down.
+The other lid*.stl files are individual editable regions or the single-colour
+alternative; do not add them to the grouped print. The 3MF has no printer profile.
+
+SETTINGS TO START FROM
+P1S / stock 0.4 mm nozzle. Compatible ordinary PLA colours, established filament
+flow and temperatures. Lid: 0.12 mm layers, four walls, five top/bottom layers.
+Use the normal first-layer setting and inspect the actual slice preview.
+No global scaling, no supports in guides or colour pockets.
+
+Face tops and perimeter rail share the bed plane. The 0.30 mm panel bevels grow
+outward away from the plate, then join the structural carrier. The recessed
+channels start 0.40 mm above the bed and bridge their narrow gaps. Inspect these
+layers for disconnected starts or unfilled gaps with your extrusion settings.
+The narrow orange tongue contacts the bed; its exposed top width is about
+0.58 mm after its bevel. Confirm a continuous extrusion in the slicer preview.
+Do not force a decorative detail with unsupported thin-wall settings.
+
+Base and caps: start with L's 0.16 mm layers, four walls, five solid top/bottom
+layers and 20% infill. Base underside down; caps closed end down, openings up.
+The cap-face recesses are shallow and bevelled. Inspect their ends in preview.
+
+For a quick one-colour geometry trial, use lid_single_colour.stl instead of the
+multipart lid. It preserves the panel relief but not the visible flush logo.
+
+ASSEMBLY
+Preserve the existing display adhesive stack and free flex route when transferring
+the working PCB. Fit card, collar and board into the base; follow L assembly notes
+for a complete new electronics assembly. Insert buttons from beneath the lid.
+The D-pad's orientation dot faces USB-A. Engage the USB-C hooks, close gently,
+and test every control for press and release. The display must not carry closure
+force. Fit the two caps in either end position; they remain reversible.
+
+CHECK THE FIRST PRINT
+Panel bevel finish, orange tongue continuity, clean logo, seam bridging, smooth
+SD shoulder, screen sight lines, button return, shell and cap retention. CAD checks
+do not establish adhesion, printed surface quality, fatigue or switch feel.

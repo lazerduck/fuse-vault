@@ -2,11 +2,19 @@
 
 Fuse Vault can act as a USB FIDO2 authenticator. This lets you register it with a website or service and then use it to sign in. FIDO uses a public and private key pair for each credential. The service holds the public key, and the device uses the private key to sign a challenge during authentication. The service can check that signature without receiving the private key. The browser connects this exchange to the website being visited. See the [WebAuthn specification](https://www.w3.org/TR/webauthn-2/) for the protocol model.
 
-The FIDO store lives in the private SD card region described in [File storage](FileStorage.md). Its protection depends on the VMK, so unlocking the vault also makes FIDO available. This page describes the current firmware with FIDO enabled.
+The FIDO store lives in the private SD card region described in [File storage](FileStorage.md). Its protection depends on the VMK. Full unlock and Passkeys only sessions authorize FIDO; Read-only files sessions do not. This page describes the current firmware with FIDO enabled.
 
 ## Registering and signing in
 
-When a website asks to register a credential or sign in, the device requires an unlocked vault and approval on the device. A request arriving while locked can open the credential-entry screen. Basic discovery, such as asking which FIDO features the device supports, is available while locked.
+When a website asks to register a credential or sign in, the device requires a
+session permitting FIDO and approval on the device. A request arriving while
+locked can open a Passkeys only credential-entry screen without exposing the file
+volume. Requests cannot replace an active local credential/settings flow.
+Reverification preserves the current scope. A Read-only files session rejects
+private FIDO operations without prompting, charging an attempt, opening the FIDO
+store or granting broader access. Local passkey management and FIDO policy/reset
+actions follow the same scope restriction. Basic discovery remains available
+without using secrets, and the FIDO HID interface stays enumerated in every mode.
 
 There are two separate decisions involved:
 

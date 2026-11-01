@@ -61,7 +61,7 @@ int main(void){
         words.entry.count=0;words.error=1;save(&words,"04d-word-mismatch");
     }
     fv_ui_fido_end(&u);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.blocks=115000000,.attempts=10,.action=1});
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.mode=FV_ACCESS_FULL,.blocks=115000000,.attempts=10,.action=1});
     save(&u,"05a-history-idle");
     for(unsigned i=0;i<60;i++)
         fv_ui_activity(&u, (i%17)*27000, (i%23)*38000, 500000);
@@ -74,7 +74,7 @@ int main(void){
     fv_ui_keypress(&u,UI_DOWN);save(&u,"09-verification-session");
     fv_ui_fido_begin(&u,false,0,"SIGN IN github.com");save(&u,"10-approval");
     fv_ui_fido_end(&u);u.job.op=UI_PASSKEY_LIST;
-    fv_ui_result r={.status=2,.profile=2,.unlocked=true,.passkey_count=2,.passkey_id={1}};
+    fv_ui_result r={.status=2,.profile=2,.unlocked=true,.mode=FV_ACCESS_FULL,.passkey_count=2,.passkey_id={1}};
     strcpy(r.passkey_site,"github.com");strcpy(r.passkey_account,"alice@example.com");
     fv_ui_complete(&u,r);save(&u,"11-passkey");
     fv_ui_keypress(&u,UI_SELECT);save(&u,"12-delete");
@@ -109,5 +109,20 @@ int main(void){
     fv_ui_complete(&u,(fv_ui_result){.status=3});save(&u,"28-lockout");
     fv_ui_complete(&u,(fv_ui_result){.status=1});save(&u,"29-welcome");
     u.flipped=true;save(&u,"30-flipped");
+    {
+        const fv_access_mode modes[] = {FV_ACCESS_FULL, FV_ACCESS_PASSKEYS_ONLY, FV_ACCESS_FILES_READ_ONLY};
+        const fv_ui_key choices[] = {UI_SELECT, UI_UP, UI_DOWN};
+        for (unsigned mode = 0; mode < 3; ++mode) {
+            char name[64];
+            fv_ui_init(&u); u.fido_enabled = true;
+            fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=3});
+            fv_ui_keypress(&u, choices[mode]);
+            snprintf(name, sizeof(name), "31-mode-%u-credential", mode); save(&u, name);
+            fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=3, .unlocked=true, .mode=modes[mode]});
+            snprintf(name, sizeof(name), "32-mode-%u-dashboard", mode); save(&u, name);
+            fv_ui_keypress(&u, UI_SELECT);
+            snprintf(name, sizeof(name), "33-mode-%u-settings", mode); save(&u, name);
+        }
+    }
     return 0;
 }

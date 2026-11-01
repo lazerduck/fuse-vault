@@ -28,7 +28,7 @@ static void flip_tests(void){
     key(&b,UI_BACK);CHECK(b.job.length==7);key(&b,UI_LEFT);CHECK(b.job.length==8 && b.flipped);
     key(&a,UI_SELECT);key(&b,UI_SELECT);CHECK(a.job.op==UI_UNLOCK && b.job.op==UI_UNLOCK);
     CHECK(!memcmp(a.job.secret,b.job.secret,8));
-    fv_ui_complete(&b,(fv_ui_result){.status=2,.unlocked=true});key(&b,UI_SELECT);CHECK(b.flipped);
+    fv_ui_complete(&b,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL});key(&b,UI_SELECT);CHECK(b.flipped);
     key(&b,UI_UP);CHECK(b.cursor==1);key(&b,UI_DOWN);CHECK(b.cursor==0);
     key(&b,UI_BACK);CHECK(b.screen==UI_DASHBOARD);
     key(&b,UI_LEFT);CHECK(!b.flipped && b.device.unlocked && !b.pending);
@@ -55,26 +55,104 @@ static void method_tests(void){
     for(unsigned i=0;i<12;i++)key(&u,UI_UP);
     key(&u,UI_SELECT);CHECK(u.job.op==UI_UNLOCK && u.job.length==4);
     for(unsigned i=0;i<4;i++)CHECK(u.job.secret[i]==0);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.attempts=10,.action=1});key(&u,UI_SELECT);
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.mode=FV_ACCESS_FULL,.attempts=10,.action=1});key(&u,UI_SELECT);
     key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);CHECK(u.flow==UI_FLOW_CHANGE);sequence(&u);CHECK(u.screen==UI_METHOD && u.job.current_length==8);
     key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_SELECT);key(&u,UI_SELECT);CHECK(u.screen==UI_REVIEW);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_CHANGE && u.job.profile==3 && u.job.length==4 && u.job.current_length==8);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=3});
     CHECK(!u.job.current_length && !u.job.length);for(unsigned i=0;i<64;i++)CHECK(!u.job.current[i]);
 }
+static void access_mode_tests(void) {
+    const fv_access_mode modes[] = {FV_ACCESS_FULL, FV_ACCESS_PASSKEYS_ONLY, FV_ACCESS_FILES_READ_ONLY};
+    const fv_ui_key choices[] = {UI_SELECT, UI_UP, UI_DOWN};
+    for (unsigned profile = 2; profile <= 4; ++profile) {
+        for (unsigned mode = 0; mode < 3; ++mode) {
+            for (unsigned flipped = 0; flipped < 2; ++flipped) {
+                fv_ui u; fv_ui_init(&u); u.fido_enabled = true;
+                fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=profile});
+                if (flipped) key(&u, UI_LEFT);
+                unsigned generation = u.fido_generation;
+                fv_ui_key choice = choices[mode];
+                if (flipped && choice != UI_SELECT) choice = choice == UI_UP ? UI_DOWN : UI_UP;
+                key(&u, choice);
+                CHECK(u.screen == UI_SECRET && u.flow == UI_FLOW_UNLOCK);
+                CHECK(u.job.mode == modes[mode] && !u.job.length && !u.entry.count);
+                CHECK(u.fido_generation != generation);
+                if (profile == 2) sequence(&u);
+                else {
+                    if (profile == 4) for (unsigned i = 0; i < 12; ++i) key(&u, UI_UP);
+                    key(&u, UI_SELECT);
+                }
+                CHECK(u.pending && u.job.op == UI_UNLOCK && u.job.mode == modes[mode]);
+                CHECK(u.job.length == (profile == 2 ? 8 : 4));
+                fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=profile, .unlocked=true, .mode=modes[mode]});
+                CHECK(u.screen == UI_DASHBOARD && u.device.mode == modes[mode]);
+                CHECK(u.job.mode == FV_ACCESS_LOCKED && !u.job.length);
+            }
+        }
+    }
+    fv_ui u; fv_ui_init(&u); u.fido_enabled = true;
+    fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=2});
+    key(&u, UI_DOWN); CHECK(u.job.mode == FV_ACCESS_FILES_READ_ONLY);
+    key(&u, UI_BACK); CHECK(u.screen == UI_HOME && u.job.mode == FV_ACCESS_LOCKED);
+    key(&u, UI_UP); CHECK(u.job.mode == FV_ACCESS_PASSKEYS_ONLY);
+    fv_ui_cancel(&u); CHECK(u.job.mode == FV_ACCESS_LOCKED && !u.job.length);
+    fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=2});
+    key(&u, UI_SELECT); CHECK(u.job.mode == FV_ACCESS_FULL);
+    fv_ui_complete(&u, (fv_ui_result){.result=-4, .status=2});
+    CHECK(u.job.mode == FV_ACCESS_LOCKED && !u.device.unlocked);
+    fv_ui_complete(&u, (fv_ui_result){.status=2}); u.fido_enabled = false;
+    key(&u, UI_UP); CHECK(u.screen == UI_HOME && u.job.mode == FV_ACCESS_LOCKED);
+    fv_ui_complete(&u, (fv_ui_result){.status=1});
+    key(&u, UI_DOWN); CHECK(u.screen == UI_HOME);
+    key(&u, UI_SELECT); CHECK(u.screen == UI_METHOD && u.job.mode == FV_ACCESS_LOCKED);
+    fv_ui_complete(&u, (fv_ui_result){.status=2, .unlocked=true, .mode=(fv_access_mode)99});
+    CHECK(!u.device.unlocked && u.device.mode == FV_ACCESS_LOCKED);
+
+    fv_ui_fido_begin(&u, true, 2, "SIGN IN example.test");
+    CHECK(u.job.mode == FV_ACCESS_PASSKEYS_ONLY && u.fido_modal);
+    fv_ui expected = {0}; ui_draw_header(&expected, "PASSKEYS ONLY", NULL);
+    CHECK(!memcmp(u.framebuffer, expected.framebuffer, 13 * FV_SCREEN_WIDTH));
+    fv_ui_fido_end(&u); CHECK(u.job.mode == FV_ACCESS_LOCKED);
+}
+
+static void restricted_settings_tests(void) {
+    fv_ui u; fv_ui_init(&u); u.fido_enabled = true;
+    fv_ui_complete(&u, (fv_ui_result){.status=2, .unlocked=true, .mode=FV_ACCESS_PASSKEYS_ONLY});
+    key(&u, UI_SELECT); CHECK(u.screen == UI_SETTINGS && !u.cursor);
+    key(&u, UI_SELECT); CHECK(u.screen == UI_FIDO_INIT_CONFIRM);
+    key(&u, UI_BACK); CHECK(u.screen == UI_SETTINGS && !u.cursor);
+    key(&u, UI_DOWN); key(&u, UI_SELECT); CHECK(u.screen == UI_FIDO_POLICY_SCREEN);
+    key(&u, UI_BACK); CHECK(u.screen == UI_SETTINGS && u.cursor == 1);
+    key(&u, UI_DOWN); key(&u, UI_SELECT); CHECK(u.pending && u.job.op == UI_PASSKEY_LIST);
+    fv_ui_complete(&u, (fv_ui_result){.status=2, .unlocked=true, .mode=FV_ACCESS_PASSKEYS_ONLY});
+    key(&u, UI_BACK); CHECK(u.screen == UI_SETTINGS && u.cursor == 2);
+    key(&u, UI_DOWN); key(&u, UI_SELECT); CHECK(u.screen == UI_DASHBOARD_SETTING);
+    key(&u, UI_BACK); CHECK(u.screen == UI_SETTINGS && u.cursor == 3);
+    key(&u, UI_DOWN); CHECK(!u.cursor);
+    key(&u, UI_UP); CHECK(u.cursor == 3);
+
+    u.job.op = UI_STATUS;
+    fv_ui_complete(&u, (fv_ui_result){.status=2, .unlocked=true, .mode=FV_ACCESS_FILES_READ_ONLY});
+    key(&u, UI_SELECT); CHECK(u.screen == UI_SETTINGS && !u.cursor);
+    for (unsigned i = 0; i < 10; ++i) { key(&u, UI_DOWN); CHECK(!u.cursor); }
+    key(&u, UI_SELECT); CHECK(u.screen == UI_DASHBOARD_SETTING);
+    key(&u, UI_BACK); CHECK(u.screen == UI_SETTINGS && !u.cursor);
+    key(&u, UI_BACK); CHECK(u.screen == UI_DASHBOARD && !u.pending);
+}
 static void fido_tests(void){
-    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true});key(&u,UI_SELECT);
+    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.mode=FV_ACCESS_FULL});key(&u,UI_SELECT);
     u.fido_enabled=true;
     key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);
     CHECK(u.screen==UI_FIDO_POLICY_SCREEN && !u.job.fido_policy);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.pending && u.job.op==UI_FIDO_POLICY && u.job.fido_policy==1);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.fido_policy=1});key(&u,UI_SELECT);
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.mode=FV_ACCESS_FULL,.fido_policy=1});key(&u,UI_SELECT);
     u.fido_enabled=true;key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);
     CHECK(u.screen==UI_FIDO_INIT_CONFIRM && !u.cursor && !u.pending);
     key(&u,UI_SELECT);CHECK(u.screen==UI_SETTINGS && u.cursor==3 && !u.pending);
     key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
     CHECK(u.pending && u.job.op==UI_FIDO_INIT);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true});key(&u,UI_SELECT);
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.profile=2,.unlocked=true,.mode=FV_ACCESS_FULL});key(&u,UI_SELECT);
     fv_ui_fido_begin(&u,false,0,"REGISTER example.test");CHECK(u.fido_modal && !u.fido_done);
     key(&u,UI_BACK);CHECK(u.fido_done && !u.fido_approved);key(&u,UI_SELECT);CHECK(!u.fido_approved);
     fv_ui_fido_end(&u);CHECK(!u.fido_modal && u.pending);
@@ -85,10 +163,10 @@ static void fido_tests(void){
     fv_ui_fido_end(&u);fv_ui_fido_begin(&u,true,3,"VERIFY");key(&u,UI_BACK);CHECK(u.fido_done && !u.fido_approved);
 }
 static void passkey_tests(void){
-    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});key(&u,UI_SELECT);u.fido_enabled=true;
+    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL});key(&u,UI_SELECT);u.fido_enabled=true;
     key(&u,UI_UP);key(&u,UI_UP);key(&u,UI_SELECT);
     CHECK(u.pending && u.job.op==UI_PASSKEY_LIST);
-    fv_ui_result r={.status=2,.unlocked=true,.passkey_count=2,.passkey_id={7}};
+    fv_ui_result r={.status=2,.unlocked=true,.mode=FV_ACCESS_FULL,.passkey_count=2,.passkey_id={7}};
     strcpy(r.passkey_site,"localhost");strcpy(r.passkey_account,"Alice");
     fv_ui_complete(&u,r);CHECK(u.screen==UI_PASSKEYS && u.job.passkey_id[0]==7);
     unsigned generation=u.fido_generation;
@@ -103,7 +181,7 @@ static void passkey_tests(void){
 }
 static void navigation_tests(void){
     fv_ui u;fv_ui_init(&u);u.fido_enabled=true;u.job.op=UI_PASSKEY_LIST;
-    fv_ui_result r={.status=2,.unlocked=true,.passkey_count=2,.passkey_id={9}};
+    fv_ui_result r={.status=2,.unlocked=true,.mode=FV_ACCESS_FULL,.passkey_count=2,.passkey_id={9}};
     strcpy(r.passkey_site,"github.com");strcpy(r.passkey_account,"Alice");
     fv_ui_complete(&u,r);
     uint8_t site_pixels[3200];memcpy(site_pixels,u.framebuffer+1600,sizeof(site_pixels));
@@ -138,7 +216,7 @@ static void navigation_tests(void){
     CHECK(u.screen==UI_SETTINGS && u.cursor==1 && !u.pending);
 }
 static void standard_controls_tests(void){
-    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});key(&u,UI_SELECT);
+    fv_ui u;fv_ui_init(&u);fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL});key(&u,UI_SELECT);
     CHECK(u.screen==UI_SETTINGS && !u.pending);
     key(&u,UI_BACK);CHECK(u.screen==UI_DASHBOARD && !u.pending);
     key(&u,UI_BACK);CHECK(u.pending && u.job.op==UI_LOCK);
@@ -191,6 +269,7 @@ static void credential_change_message_tests(void) {
 }
 
 int main(int argc,char **argv){
+    access_mode_tests();restricted_settings_tests();
     credential_change_message_tests();
     flip_tests();method_tests();fido_tests();passkey_tests();navigation_tests();standard_controls_tests();
     for(uint64_t capacity=0;capacity<100000;capacity++){
@@ -230,10 +309,10 @@ int main(int argc,char **argv){
     u.pending=false;fv_ui_cancel(&u);CHECK(u.job.op==UI_CREATE && !u.pending && !u.job.length); /* Accepted job cannot be resubmitted. */
     fv_ui_complete(&u,(fv_ui_result){.status=2});CHECK(!u.job.length);for(unsigned i=0;i<64;i++)CHECK(!u.job.secret[i]);
     key(&u,UI_SELECT);sequence(&u);CHECK(u.job.op==UI_UNLOCK);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.attempts=10,.action=1,.blocks=62912625});key(&u,UI_SELECT);
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL,.attempts=10,.action=1,.blocks=62912625});key(&u,UI_SELECT);
     CHECK(u.screen==UI_SETTINGS && !u.pending);key(&u,UI_BACK);CHECK(u.screen==UI_DASHBOARD && !u.pending);key(&u,UI_SELECT);key(&u,UI_SELECT);CHECK(u.flow==UI_FLOW_POLICY && u.screen==UI_SECRET);
     sequence(&u);CHECK(u.screen==UI_OPTIONS);key(&u,UI_DOWN);key(&u,UI_RIGHT);key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_POLICY);
-    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true});key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
+    fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL});key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
     CHECK(u.screen==UI_ERASE_CONFIRM && !u.pending);key(&u,UI_SELECT);CHECK(u.screen==UI_SETTINGS && u.cursor==1 && !u.pending);
     key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_ERASE);
     fv_ui_complete(&u,(fv_ui_result){.status=3});key(&u,UI_SELECT);CHECK(u.screen==UI_HOME && !u.pending);

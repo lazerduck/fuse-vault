@@ -133,7 +133,7 @@ add_test(NAME ui_components COMMAND ui_components_tests)
 
 add_executable(usb_mux_tests tests/usb_mux_tests.c ${FV_PICO}/device/usb_mux.c)
 target_include_directories(usb_mux_tests PRIVATE tests/mux_stubs
-  ${FV_PICO}/platform/boards ${FV_PICO}/device ${FV_SHARED}/ui)
+  ${FV_PICO}/platform/boards ${FV_PICO}/device ${FV_SHARED}/ui ${FV_SHARED}/storage/include)
 target_compile_definitions(usb_mux_tests PRIVATE FV_USB_MSC=1 FV_DEVICE_UI=1)
 target_compile_options(usb_mux_tests PRIVATE -Wall -Wextra -Werror)
 add_test(NAME usb_mux COMMAND usb_mux_tests)

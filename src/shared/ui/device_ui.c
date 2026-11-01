@@ -3,6 +3,15 @@
 #include <stdio.h>
 #include <string.h>
 
+const char *ui_mode_label(fv_access_mode mode) {
+    switch (mode) {
+    case FV_ACCESS_FULL: return "FULL ACCESS";
+    case FV_ACCESS_PASSKEYS_ONLY: return "PASSKEYS ONLY";
+    case FV_ACCESS_FILES_READ_ONLY: return "FILES READ ONLY";
+    default: return "LOCKED";
+    }
+}
+
 void fv_ui_wipe(void *p, size_t size) {
     volatile uint8_t *bytes = p;
     while (size--)
@@ -11,6 +20,7 @@ void fv_ui_wipe(void *p, size_t size) {
 
 void ui_clear_input(fv_ui *u) {
     u->flow = UI_FLOW_SETUP;
+    u->job.mode = FV_ACCESS_LOCKED;
     fv_ui_wipe(u->job.secret, sizeof(u->job.secret));
     fv_ui_wipe(u->job.current, sizeof(u->job.current));
     fv_ui_wipe(u->confirmation, sizeof(u->confirmation));
@@ -51,7 +61,11 @@ void fv_ui_cancel(fv_ui *u) {
 void fv_ui_complete(fv_ui *u, fv_ui_result result) {
     ui_clear_input(u);
     u->pending = false;
-    if (!result.unlocked || !u->device.unlocked) {
+    if (!result.unlocked || !fv_access_valid(result.mode)) {
+        result.unlocked = false;
+        result.mode = FV_ACCESS_LOCKED;
+    }
+    if (!result.unlocked || !u->device.unlocked || result.mode != u->device.mode) {
         memset(u->read_history, 0, sizeof(u->read_history));
         memset(u->write_history, 0, sizeof(u->write_history));
         u->history_next = u->history_count = 0;
@@ -81,6 +95,8 @@ void fv_ui_fido_begin(fv_ui *u, bool secret, uint16_t profile, const char *label
     u->fido_done = false;
     u->fido_approved = false;
     u->job.profile = profile;
+    u->job.mode = u->device.unlocked && fv_access_valid(u->device.mode)
+                      ? u->device.mode : FV_ACCESS_PASSKEYS_ONLY;
     u->error = 0;
     snprintf(u->fido_label, sizeof(u->fido_label), "%s", label);
     ui_scene_show(u, secret ? UI_SECRET : UI_FIDO_APPROVE);

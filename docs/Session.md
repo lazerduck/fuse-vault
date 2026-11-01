@@ -12,6 +12,27 @@ When FIDO is used, its 128 KiB store image and working secrets are loaded into R
 
 The user credential is needed to recover or reverify the VMK. Ongoing file access uses the working keys already in the session.
 
+## Session permissions
+
+Keys being present in RAM does not by itself authorize host access. A separate,
+worker-owned volatile mode grants Full access (files read/write and FIDO),
+Passkeys only, or Read-only files (no FIDO). Invalid/default modes deny access.
+Permissions are granted after successful authentication, never just by selecting
+a screen option. FIDO reverification cannot broaden them. Vault-wide credential,
+failure-policy and erase actions require Full access; FIDO management remains
+available in either FIDO-capable mode.
+
+Changing mode requires locking and unlocking again. Commands and transfer batches
+are tied to a session generation so queued work cannot cross into a new session.
+Mode and cached permissions are cleared on invalidation together with the session
+and transport cleanup. This is firmware authorization around the existing shared
+VMK, not cryptographic separation into independently keyed vault areas.
+
+USB and FIDO responses also check the worker's current generation before release.
+Locking discards an old completed USB read and any unsent fragments of a FIDO
+response. An explicit USB eject still requests a lock when FIDO is busy; a FIDO
+cancel by itself does not close an unrelated read-only file session.
+
 ## Locking
 
 Locking closes FIDO and clears its image, cached secrets and authorization state. The firmware then explicitly zeroes the vault session structure, including the VMK and working keys. USB transfer cleanup drains outstanding worker activity and clears transfer buffers so an old batch cannot be returned after the session has been invalidated.

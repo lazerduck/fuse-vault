@@ -20,6 +20,7 @@ try:
         return c.make_credential(h, {'id': rp}, {'id': b'adapter', 'name': 'Adapter'},
                                 [{'type': 'public-key', 'alg': -7}], options={'rk': True, 'uv': True})
     created = register()
+    assert d.exchange('scope') == '2 1 1'  # Host unlock grants passkeys only.
     key = created.auth_data.credential_data
     key.public_key.verify(bytes(created.auth_data) + h, created.att_stmt['sig'])
     assert created.auth_data.is_user_present() and created.auth_data.is_user_verified()
@@ -29,6 +30,7 @@ try:
     key.public_key.verify(bytes(result.auth_data)+h, result.signature)
     assert list(map(int, d.exchange('counts').split())) == [2, 1, 0]
     another_key = register('another.test').auth_data.credential_data
+    assert d.exchange('scope') == '2 1 1'  # RP reverification cannot broaden access.
     assert list(map(int, d.exchange('counts').split())) == [3, 2, 0]
     d.control('reopen')
     c = Ctap2(d)
@@ -112,6 +114,77 @@ try:
     with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
         c.get_assertion(surviving, h, options={'uv': True})
     d.control('locked')
-    print('Firmware HID/store/UI adapter: registration, signed assertion, reopen, RP/age reverify, denial, attempts, cancel, UV tokens passed')
+
+    # Full-session reverification preserves the existing authorization.
+    d.control('mode 1')
+    c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('scope') == '1 1 1'
+    d.control('time 300000000')
+    c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('scope') == '1 1 1'
+
+    # A file-only session denies every private command before parsing, prompting,
+    # secret checking or opening the FIDO filesystem. Public GetInfo remains usable.
+    d.control('mode 3')
+    before = d.exchange('effects')
+    c.get_info()
+    for command in (1, 2, 6, 7, 8, 10, 11, 12, 13, 0xff):
+        assert d.call(CTAPHID.CBOR, bytes([command])) == b'\x27'
+        assert d.exchange('scope') == '3 1 0'
+    d.control('local-readonly-check')
+    assert d.exchange('effects') == before
+    for timing in ('cancel-early', 'cancel-late'):
+        d.control(timing)
+        assert d.call(CTAPHID.CBOR, b'\x01') == b'\x2d'
+        assert d.exchange('scope') == '3 1 0'
+        assert d.exchange('effects') == before
+
+    # A genuine USB invalidation is distinct from HID CANCEL and revokes RO too.
+    d.control('invalidate')
+    assert d.call(CTAPHID.CBOR, b'\x01') == b'\x2d'
+    assert d.exchange('scope') == '0 0 0'
+    assert d.exchange('effects') == before
+    d.control('clear-invalidation')
+
+    # An invalid authorization value fails closed even with vault keys in RAM.
+    d.control('mode 99')
+    before = d.exchange('effects')
+    assert d.call(CTAPHID.CBOR, b'\x02') == b'\x27'
+    assert d.exchange('scope') == '99 1 0'
+    assert d.exchange('effects') == before
+
+    # Browser requests cannot overwrite a local read-only unlock in progress.
+    d.control('mode 0')
+    d.control('local-begin')
+    before = d.exchange('effects')
+    assert d.call(CTAPHID.CBOR, b'\x01') == b'\x27'
+    d.control('local-preserved')
+    assert d.exchange('effects') == before
+    assert d.exchange('scope') == '0 0 0'
+    d.control('local-end')
+    # The same guard also handles a local flow beginning after host work was queued.
+    d.control('local-race')
+    before = d.exchange('effects')
+    with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
+        c.get_assertion(surviving, h, options={'uv': True})
+    d.control('local-preserved')
+    assert d.exchange('effects') == before
+    d.control('local-end')
+    c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('scope') == '2 1 1'
+    d.control('time 400000000')
+    c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('scope') == '2 1 1'
+    # Completed results remain bound to the old session until USB publishes them.
+    d.control('lock-after-worker')
+    with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
+        c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('scope') == '0 0 0'
+    c.get_assertion(surviving, h, options={'uv': True})
+    d.control('lock-between-fragments')
+    request = b'\x02' + cbor.encode({1: surviving, 2: h, 5: {'uv': True}})
+    assert d.exchange(request.hex()) == 'fragment-blocked'
+    assert d.exchange('scope') == '0 0 0'
+    print('Firmware HID/store/UI adapter: signatures, persistence, verification, access scopes, file-only denial, local UI preservation, attempts and cancellation passed')
 finally:
     d.close()

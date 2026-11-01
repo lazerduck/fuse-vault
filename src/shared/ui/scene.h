@@ -1,6 +1,7 @@
 #ifndef FV_UI_SCENE_H
 #define FV_UI_SCENE_H
 #include "device_ui.h"
+const char *ui_mode_label(fv_access_mode mode);
 
 /* Private scene interface. The manager routes logical keys to exactly one scene.
  * Scene handlers update state and request transitions; the core renders afterwards.

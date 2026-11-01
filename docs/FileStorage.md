@@ -20,6 +20,17 @@ The FIDO2 reservation is the space set aside on the card, not a claim that all o
 
 The computer only sees the content region as a normal disk while unlocked. The partition table, FAT32 filesystem, directories and files all live inside this encrypted region. The host cannot address the physical card's vault headers, FIDO2 reservation or sector metadata through USB mass storage.
 
+Storage is available only in Full unlock and Read-only files modes. In Passkeys
+only mode the mass-storage interface reports no medium, even though the device
+has the keys needed to use its private FIDO store. Read-only files mode advertises
+the SCSI write-protect bit and rejects host writes with DATA PROTECT / WRITE
+PROTECTED (ASC/ASCQ 27/00). The storage worker independently enforces the selected
+permissions and rejects work from an earlier session.
+
+Read-only means that the host cannot modify the file volume. Unlocking still
+updates internal attempt state and may repair a redundant vault header. It is
+not a promise that the physical SD card receives no device-managed writes.
+
 ## Reading and writing data
 
 The computer deals with files, but the device receives requests for numbered 512-byte sectors. A request may cover many sectors. We process it in batches of up to 64 sectors, or 32 KiB. This is a processing limit rather than a maximum file size or USB command size.

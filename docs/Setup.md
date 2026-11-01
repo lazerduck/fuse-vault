@@ -40,7 +40,27 @@ Formatting initializes the encrypted filesystem and the metadata needed to treat
 
 While locked, the VMK is stored encrypted in the SD card's vault headers. Internal flash holds the security-state journal. The user credential and OTP secrets are needed to recover the VMK into RAM and construct the unlocked session.
 
-From the locked home screen, pressing Select opens the entry method chosen at setup. That choice is recorded in the unencrypted SD header. The firmware checks the header against the authoritative hash held in the internal journal before trusting it.
+The locked home screen offers three choices before credential entry:
+
+| Button | Session mode | Files over USB | Passkeys |
+| --- | --- | --- | --- |
+| Select | Full unlock | Read and write | Enabled |
+| Up | Passkeys only | No medium available | Enabled |
+| Down | Read-only files | Read only | Disabled |
+
+Up is offered when FIDO support is built in. Left/Right still flip the screen;
+directions follow its displayed orientation. Setup on a fresh device still starts
+with Select. The chosen scope appears during entry and while unlocked. Back
+cancels it. Each session uses the same credential and persistent attempt budget.
+
+The entry method chosen at setup is recorded in the unencrypted SD header. The firmware checks the header against the authoritative hash held in the internal journal before trusting it.
+
+Permissions are granted only after successful authentication. Changing mode
+requires locking and authenticating again; eject mounted storage first. No mode
+is restored on reconnect. A website-triggered unlock grants passkeys-only access,
+and never mounts the file volume. A host request cannot replace local credential
+entry or upgrade a read-only session. The USB interfaces remain enumerated;
+their presence does not grant permission to use files or passkeys.
 
 Before evaluating a submitted credential, the device durably increments the attempt counter and records that an attempt is pending. HMAC authenticates the journal records, protecting the saved attempt count and other security state against unauthorized modification. Its authentication key is derived from the enrollment token, with separate purpose and slot context. An interrupted attempt remains charged across power cycles.
 

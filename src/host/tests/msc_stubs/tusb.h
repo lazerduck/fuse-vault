@@ -6,6 +6,7 @@
 #define SCSI_SENSE_MEDIUM_ERROR 3
 #define SCSI_SENSE_ILLEGAL_REQUEST 5
 #define SCSI_SENSE_UNIT_ATTENTION 6
+#define SCSI_SENSE_DATA_PROTECT 7
 bool tud_msc_set_sense(uint8_t,uint8_t,uint8_t,uint8_t);
 void tud_msc_inquiry_cb(uint8_t,uint8_t[8],uint8_t[16],uint8_t[4]);
 bool tud_msc_test_unit_ready_cb(uint8_t);

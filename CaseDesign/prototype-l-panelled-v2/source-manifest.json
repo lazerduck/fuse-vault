@@ -1,0 +1,53 @@
+{
+  "style": "panelled-v2",
+  "files": {
+    "PRINT-AND-ASSEMBLY.txt": "72032dc7a34e0cc1b8b232af1c6491bd4d16b54e292b387a95ea85122ba05ecc",
+    "README.md": "989fb049c9ce6a9984c71db11c0e50569df1fb620726ed884fd5c55fdccb6511",
+    "assembled.png": "ce52a5f52b061ed6f2faa7e6f72c6ac9441842689c07532cc18b123048734c8a",
+    "back.step": "c3b3208b4fbb4f89a2527762eb148c025452ece41253f6b13802039f6dcfbc44",
+    "back.stl": "c5b0073331ab18bb8e2ff3419e9e493c3a1411a7a3b51ea08ef85198d9c6038f",
+    "base.step": "244153d74759af0a082dfe859b451c2e86e58564339551809562d6f1c95417cf",
+    "base.stl": "edbce106475bc4c145dff9920ec5643dc5b826ea7f60d4c92731bc5e66899c5f",
+    "case-assembly.step": "ec66fbc4379e8e0b57bed56cb54c50571c506596cd1c1f83898f09413e7b7e75",
+    "detail-validation.json": "af2dd8f74881f8ef3170637ed8c50ff48e321cd4fa5a12ce26c5b91f15d8ccd5",
+    "dpad.step": "67da9fc7aa26915e21d45543863bcac2b1cd8a44955b18029fa56f9826f1ba8b",
+    "dpad.stl": "c31c0236c5d8fa075a86387f4214fe2a86b96cd780c87734e73854a613039c26",
+    "exploded.png": "c415567bd912693939272407b5651930cb6d09b591668b7aa1627b346d644082",
+    "lid-ams.3mf": "8ee496be180968a67ab7f7cb360cdd7556308cd2b6e598423ae4a9ccede09a55",
+    "lid-ams.step": "8f13825889a529707bd06537667cc4c0228aefda23e028b005ef0e92c6c7f59a",
+    "lid.step": "2cf64e2692a8fb6e51ad2512b452e06d1bc9bf933f1b414c943cfdc6fe30acdd",
+    "lid.stl": "3b703637c94c009c74d7e2356632e60a3834931ce3ec17455eb279d94a271cff",
+    "lid_inlay_dark.step": "6a4305c72ffc8ebeb6464609b166a6fb24d0b83be591c01dd64f32e644e01824",
+    "lid_inlay_dark.stl": "3351f893c70343b10ccceafd3622bdef98e3a25f3d8b880f999918da85e0b34a",
+    "lid_inlay_orange.step": "ff411b6360d7ebaca7af021d7bd46b4869e35e6540fd4b89e5bd4117f98623f8",
+    "lid_inlay_orange.stl": "f97473c7152117efd768a90f347dc754da6c313a08ea43f962f8a203440be3eb",
+    "lid_single_colour.step": "a06343bc9050cc5aff17eff411a90139710d6fbef87fc9e52a5e3e75a9eba7da",
+    "lid_single_colour.stl": "d772fff4d8625747453843bfe8ee73d404aa099e4d972f0270d238fc7901553b",
+    "screen_shim.step": "87f778c306be9aad1d13717031092ade01eceb3292304140f4383b0a7c99ebb0",
+    "screen_shim.stl": "c5f23bc860c6d8fc2dfd0ccc83b3e65ea38eda037f315ec5ad59eaeb6cef351f",
+    "select.step": "30bf7c47b42c50048d43fa755b48766571e6ab285da0c1d573e3f40b5ff258c7",
+    "select.stl": "4bf8b5f9ec19b5580bde0befe5c477dc921c6b8ccd29234c487f9319ebab414e",
+    "top.png": "fee4c410a71f0122e25f3a56a6f6540cac46c8f394d1c5700b98e514186dd34c",
+    "universal_end_cap.stl": "3f4c01f592604b0f06de9ac1cb99740c54cfb47fe179a32bf5266efab5c04841",
+    "usb_a_end_cap.step": "8d61d504e41438408631617857b7f0d23fe6dbf8d966609924ba73ea600be211",
+    "usb_a_end_cap.stl": "9e28049bc047c13952f108f7e8194353adb489cc50f993724d3cca64f9ddfd97",
+    "usb_c_collar.step": "eb0a3ae220ff1ba8f641537383457b203248265b706ed644df2fa39481edc873",
+    "usb_c_collar.stl": "04c619eaa53bee97d23940f717c0aa041b70736743eb3c9a15e0e2c7782c24e7",
+    "usb_c_end_cap.step": "85ffe1702a0cc767f318e5028cc8eaba87242dba4ad4cb164df471047a143ebb",
+    "usb_c_end_cap.stl": "3f4c01f592604b0f06de9ac1cb99740c54cfb47fe179a32bf5266efab5c04841",
+    "validation.json": "b60f9069baa634d4bd89ce471200784de09892a5c1791124dc760fbd758a4400"
+  },
+  "scripts": {
+    "build_case_l_styles.py": "1ff66e1f0b65dc02f7d7fc07a2a716534590431a09874581e5a044f81fd977dd",
+    "check_case_l_styles.py": "96965338063ed3d4df1896ec022b418e3d49fc7c93aada1001e85a057b07f6cb",
+    "render_case_l_styles.py": "6ae548fba702428ce6e8013b62a6d3bcd2b53d9291fa238a74fda28b3b0dead7",
+    "package_case_l_styles.py": "a1774310f9e1b6db6e2bd1df88d48016aeb4a2ecd21095598acb21de2b81c302",
+    "build_case_l_panelled_v2.py": "2915f03ab094703e7f6761b521a2a9765deab7de813230fb4c67e6f328fa7575",
+    "check_case_l_panelled_v2.py": "90ae225ce10bfb98f3ab887216c14fd11de09ef89267defdab9605313e5c38cf"
+  },
+  "3mf_roundtrip": "three watertight meshes; bounds, face counts and volumes match",
+  "print_counts": {
+    "universal_end_cap.stl": 2
+  },
+  "physical_trial": "pending"
+}

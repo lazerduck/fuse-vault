@@ -25,3 +25,8 @@ __pycache__/
 !/CaseDesign/prototype-k/*.stl
 
 !/CaseDesign/prototype-l/*.stl
+
+!/CaseDesign/prototype-l-precision/*.stl
+!/CaseDesign/prototype-l-panelled/*.stl
+!/CaseDesign/prototype-l-panelled-v2/*.stl
+!/CaseDesign/prototype-l-sculpted/*.stl
