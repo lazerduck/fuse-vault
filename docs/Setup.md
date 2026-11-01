@@ -16,14 +16,14 @@ The wheels have more possible values than the four-word method, but a direction 
 
 The user first enters and confirms their credential, then selects the encryption stack. They can select one to four layers from AES-256, Camellia-256 and SM4-128. These layers build the pipeline through which content is encrypted and decrypted. Additional layers can reduce transfer speeds. Changing the stack currently requires creating a fresh vault. Credential changes preserve the existing vault.
 
-The user also selects the failure policy before confirming creation. The UI allows 1–100 attempts, followed by enrollment-token destruction. The default is ten attempts. Permanent lockout is no longer selectable.
+The Security screen lets the user enable key destruction after 1–100 consecutive failed attempts, or turn destruction off for unlimited attempts. It also sets the inactivity lock timer to Off or 1, 2, 5, 10, 15, or 30 minutes. New vaults default to destruction after ten failures and a five-minute timer. Permanent lockout is no longer selectable.
 
 The current setup order is:
 
 1. Choose the credential entry method.
 2. Enter and confirm the credential.
 3. Select the encryption stack.
-4. Select the attempt limit; exhausting attempts destroys the enrollment token.
+4. Choose whether failed attempts destroy the keys, the attempt limit when enabled, and the automatic lock duration.
 5. Review the choices and explicitly confirm creation, which replaces the existing SD layout.
 6. Provision OTP enrollment material if needed. Each enrollment gets one fresh random token and a fresh authenticated journal. There is no permanent device root.
 7. Generate a random VMK and protect it using the credential and device-held secrets, with the selected cipher families.
@@ -62,9 +62,19 @@ and never mounts the file volume. A host request cannot replace local credential
 entry or upgrade a read-only session. The USB interfaces remain enumerated;
 their presence does not grant permission to use files or passkeys.
 
-Before evaluating a submitted credential, the device durably increments the attempt counter and records that an attempt is pending. HMAC authenticates the journal records, protecting the saved attempt count and other security state against unauthorized modification. Its authentication key is derived from the enrollment token, with separate purpose and slot context. An interrupted attempt remains charged across power cycles.
+When destruction is enabled, before evaluating a submitted credential the device durably increments the attempt counter and records that an attempt is pending. HMAC authenticates the journal records, protecting the saved attempt count and other security state against unauthorized modification. Its authentication key is derived from the enrollment token, with separate purpose and slot context. An interrupted attempt remains charged across power cycles.
 
 If the credential is correct, the firmware recovers the VMK, resets the attempt count to zero and builds the working encryption pipeline. If it is incorrect, the user can try again while attempts remain. The final allowed attempt can still succeed. An interruption on the final charged attempt is handled conservatively by applying the limit policy during recovery.
+
+With destruction disabled, incorrect credentials are still rejected, but there is no attempt limit or temporary lockout. Authentication does not write an attempt counter, so repeated guesses cannot exhaust the counter or wear out that journal. This applies to both local unlock and FIDO verification. Disabling destruction removes the device's limit on credential guesses.
+
+## Changing security settings
+
+Fully unlock the vault, open Settings → Security, enter the current credential, edit the options, and select Review → Save. The worker verifies that credential when saving. Changes preserve existing files and passkeys and return the device to its locked screen. Cancel leaves the saved policy unchanged. Read-only and passkeys-only sessions cannot change these vault-wide settings.
+
+Existing vaults keep their saved attempt policy and have auto-lock Off until explicitly changed. The timer is stored with the authenticated policy and survives power cycles. The dashboard shows a small countdown ring and remaining time while it is enabled; see [Session](Session.md#automatic-locking) for what counts as activity.
+
+Firmware predating these settings cannot read policies with a nonzero timer or disabled destruction. Once either has been saved, keep this firmware or a compatible newer version: restoring destruction enabled and auto-lock Off does not make downgrade safe, because unsupported policy records can remain in the authenticated journal history. This also applies to vaults newly enrolled by this firmware, whose initial journal uses the new defaults. Current-format vaults do not need re-enrollment to use this update.
 
 ## Reaching the attempt limit
 
@@ -74,7 +84,7 @@ The enrollment token is a required input to deriving the VMK's wrapping keys. De
 
 After destruction completes, the user can set up a fresh vault using the next available token slot. A fresh token area has 228 slots, including the initial enrollment; interrupted provisioning and legacy occupied rows reduce available capacity. The fresh enrollment creates a new, empty vault.
 
-Existing lockout-policy records that authenticate in the current format retain their policy and enforcement. A locked enrollment remains denied; credential changes do not silently change its policy. The UI offers destruction for new setup and explicit policy changes. Old root-based development formats are incompatible and are not migrated.
+Existing lockout-policy records that authenticate in the current format retain their policy and enforcement. A locked enrollment remains denied; credential changes do not silently change its policy. The UI offers destruction enabled or disabled for new setup and explicit policy changes. Old root-based development formats are incompatible and are not migrated.
 
 ## Interrupted setup and destruction
 

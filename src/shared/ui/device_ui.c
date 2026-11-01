@@ -73,6 +73,8 @@ void fv_ui_complete(fv_ui *u, fv_ui_result result) {
         u->read_active = u->write_active = false;
     }
     u->device = result;
+    if (!result.unlocked || !result.auto_lock_seconds)
+        u->timer_remaining_seconds = 0;
     u->error = result.result;
     if (result.result) {
         ui_scene_show(u, UI_ERROR);
@@ -171,4 +173,13 @@ void fv_ui_animate(fv_ui *u, uint32_t milliseconds) {
     if (u->screen != UI_WAIT || frame == u->busy_frame) return;
     u->busy_frame = frame;
     fv_ui_render(u);
+}
+
+void fv_ui_countdown(fv_ui *u, uint32_t remaining_seconds) {
+    if (!u->device.unlocked || !u->device.auto_lock_seconds) remaining_seconds = 0;
+    if (remaining_seconds > u->device.auto_lock_seconds)
+        remaining_seconds = u->device.auto_lock_seconds;
+    if (remaining_seconds == u->timer_remaining_seconds) return;
+    u->timer_remaining_seconds = remaining_seconds;
+    if (u->screen == UI_DASHBOARD) fv_ui_render(u);
 }

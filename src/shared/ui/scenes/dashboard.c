@@ -2,6 +2,7 @@
 #include "drawing.h"
 #include "settings.h"
 #include <stdio.h>
+#include <string.h>
 
 static void dashboard_key(fv_ui *u, fv_ui_key key) {
     if (key == UI_BACK) ui_submit(u, UI_LOCK);
@@ -25,6 +26,36 @@ static void speed_label(fv_ui *u, unsigned y, const char *name, uint32_t rate,
 
 static unsigned height(uint32_t rate, uint32_t peak) {
     return (unsigned)((uint64_t)rate * 12 / peak);
+}
+
+static void dashboard_header(fv_ui *u) {
+    if (!u->device.auto_lock_seconds) {
+        ui_draw_header(u, ui_mode_label(u->device.mode),
+                       u->device.mode == FV_ACCESS_PASSKEYS_ONLY ? NULL : u->dashboard_bars ? "LIVE" : "30S");
+        return;
+    }
+    ui_draw_header(u, ui_mode_label(u->device.mode), NULL);
+    uint32_t remaining = u->timer_remaining_seconds;
+    if (remaining > u->device.auto_lock_seconds) remaining = u->device.auto_lock_seconds;
+    /* Clockwise pixels around a small ring, using integer arithmetic only. */
+    static const int8_t ring[28][2] = {
+        {0,-5},{1,-5},{2,-5},{3,-4},{4,-3},{5,-2},{5,-1},
+        {5,0},{5,1},{5,2},{4,3},{3,4},{2,5},{1,5},
+        {0,5},{-1,5},{-2,5},{-3,4},{-4,3},{-5,2},{-5,1},
+        {-5,0},{-5,-1},{-5,-2},{-4,-3},{-3,-4},{-2,-5},{-1,-5}
+    };
+    unsigned segments = (unsigned)(((uint64_t)remaining * 28 + u->device.auto_lock_seconds - 1) /
+                                   u->device.auto_lock_seconds);
+    fv_ui_colour colour = remaining <= 10 ? UI_COLOUR_ERROR
+                         : remaining <= 30 ? UI_COLOUR_WARNING : UI_COLOUR_ACCENT;
+    for (unsigned i = 0; i < 28; ++i)
+        ui_draw_pixel(u, (unsigned)(108 + ring[i][0]), (unsigned)(6 + ring[i][1]),
+                      i < segments ? colour : 0x05);
+    char clock[16];
+    snprintf(clock, sizeof(clock), "%lu:%02lu", (unsigned long)(remaining / 60),
+             (unsigned long)(remaining % 60));
+    ui_draw_text_at(u, 156 - (unsigned)strlen(clock) * 6, 2, clock, 1,
+                    remaining <= 30 ? colour : UI_COLOUR_TEXT);
 }
 
 static void chart(fv_ui *u, const uint32_t *history, uint32_t rate, uint32_t peak,
@@ -71,13 +102,13 @@ static void render_dashboard(fv_ui *u) {
         if (u->write_history[i] > peak) peak = u->write_history[i];
     }
     if (u->device.mode == FV_ACCESS_PASSKEYS_ONLY) {
-        ui_draw_header(u, ui_mode_label(u->device.mode), NULL);
+        dashboard_header(u);
         ui_draw_vault(u, 68, 20, UI_COLOUR_ACCENT);
         ui_draw_text_at(u, 29, 53, "FILES NOT EXPOSED", 1, UI_COLOUR_TEXT);
         ui_draw_footer(u, "\005 LOCK", "\006 SETTINGS");
         return;
     }
-    ui_draw_header(u, ui_mode_label(u->device.mode), u->dashboard_bars ? "LIVE" : "30S");
+    dashboard_header(u);
     if (fv_access_writable(u->device.mode)) {
         speed_label(u, 16, "UP", u->write_kib_tenths, UI_COLOUR_ACCENT);
         chart(u, u->write_history, u->write_kib_tenths, peak, 39, UI_COLOUR_ACCENT);

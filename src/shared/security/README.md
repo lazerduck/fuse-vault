@@ -17,8 +17,12 @@ implemented for development/testing, not frozen for production use.
 - Create, unlock, read/write, lock, credential change and header repair. Rewrap
   keeps the VMK/descriptor/data keys and payload unchanged; salt/shares refresh.
 - Durable-attempt state machine through a trusted adapter. Default ten attempts
-  with destruction, or persistent lockout; final-attempt success, interruption,
+  with destruction, or unlimited attempts with destruction disabled. Legacy
+  persistent lockout remains readable. Final-attempt success, interruption,
   uncertain commits and failed destruction retries are covered by tests.
+- Authenticated inactivity duration stored in the policy (Off or 1/2/5/10/15/30
+  minutes). New policies default to five minutes; legacy zero bytes mean Off.
+  The portable monotonic timer cannot be revived by activity after expiry.
 - Exact header hash/generation anchored on the device. Credential changes write,
   sync and verify the other SD header before committing the new authority record.
   Mirroring follows commit; its failure never rolls the anchor back.
@@ -44,8 +48,10 @@ corrupt device state must fail; never convert it to an empty/factory-default sta
 Creation requires an explicitly pre-provisioned EMPTY enrollment and formats SD
 metadata. It returns locked. Production provisioning/slot allocation is separate.
 
-`fv_vault_unlock()` charges before credential evaluation and commits success before
-publishing a session. Only exact locally anchored headers can be selected; SD
+With an enabled limit, `fv_vault_unlock()` charges before credential evaluation
+and commits success before publishing a session. Unlimited authentication skips
+attempt-accounting writes and requires zero attempts/pending state. Only exact
+locally anchored headers can be selected; SD
 copies do not vote for a highest generation. Bad/missing headers don't consume a
 guess. Authentication failures do; errors after a durable charge retain that charge.
 The tenth attempt may succeed. Failure to commit its success can destroy the vault

@@ -9,6 +9,9 @@
 #include "fuse_vault/vault.h"
 #include "fuse_vault/session_access.h"
 #include "usb_vault_io.h"
+#if FV_USB_MSC
+#include "session_timeout.h"
+#endif
 #include "fuse_vault/development_policy.h"
 #include "fuse_vault/rp2354_authority.h"
 #include "pico/flash.h"
@@ -277,13 +280,28 @@ static bool fido_rng_ready;
 static void usb_lock(void) {
     /* Revoke queued/completed transport work before clearing worker secrets. */
     fv_usb_publish_generation(usb_access.generation+1);
+    fv_session_timeout_stop();
 #if FV_USB_FIDO
     fv_fido_close();
 #endif
     fv_session_lock(&usb_access,&usb_session);
 }
+void fv_session_timeout_lock(void) {
+    usb_lock();
+#if FV_DEVICE_UI
+    fv_device_ui_disconnect();
+#endif
+}
+static void usb_timer_start(void) {
+    fv_session_timeout_start(usb_session.config.policy.auto_lock_seconds,
+                             time_us_64()/1000,usb_access.generation);
+}
+static bool usb_timer_poll(void) {
+    return fv_session_timeout_poll(time_us_64()/1000,usb_access.generation);
+}
 void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *response) {
     int result=FV_BLOCK_OK;
+    (void)usb_timer_poll();
     if(fv_usb_session_invalidated())usb_lock();
     switch(request->op) {
     case FV_USB_LOCK:usb_lock();break;
@@ -297,6 +315,13 @@ void fv_usb_storage_execute(const fv_usb_request *request,fv_usb_response *respo
         /* A stale/unauthorized request is not a media fault. Underlying media
          * removal can itself close the vault, so also revoke its scope. */
         if(!usb_session.unlocked && usb_access.mode!=FV_ACCESS_LOCKED)usb_lock();
+        if(result==FV_BLOCK_OK && request->count){
+            if(fv_session_timeout_activity(time_us_64()/1000,usb_access.generation)){
+                /* A completed read can still contain plaintext at expiry. */
+                mbedtls_platform_zeroize(request->data,(size_t)request->count*512);
+                result=FV_BLOCK_ERROR_NOT_READY;
+            }
+        }
         break;
     case FV_USB_SYNC:
         /* No buffered writes: each fv_vault_write has already synced. */
@@ -323,6 +348,9 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
 #if FV_USB_FIDO
     fv_passkey_t passkey={0};uint16_t passkey_index=job->passkey_index,passkey_count=0;
 #endif
+    if(usb_timer_poll() && job->op!=UI_STATUS && job->op!=UI_LOCK){
+        r=FV_VAULT_DENIED;goto done;
+    }
     if(fv_usb_session_invalidated()){
         usb_lock();
         if(job->op!=UI_STATUS && job->op!=UI_LOCK){r=FV_VAULT_DENIED;goto done;}
@@ -344,8 +372,13 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
             if(job->profile==2?(job->secret[i]<1 || job->secret[i]>4):job->secret[i]>=(job->profile==3?100:64))r=FV_VAULT_INVALID;
         }
     }
-    if((job->op==UI_CREATE || job->op==UI_POLICY) &&
-       (!job->attempts || job->attempts>100 || (job->action!=1 && job->action!=2)))r=FV_VAULT_INVALID;
+    if(job->op==UI_CREATE || job->op==UI_POLICY){
+        fv_auth_policy policy={job->attempts,(fv_limit_action)job->action,job->auto_lock_seconds};
+        uint8_t encoded[FV_AUTH_POLICY_BYTES];
+        if(!fv_auth_policy_encode(&policy,encoded) ||
+           (job->action!=FV_LIMIT_DESTROY && job->action!=FV_LIMIT_NONE) ||
+           (job->action==FV_LIMIT_DESTROY && job->attempts>100))r=FV_VAULT_INVALID;
+    }
     if(job->op==UI_CHANGE && (!job->current_length || job->current_length>64 || (job->profile==2 && job->length<8)))r=FV_VAULT_INVALID;
     if(job->op==UI_CREATE){
         if((job->profile==2 && job->length<8) || !job->count || job->count>4)r=FV_VAULT_INVALID;
@@ -375,21 +408,19 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         fv_usb_publish_generation(usb_access.generation);
         if(!r && usb_session.config.volume.logical_blocks>UINT32_MAX){usb_lock();r=FV_VAULT_INVALID;}
         if(!r && fv_usb_session_invalidated()){usb_lock();r=FV_VAULT_DENIED;}
+        if(!r)usb_timer_start();
 #if FV_USB_FIDO
         if(!r && fv_access_fido(usb_mode()))fv_fido_unlocked();
 #endif
         goto done;
     }
     if(!start_random()){r=FV_VAULT_IO;goto done;}
-    fv_auth_policy policy={job->attempts,(fv_limit_action)job->action};
+    fv_auth_policy policy={job->attempts,(fv_limit_action)job->action,job->auto_lock_seconds};
     if(job->op==UI_CHANGE){
         r=persistent_platform.authority.load(persistent_platform.authority.context,&state);
         if(!r)r=fv_vault_change_credential(&usb_session,&persistent_platform,job->current,job->current_length,
             job->secret,job->length,job->profile,FV_ENROLLMENT_ITERATIONS,state.policy,false);
         goto done;
-    }
-    if((job->op==UI_POLICY || job->op==UI_CREATE) && policy.limit_action!=FV_LIMIT_DESTROY){
-        r=FV_VAULT_INVALID;goto done;
     }
     if(job->op==UI_POLICY){
         r=fv_vault_change_credential(&usb_session,&persistent_platform,job->secret,job->length,
@@ -415,11 +446,13 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
         FV_ENROLLMENT_ITERATIONS,policy,job->secret,job->length);
     persistent_platform.initialize_contents=NULL;
  done:
+    if(usb_timer_poll() && !r && job->op!=UI_STATUS && job->op!=UI_LOCK)r=FV_VAULT_DENIED;
     memset(out,0,sizeof(*out));out->result=r;
     opened=fv_enrollment_open(&persistent_device);
     if(!opened){
         int loaded=persistent_platform.authority.load(persistent_platform.authority.context,&state);
-        if(!loaded){out->status=state.status;out->attempts=state.policy.max_attempts;out->action=state.policy.limit_action;}
+        if(!loaded){out->status=state.status;out->attempts=state.policy.max_attempts;
+            out->action=state.policy.limit_action;out->auto_lock_seconds=state.policy.auto_lock_seconds;}
         else if(!out->result)out->result=loaded;
     }else if(opened!=1 && opened!=2 && !out->result)out->result=opened;
     if(!out->result && out->status==FV_ENROLLMENT_ACTIVE){
@@ -439,6 +472,8 @@ void fv_device_ui_execute(const fv_ui_job *job,fv_ui_result *out) {
     fido_rng_ready=false;
 #endif
     fv_random_clear(&random_source);
+    if(usb_timer_poll() && !out->result && job->op!=UI_STATUS && job->op!=UI_LOCK)
+        out->result=FV_VAULT_DENIED;
     out->unlocked=usb_session.unlocked;
     out->mode=usb_mode();
     out->blocks=fv_access_files(usb_mode())?usb_session.config.volume.logical_blocks:0;
@@ -466,6 +501,7 @@ static bool usb_session_command(const char *command) {
                     usb_lock();r=FV_VAULT_INVALID;
                 }
                 if(!r && fv_usb_session_invalidated()){usb_lock();r=FV_VAULT_DENIED;}
+                if(!r)usb_timer_start();
             }
         }
     } else if(strcmp(command,"MEDIA")) {
@@ -543,7 +579,19 @@ void security_worker(void) {
     startup_stage=14;
 #endif
     for(;;) {
-        fv_command command;queue_remove_blocking(&commands,&command);
+        fv_command command;
+#if FV_USB_MSC
+        /* Expiry must run even when a quiet host never sends another command. */
+        (void)usb_timer_poll();
+        if(!queue_try_remove(&commands,&command)){
+            /* A queue event wakes immediately; quiet periods still check the
+             * deadline without adding a fixed delay to each transfer batch. */
+            (void)best_effort_wfe_or_timeout(make_timeout_time_us(1000));
+            continue;
+        }
+#else
+        queue_remove_blocking(&commands,&command);
+#endif
 #if FV_USB_FIDO
         if(command.fido){fido_rng_ready=start_random();fv_fido_execute();fv_random_clear(&random_source);fido_rng_ready=false;continue;}
 #endif
@@ -582,16 +630,22 @@ uint16_t fv_fido_profile(void){
     return profile;
 }
 int fv_fido_verify_secret(const uint8_t *secret,size_t n){
+    if(usb_timer_poll())return FV_VAULT_DENIED;
     if(usb_session.unlocked && !fv_access_fido(usb_mode()))return FV_VAULT_DENIED;
     if(fv_usb_session_invalidated()){usb_lock();return FV_VAULT_DENIED;}
-    int r=usb_session.unlocked?fv_session_reverify_fido(&usb_access,&usb_session,secret,n):
+    bool was_unlocked=usb_session.unlocked;
+    int r=was_unlocked?fv_session_reverify_fido(&usb_access,&usb_session,secret,n):
         fv_session_unlock(&usb_access,&usb_session,&persistent_platform,secret,n,FV_ACCESS_PASSKEYS_ONLY);
     fv_usb_publish_generation(usb_access.generation);
     if(r || usb_session.config.volume.logical_blocks>UINT32_MAX){usb_lock();return r?r:FV_VAULT_INVALID;}
     if(fv_usb_session_invalidated()){usb_lock();return FV_VAULT_DENIED;}
+    if(was_unlocked){
+        if(fv_session_timeout_activity(time_us_64()/1000,usb_access.generation))return FV_VAULT_DENIED;
+    }else usb_timer_start();
     return 0;
 }
 void fv_fido_pump(void){
+    (void)usb_timer_poll();
     fv_command c;if(!queue_try_remove(&commands,&c))return;
     if(c.storage.op!=FV_USB_NONE){fv_usb_response r;fv_usb_storage_execute(&c.storage,&r);queue_add_blocking(&storage_responses,&r);}
     else if(c.ui){fv_ui_result r={.result=FV_VAULT_DENIED};fv_ui_wipe(c.ui,sizeof(*c.ui));queue_add_blocking(&ui_responses,&r);}

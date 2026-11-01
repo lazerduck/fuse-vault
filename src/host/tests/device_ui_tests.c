@@ -225,9 +225,9 @@ static void standard_controls_tests(void){
     CHECK(u.screen==UI_HOME && !u.pending);
     u.screen=UI_OPTIONS;u.cursor=0;u.job.attempts=10;u.job.action=1;
     key(&u,UI_DOWN);CHECK(u.cursor==1 && u.job.attempts==10 && u.job.action==1);
-    key(&u,UI_RIGHT);CHECK(u.job.action==1 && u.job.attempts==10);
+    key(&u,UI_RIGHT);CHECK(u.job.action==1 && u.job.attempts==11);
     key(&u,UI_DOWN);key(&u,UI_RIGHT);CHECK(u.cursor==2 && u.screen==UI_OPTIONS);
-    key(&u,UI_SELECT);CHECK(u.screen==UI_REVIEW && !u.cursor && !u.pending);
+    key(&u,UI_SELECT);CHECK(u.cursor==3);key(&u,UI_SELECT);CHECK(u.screen==UI_REVIEW && !u.cursor && !u.pending);
     u.screen=UI_STACK;u.cursor=0;u.job.count=2;u.job.algorithms[0]=1;u.job.algorithms[1]=1;
     key(&u,UI_LEFT);CHECK(u.job.count==2 && u.job.algorithms[0]==2 && u.job.algorithms[1]==1);
     key(&u,UI_DOWN);key(&u,UI_DOWN);key(&u,UI_DOWN); /* Explicit remove row. */
@@ -268,7 +268,66 @@ static void credential_change_message_tests(void) {
     CHECK(!memcmp(failed.framebuffer, failure_header.framebuffer, 13 * FV_SCREEN_WIDTH));
 }
 
+static void security_settings_tests(void) {
+    const uint32_t durations[] = {0, 60, 120, 300, 600, 900, 1800};
+    for (unsigned flipped = 0; flipped < 2; ++flipped) {
+        fv_ui u; fv_ui_init(&u);
+        fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=3, .unlocked=true,
+            .mode=FV_ACCESS_FULL, .action=1, .attempts=7, .auto_lock_seconds=300});
+        u.flipped = flipped != 0;
+        fv_ui_key down = flipped ? UI_UP : UI_DOWN;
+        fv_ui_key left = flipped ? UI_RIGHT : UI_LEFT;
+        fv_ui_key right = flipped ? UI_LEFT : UI_RIGHT;
+        key(&u, UI_SELECT); key(&u, UI_SELECT);
+        CHECK(u.screen == UI_SECRET && u.flow == UI_FLOW_POLICY && !u.pending);
+        CHECK(u.job.attempts == 7 && u.job.action == 1 && u.job.auto_lock_seconds == 300);
+        key(&u, UI_SELECT); CHECK(u.screen == UI_OPTIONS && u.job.length == 4);
+        key(&u, right); CHECK(u.job.action == 5 && !u.job.attempts);
+        key(&u, down); key(&u, right); key(&u, left);
+        CHECK(!u.job.attempts && u.job.action == 5); /* Disabled count is inert. */
+        key(&u, down); CHECK(u.cursor == 2);
+        for (unsigned i = 0; i < 3; ++i) key(&u, left);
+        CHECK(!u.job.auto_lock_seconds);
+        for (unsigned i = 0; i < 7; ++i) {
+            CHECK(u.job.auto_lock_seconds == durations[i]);
+            key(&u, right);
+        }
+        CHECK(!u.job.auto_lock_seconds);
+        key(&u, down); key(&u, UI_SELECT);
+        CHECK(u.screen == UI_REVIEW && !u.cursor && !u.pending);
+        key(&u, down); key(&u, UI_SELECT);
+        CHECK(u.pending && u.job.op == UI_POLICY && u.job.action == 5 && !u.job.attempts);
+        CHECK(!u.job.auto_lock_seconds && u.job.length == 4);
+
+        fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=3, .unlocked=true,
+            .mode=FV_ACCESS_FULL, .action=5, .attempts=0});
+        key(&u, UI_SELECT); key(&u, UI_SELECT); key(&u, UI_SELECT);
+        CHECK(u.screen == UI_OPTIONS && u.job.action == 5 && !u.job.attempts);
+        key(&u, left); CHECK(u.job.action == 1 && u.job.attempts == 10);
+        key(&u, down);
+        for (unsigned i = 0; i < 110; ++i) key(&u, left);
+        CHECK(u.job.attempts == 1);
+        for (unsigned i = 0; i < 110; ++i) key(&u, right);
+        CHECK(u.job.attempts == 100);
+        key(&u, UI_BACK);
+        CHECK(u.screen == UI_DASHBOARD && !u.pending && !u.job.length);
+        CHECK(u.device.action == 5 && !u.device.auto_lock_seconds); /* Cancel didn't save. */
+    }
+
+    fv_ui u; fv_ui_init(&u);
+    fv_ui_complete(&u, (fv_ui_result){.status=1});
+    key(&u, UI_SELECT);
+    CHECK(u.job.action == 1 && u.job.attempts == 10 && u.job.auto_lock_seconds == 300);
+    /* A legacy permanent-lockout policy remains intact until an explicit save. */
+    fv_ui_complete(&u, (fv_ui_result){.status=2, .profile=3, .unlocked=true,
+        .mode=FV_ACCESS_FULL, .action=2, .attempts=9});
+    key(&u, UI_SELECT); key(&u, UI_SELECT); key(&u, UI_SELECT);
+    CHECK(u.job.action == 1 && u.job.attempts == 9 && !u.job.auto_lock_seconds);
+    key(&u, UI_BACK); CHECK(u.device.action == 2 && !u.pending);
+}
+
 int main(int argc,char **argv){
+    security_settings_tests();
     access_mode_tests();restricted_settings_tests();
     credential_change_message_tests();
     flip_tests();method_tests();fido_tests();passkey_tests();navigation_tests();standard_controls_tests();
@@ -297,6 +356,7 @@ int main(int argc,char **argv){
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==4);
     key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.count==4);
     key(&u,UI_DOWN);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.screen==UI_OPTIONS);
+    key(&u,UI_DOWN);
     for(unsigned i=0;i<150;i++){key(&u,UI_RIGHT);}CHECK(u.job.attempts==100);
     for(unsigned i=0;i<150;i++){key(&u,UI_LEFT);}CHECK(u.job.attempts==1);
     for(unsigned i=0;i<9;i++)key(&u,UI_RIGHT);
@@ -311,7 +371,7 @@ int main(int argc,char **argv){
     key(&u,UI_SELECT);sequence(&u);CHECK(u.job.op==UI_UNLOCK);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL,.attempts=10,.action=1,.blocks=62912625});key(&u,UI_SELECT);
     CHECK(u.screen==UI_SETTINGS && !u.pending);key(&u,UI_BACK);CHECK(u.screen==UI_DASHBOARD && !u.pending);key(&u,UI_SELECT);key(&u,UI_SELECT);CHECK(u.flow==UI_FLOW_POLICY && u.screen==UI_SECRET);
-    sequence(&u);CHECK(u.screen==UI_OPTIONS);key(&u,UI_DOWN);key(&u,UI_RIGHT);key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_POLICY);
+    sequence(&u);CHECK(u.screen==UI_OPTIONS);key(&u,UI_DOWN);key(&u,UI_RIGHT);key(&u,UI_DOWN);key(&u,UI_DOWN);key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_POLICY);
     fv_ui_complete(&u,(fv_ui_result){.status=2,.unlocked=true,.mode=FV_ACCESS_FULL});key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);
     CHECK(u.screen==UI_ERASE_CONFIRM && !u.pending);key(&u,UI_SELECT);CHECK(u.screen==UI_SETTINGS && u.cursor==1 && !u.pending);
     key(&u,UI_SELECT);key(&u,UI_DOWN);key(&u,UI_SELECT);CHECK(u.job.op==UI_ERASE);

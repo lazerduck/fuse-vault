@@ -1,0 +1,8 @@
+Internal ctest changing into directory: /home/adam/projects/fuse-vault/build-unlock-modes-host
+Test project /home/adam/projects/fuse-vault/build-unlock-modes-host
+    Start 36: fido_firmware_adapter
+1/1 Test #36: fido_firmware_adapter ............   Passed    0.99 sec
+
+100% tests passed, 0 tests failed out of 1
+
+Total Test time (real) =   0.99 sec

@@ -86,7 +86,7 @@ int main(void){
     u.screen=UI_ERASE_CONFIRM;u.cursor=0;save(&u,"16-destroy");
     u.cursor=1;save(&u,"16a-destroy-selected");
     u.cursor=0;u.screen=UI_FIDO_INIT_CONFIRM;save(&u,"17-initialize-fido");
-    u.screen=UI_REVIEW;u.flow=UI_FLOW_POLICY;u.job.attempts=10;u.job.action=1;save(&u,"18-policy-review");
+    u.screen=UI_REVIEW;u.flow=UI_FLOW_POLICY;u.job.attempts=10;u.job.action=1;u.job.auto_lock_seconds=300;save(&u,"18-policy-review");
     u.screen=UI_WAIT;u.job.op=UI_PASSKEY_DELETE;save(&u,"19-busy-delete");
     u.job.op=UI_UNLOCK;
     for(unsigned i=0;i<12;i++) {
@@ -98,7 +98,12 @@ int main(void){
     u.screen=UI_STACK;u.job.count=4;u.cursor=6;
     for(unsigned i=0;i<4;i++)u.job.algorithms[i]=(uint16_t)(i%2+1);
     save(&u,"22-encryption-order");
-    u.screen=UI_OPTIONS;u.cursor=0;save(&u,"23-failure-policy");
+    u.screen=UI_OPTIONS;u.cursor=0;save(&u,"23-security");
+    u.cursor=1;save(&u,"23a-failed-attempts");
+    u.cursor=2;save(&u,"23b-auto-lock");
+    u.job.action=5;u.job.attempts=0;u.cursor=0;save(&u,"23c-destruction-off");
+    u.screen=UI_REVIEW;u.flow=UI_FLOW_POLICY;save(&u,"23d-security-off-review");
+    u.job.action=1;u.job.attempts=100;
     u.screen=UI_REVIEW;u.flow=UI_FLOW_SETUP;u.cursor=0;save(&u,"24-create-review");
     u.flow=UI_FLOW_CHANGE;save(&u,"25-change-review");u.flow=UI_FLOW_SETUP;
     u.screen=UI_WAIT;u.job.op=UI_CREATE;u.format_total=1000000;u.format_done=500000;
@@ -122,6 +127,20 @@ int main(void){
             snprintf(name, sizeof(name), "32-mode-%u-dashboard", mode); save(&u, name);
             fv_ui_keypress(&u, UI_SELECT);
             snprintf(name, sizeof(name), "33-mode-%u-settings", mode); save(&u, name);
+        }
+    }
+    {
+        const fv_access_mode modes[] = {FV_ACCESS_FULL, FV_ACCESS_PASSKEYS_ONLY, FV_ACCESS_FILES_READ_ONLY};
+        const unsigned seconds[] = {1800, 900, 61, 30, 10, 0};
+        for (unsigned mode = 0; mode < 3; ++mode) {
+            fv_ui_init(&u);
+            fv_ui_complete(&u, (fv_ui_result){.status=2, .unlocked=true,
+                .mode=modes[mode], .auto_lock_seconds=1800});
+            for (unsigned i = 0; i < sizeof(seconds)/sizeof(seconds[0]); ++i) {
+                char name[64];
+                fv_ui_countdown(&u, seconds[i]);
+                snprintf(name, sizeof(name), "34-countdown-%u-%02u", mode, i); save(&u, name);
+            }
         }
     }
     return 0;

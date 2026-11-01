@@ -3,6 +3,7 @@
 #include "fido_adapter.h"
 #endif
 #include "device_ui_adapter.h"
+#include "session_timeout.h"
 #include "fuse_vault/pico_buttons.h"
 #if FV_TFT_DISPLAY
 #include "fuse_vault/tft_display.h"
@@ -88,6 +89,8 @@ void fv_device_ui_poll(void) {
 #if FV_DEBUG_BUTTONS
     key = 0; /* Dedicated diagnostic image: test presses never navigate/approve. */
 #endif
+    /* Only physical button events renew idle time; host discovery does not. */
+    if(key)fv_session_timeout_local_activity(fv_usb_session_generation());
 #if FV_TFT_DISPLAY
     if (key && fv_tft_activity())
         key = 0; /* A dark-screen press wakes only; never submits a secret or approval. */
@@ -106,6 +109,7 @@ void fv_device_ui_poll(void) {
         }
     }
     fv_ui_animate(&ui, (uint32_t)(time_us_64() / 1000));
+    fv_ui_countdown(&ui, fv_session_timeout_remaining());
     /* USB callbacks and UI polling run on core 0; no cross-core counters. */
     static uint64_t activity_sample;
     uint64_t activity_now = time_us_64();
@@ -211,6 +215,7 @@ bool fv_device_ui_command(const char *command, char *out, size_t size) {
 #endif
         if (accepted) {
             fv_device_ui_wake();
+            fv_session_timeout_local_activity(fv_usb_session_generation());
             fv_ui_keypress(&ui, (fv_ui_key)(i + 1));
         }
         snprintf(out, size, "{\"command\":\"key\",\"ok\":true,\"accepted\":%s}\n",

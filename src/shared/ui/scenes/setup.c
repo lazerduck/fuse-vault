@@ -31,18 +31,27 @@ static void options_key(fv_ui *u, fv_ui_key key) {
         ui_go_home(u);
         return;
     }
-    u->job.action = 1; /* New policies support destruction only. */
-    ui_selection_move(&u->cursor, 3, key);
+    ui_selection_move(&u->cursor, 4, key);
     if (key == UI_LEFT || key == UI_RIGHT) {
         if (u->cursor == 0) {
+            u->job.action = u->job.action == 5 ? 1 : 5;
+            u->job.attempts = u->job.action == 5 ? 0 : 10;
+        } else if (u->cursor == 1 && u->job.action == 1) {
             if (key == UI_RIGHT && u->job.attempts < 100)
                 ++u->job.attempts;
             if (key == UI_LEFT && u->job.attempts > 1)
                 --u->job.attempts;
+        } else if (u->cursor == 2) {
+            static const uint32_t durations[] = {0, 60, 120, 300, 600, 900, 1800};
+            unsigned choice = 0;
+            for (unsigned i = 0; i < sizeof(durations) / sizeof(durations[0]); ++i)
+                if (durations[i] == u->job.auto_lock_seconds) choice = i;
+            choice = key == UI_RIGHT ? (choice + 1) % 7 : (choice + 6) % 7;
+            u->job.auto_lock_seconds = durations[choice];
         }
     }
     if (key == UI_SELECT) {
-        if (u->cursor < 2)
+        if (u->cursor < 3)
             ++u->cursor;
         else
             ui_scene_show(u, UI_REVIEW);
@@ -86,36 +95,48 @@ static void render_stack(fv_ui *u) {
 
 static void render_options(fv_ui *u) {
     char b[40];
-    ui_draw_header(u, "FAILURE POLICY", NULL);
-    snprintf(b, sizeof(b), "ATTEMPTS: %u", (unsigned)u->job.attempts);
+    ui_draw_header(u, "SECURITY", NULL);
+    snprintf(b, sizeof(b), "DESTROY KEYS: %s", u->job.action == 5 ? "OFF" : "ON");
     ui_draw_choice(u, 16, b, u->cursor == 0);
-    ui_draw_choice(u, 28, "THEN: DESTROY KEY",
-                   u->cursor == 1);
-    ui_draw_choice(u, 40, "REVIEW", u->cursor == 2);
-    if (u->cursor == 0)
-        ui_draw_text_at(u, 4, 55, "\003\001 CHANGE", 1, UI_COLOUR_TEXT);
+    snprintf(b, sizeof(b), "AFTER: %u FAILURES", (unsigned)u->job.attempts);
+    ui_draw_choice(u, 27, u->job.action == 5 ? "UNLIMITED ATTEMPTS" : b, u->cursor == 1);
+    if (u->job.auto_lock_seconds)
+        snprintf(b, sizeof(b), "AUTO LOCK: %u MIN", (unsigned)(u->job.auto_lock_seconds / 60));
+    else
+        snprintf(b, sizeof(b), "AUTO LOCK: OFF");
+    ui_draw_choice(u, 38, b, u->cursor == 2);
+    ui_draw_choice(u, 49, "REVIEW", u->cursor == 3);
+    const char *hint = u->cursor == 2 ? "AFTER INACTIVITY"
+                     : u->cursor == 1 && u->job.action == 1 ? "CONSECUTIVE FAILURES"
+                     : u->cursor == 3 ? "CHECK BEFORE SAVING" : "\003\001 CHANGE";
+    ui_draw_text_at(u, 4, 60, hint, 1, UI_COLOUR_MUTED);
     ui_draw_footer(u, "\005 BACK", "\006 SELECT");
 }
 
 static void render_review(fv_ui *u) {
-    char b[40];
+    char b[40], layers[16];
+    snprintf(layers, sizeof(layers), "%u LAYERS", u->job.count);
     ui_draw_header(u,
                    (u->flow == UI_FLOW_CHANGE)   ? "CHANGE UNLOCK?"
-                   : (u->flow == UI_FLOW_POLICY) ? "SAVE FAILURE POLICY?"
+                   : (u->flow == UI_FLOW_POLICY) ? "SAVE SECURITY?"
                                                  : "CREATE VAULT?",
-                   NULL);
+                   u->flow == UI_FLOW_SETUP ? layers : NULL);
     ui_draw_text_at(u, 4, 16,
                     (u->flow == UI_FLOW_CHANGE)   ? "KEEPS FILES AND PASSKEYS"
                     : (u->flow == UI_FLOW_POLICY) ? "CHECKS CURRENT CREDENTIAL"
                                                   : "ERASES EXISTING SD DATA",
                     1, UI_COLOUR_TEXT);
-    snprintf(b, sizeof(b), "%u FAILURES: %s", (unsigned)u->job.attempts,
-             u->job.action == 1 ? "DESTROY" : "LOCKOUT");
+    if (u->job.action == 5)
+        snprintf(b, sizeof(b), "KEY DESTRUCTION DISABLED");
+    else
+        snprintf(b, sizeof(b), "%u FAILURES: %s", (unsigned)u->job.attempts,
+                 u->job.action == 1 ? "DESTROY KEYS" : "LOCKOUT");
     ui_draw_text_at(u, 4, 26, b, 1, UI_COLOUR_TEXT);
-    if (u->flow != UI_FLOW_POLICY && u->flow != UI_FLOW_CHANGE) {
-        snprintf(b, sizeof(b), "%u ENCRYPTION LAYERS", u->job.count);
-        ui_draw_text_at(u, 4, 36, b, 1, UI_COLOUR_TEXT);
-    }
+    if (u->job.auto_lock_seconds)
+        snprintf(b, sizeof(b), "AUTO LOCK: %u MIN IDLE", (unsigned)(u->job.auto_lock_seconds / 60));
+    else
+        snprintf(b, sizeof(b), "AUTO LOCK: OFF");
+    ui_draw_text_at(u, 4, 36, b, 1, UI_COLOUR_TEXT);
     if (u->flow == UI_FLOW_SETUP) ui_draw_danger_choices(u, "CREATE VAULT");
     else ui_draw_confirm_choices(u, "SAVE");
 }

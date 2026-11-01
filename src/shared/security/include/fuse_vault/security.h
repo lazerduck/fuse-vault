@@ -2,10 +2,16 @@
 #define FV_SECURITY_H
 #include "fuse_vault/volume_format.h"
 #define FV_AUTH_POLICY_BYTES 16u
-/* Only the first two actions are supported. Other IDs are reserved, rejected. */
+/* LOCKOUT remains readable for legacy vaults. NONE disables guess accounting;
+ * its canonical max_attempts is zero. Reserved action IDs are rejected. */
 typedef enum { FV_LIMIT_DESTROY=1,FV_LIMIT_LOCKOUT=2,
-    FV_LIMIT_DELAY_RESERVED=3,FV_LIMIT_TIMED_LOCKOUT_RESERVED=4 } fv_limit_action;
-typedef struct {uint32_t max_attempts;fv_limit_action limit_action;} fv_auth_policy;
+    FV_LIMIT_DELAY_RESERVED=3,FV_LIMIT_TIMED_LOCKOUT_RESERVED=4,FV_LIMIT_NONE=5 } fv_limit_action;
+typedef struct {
+    uint32_t max_attempts;
+    fv_limit_action limit_action;
+    /* Zero preserves the original no-timer behavior of existing vaults. */
+    uint32_t auto_lock_seconds;
+} fv_auth_policy;
 fv_auth_policy fv_auth_policy_default(void);
 bool fv_auth_policy_encode(const fv_auth_policy *,uint8_t out[FV_AUTH_POLICY_BYTES]);
 bool fv_auth_policy_decode(const uint8_t *,size_t,fv_auth_policy *);

@@ -23,6 +23,7 @@ static void begin_vault_flow(fv_ui *u, fv_access_mode mode) {
     u->job.algorithms[0] = 1;
     u->job.attempts = 10;
     u->job.action = 1;
+    u->job.auto_lock_seconds = 300;
     u->job.profile = u->device.profile ? u->device.profile : 2;
     if (u->device.status == 2) {
         u->flow = UI_FLOW_UNLOCK;

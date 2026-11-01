@@ -149,6 +149,37 @@ static void dashboard_tests(void) {
     fv_ui_keypress(&u,UI_LEFT);CHECK(u.dashboard_bars && u.flipped);
 }
 
+static void countdown_tests(void) {
+    const fv_access_mode modes[] = {FV_ACCESS_FULL, FV_ACCESS_PASSKEYS_ONLY, FV_ACCESS_FILES_READ_ONLY};
+    for (unsigned m = 0; m < 3; ++m) {
+        fv_ui u; fv_ui_init(&u);
+        fv_ui_complete(&u, (fv_ui_result){.status=2, .unlocked=true, .mode=modes[m], .auto_lock_seconds=1800});
+        fv_ui_countdown(&u, 1801); CHECK(u.timer_remaining_seconds == 1800);
+        fv_ui full = u;
+        fv_ui_countdown(&u, 1800); CHECK(!memcmp(&u, &full, sizeof(u)));
+        fv_ui_countdown(&u, 900);
+        CHECK(memcmp(u.framebuffer, full.framebuffer, 12 * FV_SCREEN_WIDTH));
+        CHECK(!memcmp(u.framebuffer + 12 * FV_SCREEN_WIDTH, full.framebuffer + 12 * FV_SCREEN_WIDTH,
+                      FV_SCREEN_BYTES - 12 * FV_SCREEN_WIDTH));
+        CHECK(!memcmp(&u.job, &full.job, sizeof(u.job)) && !u.pending);
+        fv_ui_countdown(&u, 30); CHECK(u.framebuffer[1 * FV_SCREEN_WIDTH + 108] == UI_COLOUR_WARNING);
+        fv_ui_countdown(&u, 10); CHECK(u.framebuffer[1 * FV_SCREEN_WIDTH + 108] == UI_COLOUR_ERROR);
+        fv_ui_countdown(&u, 0); CHECK(u.device.unlocked && !u.pending); /* Display cannot authorize or lock. */
+        u.flipped = true; fv_ui_render(&u); full = u;
+        u.flipped = false; fv_ui_render(&u);
+        for (unsigned i = 0; i < FV_SCREEN_BYTES; ++i)
+            CHECK(u.framebuffer[i] == full.framebuffer[FV_SCREEN_BYTES - 1 - i]);
+        ui_scene_show(&u, UI_SETTINGS); fv_ui_render(&u); full = u;
+        fv_ui_countdown(&u, 60);
+        CHECK(!memcmp(u.framebuffer, full.framebuffer, FV_SCREEN_BYTES));
+        CHECK(u.timer_remaining_seconds == 60 && u.screen == UI_SETTINGS && !u.pending);
+        fv_ui_complete(&u, (fv_ui_result){.status=2});
+        fv_ui_countdown(&u, 300); CHECK(!u.timer_remaining_seconds);
+        fv_ui_complete(&u, (fv_ui_result){.status=2, .unlocked=true, .mode=modes[m]});
+        full = u; fv_ui_countdown(&u, 300); CHECK(!memcmp(&u, &full, sizeof(u)));
+    }
+}
+
 static void approval_text_tests(void) {
     fv_ui u;fv_ui_init(&u);
     char label[128];memset(label,'A',127);label[127]=0;
@@ -161,6 +192,7 @@ static void approval_text_tests(void) {
 }
 
 int main(void) {
+    countdown_tests();
     dashboard_tests();
     fv_ui colour_ui;
     fv_ui_init(&colour_ui);

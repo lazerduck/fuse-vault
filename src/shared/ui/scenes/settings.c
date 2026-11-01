@@ -9,8 +9,11 @@
 static void begin_policy(fv_ui *u) {
     ui_clear_input(u);
     u->flow = UI_FLOW_POLICY;
-    u->job.attempts = u->device.attempts;
-    u->job.action = 1; /* Only destruction is offered for a new policy. */
+    u->job.action = u->device.action == 5 ? 5 : 1;
+    u->job.attempts = u->job.action == 5 ? 0 : u->device.attempts;
+    if (u->job.action == 1 && (!u->job.attempts || u->job.attempts > 100))
+        u->job.attempts = 10;
+    u->job.auto_lock_seconds = u->device.auto_lock_seconds;
     u->job.profile = u->device.profile ? u->device.profile : 2;
     ui_scene_show(u, UI_SECRET);
 }
@@ -21,6 +24,7 @@ static void begin_change(fv_ui *u) {
     u->job.profile = u->device.profile ? u->device.profile : 2;
     u->job.attempts = u->device.attempts;
     u->job.action = u->device.action;
+    u->job.auto_lock_seconds = u->device.auto_lock_seconds;
     ui_scene_show(u, UI_SECRET);
 }
 
@@ -41,7 +45,7 @@ static void begin_passkeys(fv_ui *u) {
 static void dashboard_setting(fv_ui *u) { ui_scene_show(u, UI_DASHBOARD_SETTING); }
 
 static const ui_menu_item settings_items[] = {
-    [UI_SETTING_POLICY] = {"FAILURE POLICY", begin_policy},
+    [UI_SETTING_POLICY] = {"SECURITY", begin_policy},
     [UI_SETTING_ERASE] = {"ERASE AND SET UP", begin_erase},
     [UI_SETTING_METHOD] = {"UNLOCK METHOD", begin_change},
     [UI_SETTING_FIDO_INIT] = {"RESET FIDO", begin_fido_init},

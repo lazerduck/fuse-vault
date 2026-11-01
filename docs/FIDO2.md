@@ -34,11 +34,13 @@ Physical approval of a registration or sign-in request still applies when verifi
 
 ## Attempts and lockouts
 
-FIDO uses the same on-device credential and persistent attempt counter as vault unlocking. An incorrect credential submitted through FIDO consumes a vault attempt and closes the unlocked session. Successful verification resets the attempt count in the normal way.
+FIDO uses the same on-device credential and attempt policy as vault unlocking. When destruction is enabled, an incorrect credential submitted through FIDO consumes a vault attempt and closes the unlocked session. Successful verification resets the attempt count in the normal way. With destruction disabled, incorrect credentials are still rejected and close the session, but no attempt limit is applied.
 
-Reaching the limit applies the vault's configured destruction or permanent-lockout policy, as described in [Setup](Setup.md). This means failed FIDO verification can ultimately destroy access to both files and passkeys. Removing permanent lockout remains a proposed change.
+Reaching an enabled limit destroys access to both files and passkeys, as described in [Setup](Setup.md). Legacy permanent-lockout policies remain enforced, but new security settings offer only destruction enabled or disabled.
 
-The FIDO protocol also has verification errors, short-lived authorization tokens and retry reporting. In this implementation, the reported verification retries come from the vault's remaining attempts. The host cannot set up a separate FIDO PIN with its own retry allowance. Prompt timeouts, rejected requests and expired authorization are separate from submitting an incorrect vault credential.
+The FIDO protocol also has verification errors, short-lived authorization tokens and retry reporting. The reported verification retries come from the vault's remaining attempts, or report the byte field's maximum of 255 when unlimited; that value is not a real limit. The host cannot set up a separate FIDO PIN with its own retry allowance. Prompt timeouts, rejected requests and expired authorization are separate from submitting an incorrect vault credential.
+
+The session inactivity timer also applies to FIDO. Successful credential creation/sign-in, reverification and local button presses renew it; discovery, retry and key-agreement queries do not. Expiry aborts outstanding prompts and suppresses private responses from the expired session, including unsent HID fragments.
 
 ## SD-backed credential storage
 

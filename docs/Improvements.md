@@ -94,7 +94,7 @@ This is a design investigation. No recovery mechanism has been selected, and the
 
 The documentation review also identified work to complete alongside these changes before treating the device as ready for production:
 
-- **Protect key RAM:** define and implement the hardware-enforced boundary around key handling, including access from both cores, DMA and debugging. See [Session](Session.md#protecting-ram-while-unlocked).
+- **Review key RAM protection:** a full TrustZone split is deferred under the current threat model. Revisit it if isolation after a firmware exploit becomes a product requirement; continue key-cleanup validation and firmware/debug hardening below. See [Session](Session.md#protecting-ram-while-unlocked).
 - **Finish cleanup validation:** audit temporary copies, library contexts, cancellation and error exits, and test locking while USB and FIDO work is active.
 - **Complete firmware and debug hardening:** finalize trusted-boot, firmware-update and OTP access policies, along with production debug restrictions. The existing [production checklist](AI/production-checklist.md) tracks the detailed work.
 - **Qualify randomness:** assess the source and sampling settings under the intended temperature, clock and supply conditions, and validate failure recovery. See [Randomness](Randomness.md#remaining-validation).

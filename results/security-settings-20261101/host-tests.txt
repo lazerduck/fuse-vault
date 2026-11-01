@@ -1,0 +1,98 @@
+Internal ctest changing into directory: /home/adam/projects/fuse-vault/build-unlock-modes-host
+Test project /home/adam/projects/fuse-vault/build-unlock-modes-host
+      Start 46: fido_journal_interruptions
+      Start 45: fido_journal_reference
+      Start 36: fido_store
+      Start 44: fido_encrypted_reference
+ 1/46 Test #44: fido_encrypted_reference .................   Passed   18.31 sec
+      Start 42: fido_engine_reference
+ 2/46 Test #42: fido_engine_reference ....................   Passed   11.86 sec
+      Start 37: new_vault_setup
+ 3/46 Test #37: new_vault_setup ..........................   Passed    1.74 sec
+      Start  1: crypto
+ 4/46 Test  #1: crypto ...................................   Passed    1.31 sec
+      Start 22: persistent_authority_pico_contract
+ 5/46 Test #22: persistent_authority_pico_contract .......   Passed    1.28 sec
+      Start 21: persistent_authority
+ 6/46 Test #21: persistent_authority .....................   Passed    1.14 sec
+      Start 41: fido_web
+ 7/46 Test #41: fido_web .................................   Passed    0.87 sec
+      Start 16: vault_pico_contract
+ 8/46 Test #16: vault_pico_contract ......................   Passed    0.90 sec
+      Start 14: envelope_pico_contract
+ 9/46 Test #14: envelope_pico_contract ...................   Passed    0.74 sec
+      Start  4: board_bench_protocol
+10/46 Test  #4: board_bench_protocol .....................   Passed    0.64 sec
+      Start  8: pico_hmac_pipeline
+11/46 Test  #8: pico_hmac_pipeline .......................   Passed    0.67 sec
+      Start 15: vault
+12/46 Test #15: vault ....................................   Passed    0.76 sec
+      Start 13: envelope
+13/46 Test #13: envelope .................................   Passed    0.56 sec
+      Start 23: otp_mask_lifecycle
+14/46 Test #23: otp_mask_lifecycle .......................   Passed    0.59 sec
+      Start 30: lazy_metadata_bitmap
+15/46 Test #30: lazy_metadata_bitmap .....................   Passed    0.33 sec
+      Start 39: fido_image_migration
+16/46 Test #39: fido_image_migration .....................   Passed    0.35 sec
+      Start 43: fido_encrypted_engine
+17/46 Test #43: fido_encrypted_engine ....................   Passed    0.23 sec
+      Start  3: benchmark_engine
+18/46 Test  #3: benchmark_engine .........................   Passed    0.16 sec
+      Start 18: security_probe
+19/46 Test #18: security_probe ...........................   Passed    0.10 sec
+      Start 12: volume_policy_derivation_pico_contract
+20/46 Test #12: volume_policy_derivation_pico_contract ...   Passed    0.09 sec
+      Start 40: fido_web_http
+21/46 Test #40: fido_web_http ............................   Passed    0.10 sec
+      Start 19: ram_debug
+22/46 Test #19: ram_debug ................................   Passed    0.10 sec
+      Start  9: volume_policy_derivation
+23/46 Test  #9: volume_policy_derivation .................   Passed    0.10 sec
+      Start 27: device_ui_and_capacity
+24/46 Test #27: device_ui_and_capacity ...................   Passed    0.11 sec
+      Start 38: fido_engine
+25/46 Test #38: fido_engine ..............................   Passed    0.04 sec
+      Start  7: pico_hmac_storage
+26/46 Test  #7: pico_hmac_storage ........................   Passed    0.02 sec
+      Start  5: authenticated_storage
+27/46 Test  #5: authenticated_storage ....................   Passed    0.01 sec
+      Start 24: usb_storage_callbacks
+28/46 Test #24: usb_storage_callbacks ....................   Passed    0.01 sec
+      Start 32: ui_components
+29/46 Test #32: ui_components ............................   Passed    0.01 sec
+      Start 31: tft_display_transport
+30/46 Test #31: tft_display_transport ....................   Passed    0.01 sec
+      Start 17: cryptographic_random
+31/46 Test #17: cryptographic_random .....................   Passed    0.01 sec
+      Start  6: pico_hmac_contract
+32/46 Test  #6: pico_hmac_contract .......................   Passed    0.00 sec
+      Start 29: metadata_format_progress
+33/46 Test #29: metadata_format_progress .................   Passed    0.00 sec
+      Start 20: otp_inspection_contract
+34/46 Test #20: otp_inspection_contract ..................   Passed    0.00 sec
+      Start 34: fido_usb_scheduling
+35/46 Test #34: fido_usb_scheduling ......................   Passed    0.00 sec
+      Start 25: usb_vault_large_batches
+36/46 Test #25: usb_vault_large_batches ..................   Passed    0.00 sec
+      Start 26: usb_storage_invalidation
+37/46 Test #26: usb_storage_invalidation .................   Passed    0.00 sec
+      Start 33: usb_mux
+38/46 Test #33: usb_mux ..................................   Passed    0.00 sec
+      Start 28: usb_storage_during_setup
+39/46 Test #28: usb_storage_during_setup .................   Passed    0.00 sec
+      Start  2: sd_native
+40/46 Test  #2: sd_native ................................   Passed    0.00 sec
+      Start 35: fido_transport
+41/46 Test #35: fido_transport ...........................   Passed    0.00 sec
+      Start 11: worker_session_timeout
+42/46 Test #11: worker_session_timeout ...................   Passed    0.00 sec
+      Start 10: session_inactivity_timer
+43/46 Test #10: session_inactivity_timer .................   Passed    0.00 sec
+44/46 Test #36: fido_store ...............................   Passed   75.20 sec
+45/46 Test #45: fido_journal_reference ...................   Passed  350.73 sec
+46/46 Test #46: fido_journal_interruptions ...............   Passed  892.21 sec
+
+100% tests passed, 0 tests failed out of 46
+
+Total Test time (real) = 892.21 sec

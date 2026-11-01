@@ -1,6 +1,8 @@
 # Fuse Vault
 Fuse Vault is a security hardware device designed to provide a genuinely trustable location where you can store various secret and sensitive documents. It provides encrypted at rest storage and on-device unlocking alongside FIDO2 passkey capabilities.
 
+The project is pre-alpha. Backward compatibility between development versions is not required: firmware and storage formats may change without migration support. Prefer a simpler current design over retaining legacy behavior. Document any required vault reset or re-enrollment in the release notes.
+
 ## Philosophy
 Fuse Vault is built around the principle of Trust. Every aspect of Fuse Vault needed to be as open source, inspectable and trustable by the user as possible. The intention was to create a device that could be trusted rather than a device that had to be trusted. Specifically in contrast to things like a TPM. To achieve this, Fuse Vault has used open source hardware where possible and all the software is also open source, inspectable and customizable. Additionally, where trust can't be 100% confirmed, we instead take whatever measures we can to get as close as possible to something we can trust. For example, when encrypting data, we allow users to establish a stack of algorithms each with a varied provenance.
 

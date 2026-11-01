@@ -1,0 +1,8 @@
+Actual TinyUSB BOT overlap and durable-CSW tests passed
+PASS: 4096-byte buffers
+Actual TinyUSB BOT overlap and durable-CSW tests passed
+PASS: 16384-byte buffers
+Actual TinyUSB BOT overlap and durable-CSW tests passed
+PASS: 32768-byte buffers
+Actual TinyUSB BOT overlap and durable-CSW tests passed
+PASS: 65024-byte buffers

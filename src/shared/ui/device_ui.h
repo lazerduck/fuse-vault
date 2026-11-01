@@ -40,7 +40,7 @@ typedef struct {
     uint8_t secret[FV_UI_SECRET_MAX], length, count;
     uint8_t current[FV_UI_SECRET_MAX], current_length;
     uint16_t algorithms[4], profile;
-    uint32_t attempts, action;
+    uint32_t attempts, action, auto_lock_seconds;
     uint8_t fido_policy;
     uint16_t passkey_index;
     uint8_t passkey_id[42];
@@ -51,7 +51,7 @@ typedef struct {
     bool unlocked;
     fv_access_mode mode;
     uint64_t blocks;
-    uint32_t attempts, action;
+    uint32_t attempts, action, auto_lock_seconds;
     uint8_t fido_policy;
     uint16_t passkey_index, passkey_count;
     uint8_t passkey_id[42];
@@ -100,6 +100,8 @@ typedef struct {
     uint8_t confirmation[FV_UI_SECRET_MAX], confirmation_length;
     int error;
     uint32_t read_kib_tenths, write_kib_tenths;
+    /* Display snapshot only. The worker owns the actual lock deadline. */
+    uint32_t timer_remaining_seconds;
     bool read_active, write_active;
     /* Half-second samples; volatile dashboard choice survives lock/unlock. */
     uint32_t read_history[FV_UI_HISTORY_SAMPLES], write_history[FV_UI_HISTORY_SAMPLES];
@@ -122,6 +124,7 @@ void fv_ui_render(fv_ui *);
 void fv_ui_animate(fv_ui *, uint32_t milliseconds);
 /* Host reads are downloads; host writes are uploads into the vault. */
 void fv_ui_activity(fv_ui *, uint32_t read_bytes, uint32_t write_bytes, uint64_t elapsed_us);
+void fv_ui_countdown(fv_ui *, uint32_t remaining_seconds);
 /* Volatile wipe for credentials in UI objects and inter-core messages. */
 void fv_ui_wipe(void *, size_t);
 #endif

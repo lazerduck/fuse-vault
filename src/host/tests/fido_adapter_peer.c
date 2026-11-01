@@ -16,6 +16,8 @@ atomic_bool fv_ui_maintenance;
 static uint32_t clock_ms=100;
 static bool command_queued,approval=true,cancel_prompt,wrong_secret,reset_queued,late_cancel,early_cancel,local_flow,local_race;
 static bool lock_after_worker,lock_after_report,fragment_test;
+static bool timeout_prompt,timeout_before_verify,timeout_after_worker,timeout_after_report;
+static unsigned timeout_locks;
 static unsigned approvals,verifications;
 static unsigned wake_events;
 static uint8_t wire[8192];static unsigned wire_size;
@@ -27,6 +29,10 @@ bool tud_hid_ready(void){return true;}
 bool tud_hid_report(uint8_t id,const void *data,uint16_t n){
     assert(!id && n==64 && wire_size+64<=sizeof(wire));memcpy(wire+wire_size,data,64);wire_size+=64;
     if(lock_after_report){lock_after_report=false;fv_fido_lock_session();}
+    if(timeout_after_report){
+        timeout_after_report=false;clock_ms+=60000;
+        assert(fv_session_timeout_poll(clock_ms,access_generation));
+    }
     return true;
 }
 fv_vault *fv_fido_vault(void){return &fixture.vault;}
@@ -34,10 +40,13 @@ fv_access_mode fv_fido_access_mode(void){return access_mode;}
 bool fv_usb_session_invalidated(void){return transport_invalidated;}
 uint32_t fv_usb_session_generation(void){return access_generation;}
 void fv_usb_publish_generation(uint32_t generation){access_generation=generation;}
-void fv_fido_lock_session(void){fv_usb_publish_generation(access_generation+1);access_mode=FV_ACCESS_LOCKED;fv_fido_close();fv_vault_lock(&fixture.vault);}
+void fv_fido_lock_session(void){fv_usb_publish_generation(access_generation+1);fv_session_timeout_stop();access_mode=FV_ACCESS_LOCKED;fv_fido_close();fv_vault_lock(&fixture.vault);}
+void fv_session_timeout_lock(void){timeout_locks++;fv_fido_lock_session();}
 bool fv_fido_random(void *ctx,uint8_t *out,size_t n){(void)ctx;return RAND_bytes(out,(int)n)==1;}
 uint16_t fv_fido_profile(void){return 2;}
 int fv_fido_verify_secret(const uint8_t *secret,size_t n){
+    /* Match the device worker's deadline gate before fresh verification. */
+    if(fv_session_timeout_poll(clock_ms,access_generation))return FV_VAULT_DENIED;
     if(access_mode!=FV_ACCESS_LOCKED && !fv_access_fido(access_mode))return FV_VAULT_DENIED;
     assert(n==1 && secret[0]==UI_UP);verifications++;
     const uint8_t good[]="fixture secret",bad[]="wrong";
@@ -47,10 +56,14 @@ int fv_fido_verify_secret(const uint8_t *secret,size_t n){
     return r;
 }
 void fv_fido_pump(void){
+    (void)fv_session_timeout_poll(clock_ms,access_generation);
     bool opening_prompt=atomic_load(&prompt_state)==1;
+    bool dismissing_secret=atomic_load(&prompt_state)==4 && prompt.secret && prompt.approved;
     unsigned before_wake=wake_events;
     fv_fido_ui_poll(&ui);
     if(opening_prompt)assert(wake_events==before_wake+(ui.fido_modal?1u:0u));
+    if(opening_prompt && timeout_prompt){timeout_prompt=false;clock_ms+=60000;return;}
+    if(dismissing_secret && timeout_before_verify){timeout_before_verify=false;clock_ms+=60000;}
     if(atomic_load(&prompt_state)==2 && !ui.fido_done){
         if(cancel_prompt){atomic_store(&cancel,true);return;}
         if(reset_queued){fv_fido_disconnect();reset_queued=false;return;}
@@ -102,6 +115,19 @@ int main(void){
         else if(!strcmp(line,"clear-invalidation\n")){transport_invalidated=false;puts("ok");}
         else if(!strcmp(line,"lock-after-worker\n")){lock_after_worker=true;puts("ok");}
         else if(!strcmp(line,"lock-between-fragments\n")){fragment_test=true;puts("ok");}
+        else if(!strcmp(line,"timeout-prompt\n")){timeout_prompt=true;puts("ok");}
+        else if(!strcmp(line,"timeout-before-verify\n")){timeout_before_verify=true;puts("ok");}
+        else if(!strcmp(line,"timeout-after-worker\n")){timeout_after_worker=true;puts("ok");}
+        else if(!strcmp(line,"timeout-between-fragments\n")){fragment_test=true;timeout_after_report=true;puts("ok");}
+        else if(!strncmp(line,"timer ",6)){
+            unsigned seconds;assert(sscanf(line+6,"%u",&seconds)==1 && fixture.vault.unlocked);
+            fv_session_timeout_start(seconds,clock_ms,access_generation);puts("ok");
+        }
+        else if(!strcmp(line,"remaining\n")){
+            (void)fv_session_timeout_poll(clock_ms,access_generation);
+            printf("%u\n",fv_session_timeout_remaining());
+        }
+        else if(!strcmp(line,"timeout-locks\n")){printf("%u\n",timeout_locks);}
         else if(!strcmp(line,"effects\n")){printf("%u %u %u %u %u %u %u\n",fixture.reads,fixture.writes,fixture.syncs,approvals,verifications,fixture.authority.attempts,wake_events);}
         else if(!strcmp(line,"local-readonly-check\n")){
             assert(access_mode==FV_ACCESS_FILES_READ_ONLY && fixture.vault.unlocked && !engine_open);
@@ -147,7 +173,16 @@ int main(void){
         else if(!strcmp(line,"wrong\n")){wrong_secret=true;puts("ok");}
         else if(!strcmp(line,"correct\n")){wrong_secret=false;puts("ok");}
         else if(!strncmp(line,"time ",5)){assert(sscanf(line+5,"%u",&clock_ms)==1);puts("ok");}
+        else if(!strncmp(line,"advance ",8)){unsigned ms;assert(sscanf(line+8,"%u",&ms)==1);clock_ms+=ms;puts("ok");}
         else if(!strcmp(line,"counts\n")){printf("%u %u %u\n",approvals,verifications,fixture.authority.attempts);}
+        else if(!strcmp(line,"attempt-limit-off\n")){
+            static const uint8_t secret[]="fixture secret";
+            fv_fido_lock_session();
+            assert(fv_vault_change_credential(&fixture.vault,&fixture.platform,secret,sizeof(secret)-1,
+                secret,sizeof(secret)-1,1,2,(fv_auth_policy){0,FV_LIMIT_NONE,300},true)==FV_VAULT_OK);
+            fv_device_ui_media_changed(false);puts("ok");
+        }
+        else if(!strcmp(line,"authority-sequence\n")){printf("%llu\n",(unsigned long long)fixture.authority.sequence);}
         else {
             size_t len=strcspn(line,"\n");assert(!(len%2) && len/2<=4096);uint8_t request[4096];
             for(size_t i=0;i<len/2;i++){unsigned b;assert(sscanf(line+2*i,"%2x",&b)==1);request[i]=b;}
@@ -160,14 +195,18 @@ int main(void){
                 if(early_cancel){receive(1,0x91,NULL,0);early_cancel=false;}
                 fv_fido_execute();
                 if(lock_after_worker){fv_fido_lock_session();lock_after_worker=false;}
+                if(timeout_after_worker){
+                    timeout_after_worker=false;clock_ms+=60000;
+                    assert(fv_session_timeout_poll(clock_ms,access_generation));
+                }
                 if(late_cancel){receive(1,0x91,NULL,0);late_cancel=false;}
-                if(fragment_test)lock_after_report=true;
+                if(fragment_test && !timeout_after_report)lock_after_report=true;
                 fv_fido_poll();
             }
             while(hid.transmitting)fv_fido_poll();assert(wire_size>=64 && wire[4]==0x90);
             unsigned total=((unsigned)wire[5]<<8)|wire[6],written=0;
             if(fragment_test){
-                assert(!lock_after_report && wire_size==64 && total>57 && !hid.transmitting);
+                assert(!lock_after_report && !timeout_after_report && wire_size==64 && total>57 && !hid.transmitting);
                 for(unsigned i=0;i<sizeof(hid.tx);i++)assert(hid.tx[i]==0);
                 assert(access_mode==FV_ACCESS_LOCKED && !fixture.vault.unlocked && !engine_open);
                 fragment_test=false;wire_size=0;puts("fragment-blocked");fflush(stdout);continue;

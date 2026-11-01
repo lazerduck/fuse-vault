@@ -19,7 +19,7 @@ worker-owned volatile mode grants Full access (files read/write and FIDO),
 Passkeys only, or Read-only files (no FIDO). Invalid/default modes deny access.
 Permissions are granted after successful authentication, never just by selecting
 a screen option. FIDO reverification cannot broaden them. Vault-wide credential,
-failure-policy and erase actions require Full access; FIDO management remains
+security-settings and erase actions require Full access; FIDO management remains
 available in either FIDO-capable mode.
 
 Changing mode requires locking and unlocking again. Commands and transfer batches
@@ -43,7 +43,15 @@ Session invalidation also occurs on USB disconnect, bus reset, suspend and switc
 
 These events can arrive while work is in progress. The firmware marks the session invalid and coordinates cleanup with the worker. This prevents new access while allowing outstanding work to finish before its state is cleared. A write already committed to the card remains committed.
 
-There is currently no general inactivity timeout that locks the vault. Display sleep and the FIDO verification timeout have their own purposes; the vault remains unlocked until a locking event occurs.
+## Automatic locking
+
+Security settings can lock the whole session after 1, 2, 5, 10, 15, or 30 minutes of inactivity, or disable the timer. New vaults default to five minutes. Existing vaults retain Off until the user changes their settings. This is separate from display sleep and the FIDO verification timeout.
+
+The countdown starts after successful unlock in any mode. Physical button presses (including waking the display), successful nonempty file reads/writes, passkey creation/sign-in and successful credential reverification renew it. Routine USB status/sync polling, FIDO discovery/retry/key-agreement queries, failed requests and malformed traffic do not. Local activity is bound to its session generation, so a stale button event cannot renew a later session. As an inactivity timer, continued host file traffic can keep it open; it is not a maximum session lifetime.
+
+The dashboard shows remaining minutes/seconds and a small circular indicator. The timer keeps running in Settings and while a FIDO prompt is open. At expiry the worker revokes the session generation, clears its keys and cancels pending FIDO work. A quiet worker polls the deadline without waiting for a USB request. No activity at or after the deadline can revive the old session; authentication is required again.
+
+Storage writes are committed in batches. An executing batch can finish before the worker checks expiry; no later batch or stale result is authorized after revocation. Host-side cached data has not necessarily reached the device, so eject before leaving a writable volume idle if applications have unsaved or cached writes. Locking cannot erase data already delivered to the host.
 
 ## Power loss and restart
 
@@ -53,7 +61,7 @@ USB events can happen while the chip remains powered, particularly with two conn
 
 ## Protecting RAM while unlocked
 
-The current firmware gives the storage worker ownership of the vault and FIDO secrets. The UI and USB code send it requests. This helps coordinate access, but the hardware memory boundary needed to protect those secrets from other firmware components is still an improvement to implement.
+The current firmware gives the storage worker ownership of the vault and FIDO secrets. The UI and USB code send it requests. This helps coordinate access, but does not establish a hardware memory boundary protecting those secrets from other firmware components.
 
 The RP2350 family supports Arm TrustZone and access controls for memory and peripherals. We could place key material and the code that uses it in a protected Secure region, with the rest of the firmware making narrowly defined requests to that code. Access restrictions would need to cover both cores, DMA and debugging as well as ordinary CPU reads. Raspberry Pi describes these facilities in its [security features guide](https://pip-assets.raspberrypi.com/categories/1260-security/documents/RP-009377-WP-1-Understanding%20RP2350_s%20security%20features.pdf).
 
@@ -61,7 +69,7 @@ In that design, a fault in a less-privileged USB or UI component would have a re
 
 ## Improvements not yet completed
 
-Define and implement the hardware-enforced boundary around key handling and its permitted operations. This includes deciding which components are trusted and configuring every relevant memory-access path.
+A full TrustZone split is deferred during pre-alpha under the current threat model. Prioritize trusted boot and update policies, debug and OTP access restrictions, hostile-input validation, and hardware testing of key cleanup and interrupted operations. Revisit component isolation if protecting keys after a successful USB or FIDO firmware exploit becomes a product requirement. That would require defining the trusted components and configuring every relevant memory-access path; the current firmware does not provide that isolation.
 
 Audit and test cleanup beyond the main session objects: temporary stack copies, library contexts, error exits, cancellation and work interrupted by USB events. The current explicit wipes establish the intended lifecycle, but a complete RAM-cleanup claim needs that wider evidence.
 

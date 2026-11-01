@@ -2,6 +2,7 @@
 #include "fuse_vault/fido_hid_descriptor.h"
 #include "bringup.h"
 #include "device_ui_adapter.h"
+#include "session_timeout.h"
 #include "tusb.h"
 #include "pico/stdlib.h"
 #include "fuse_vault/fido_hid.h"
@@ -44,7 +45,12 @@ static bool fido_authorized(void){
 static uint32_t now(void *context){(void)context;return (uint32_t)(time_us_64()/1000);}
 bool fv_fido_busy(void){return atomic_load(&busy);}
 bool fv_fido_disk_available(void){unsigned s=atomic_load(&prompt_state);return s==1 || s==2;}
-bool fv_fido_cancelled(void *ctx){(void)ctx;return atomic_load(&cancel) || invalidated || fv_usb_session_invalidated();}
+bool fv_fido_cancelled(void *ctx){
+    (void)ctx;
+    /* Worker-side callback also runs while crypto or a presence prompt waits. */
+    (void)fv_session_timeout_poll(time_us_64()/1000,fv_usb_session_generation());
+    return atomic_load(&cancel) || invalidated || fv_usb_session_invalidated();
+}
 void fv_fido_disconnect(void){atomic_store(&cancel,true);atomic_store(&disconnected,true);atomic_store(&enumerated,false);}
 void tud_mount_cb(void){atomic_store(&enumerated_at,now(NULL));atomic_store(&enumerated,true);}
 void fv_fido_close(void){
@@ -106,6 +112,9 @@ static bool commit_disk(void *ctx){(void)ctx;return fido_authorized() && (!execu
 static uint8_t retries(void *ctx){
     (void)ctx;fv_device_state state;fv_vault *v=fv_fido_vault();
     if(!fido_authorized() || v->platform->authority.load(v->platform->authority.context,&state) || state.status!=FV_ENROLLMENT_ACTIVE)return 0;
+    /* CTAP has a bounded retry count, no unlimited sentinel. Keep it available
+     * without decrementing while the vault's failed-attempt limit is off. */
+    if(state.policy.limit_action==FV_LIMIT_NONE)return 255;
     uint32_t remaining=state.policy.max_attempts>state.attempts?state.policy.max_attempts-state.attempts:0;
     return remaining>255?255:(uint8_t)remaining;
 }
@@ -198,6 +207,17 @@ void fv_fido_execute(void){
     if(!ensure_engine()){response[0]=0x30;goto finish;}
     n=fv_fido_engine_command_channel(hid.active_channel,hid.rx,hid.rx_size,response,sizeof(response));
  finish:
+    /* Never publish private output from an operation whose deadline elapsed.
+     * Only credential use counts here; discovery, retry and key-agreement
+     * queries can be polled without a user and must not hold a session open. */
+    if(fv_fido_cancelled(NULL)){
+        fv_ui_wipe(response,sizeof(response));response[0]=0x2d;n=1;
+    }else if(response[0]==0 && hid.rx_size &&
+             (hid.rx[0]==0x01 || hid.rx[0]==0x02 || hid.rx[0]==0x08) && fido_authorized()){
+        if(fv_session_timeout_activity(time_us_64()/1000,fv_usb_session_generation())){
+            fv_ui_wipe(response,sizeof(response));response[0]=0x2d;n=1;
+        }
+    }
     /* Capture before cleanup can advance the generation. An old result must
      * never be relabelled as belonging to the subsequent locked session. */
     completed_generation=fv_usb_session_generation();

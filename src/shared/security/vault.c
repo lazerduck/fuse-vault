@@ -43,7 +43,8 @@ static fv_vault_result recover(const fv_vault_platform *p,fv_device_state *s) {
     memset(s,0,sizeof(*s));
     if(p->authority.load(p->authority.context,s) || !state_valid(s))return FV_VAULT_STATE;
     if(s->status==FV_ENROLLMENT_DESTROY_PENDING ||
-       (s->status==FV_ENROLLMENT_ACTIVE && s->attempts==s->policy.max_attempts))return limit(p,s);
+       (s->status==FV_ENROLLMENT_ACTIVE && s->policy.limit_action!=FV_LIMIT_NONE &&
+        s->attempts==s->policy.max_attempts))return limit(p,s);
     if(s->status==FV_ENROLLMENT_LOCKED || s->status==FV_ENROLLMENT_DESTROYED)return FV_VAULT_DENIED;
     if(s->attempt_pending) {
         s->attempt_pending=false;
@@ -61,7 +62,8 @@ void fv_vault_lock(fv_vault *v) {
 static bool matches(const fv_envelope_config *c,const fv_device_state *s) {
     return c->credential_generation==s->credential_generation && c->token_slot==s->token_slot &&
         !memcmp(c->device_id,s->device_id,16) && !memcmp(c->volume.volume_id,s->volume_id,16) &&
-        c->policy.max_attempts==s->policy.max_attempts && c->policy.limit_action==s->policy.limit_action;
+        c->policy.max_attempts==s->policy.max_attempts && c->policy.limit_action==s->policy.limit_action &&
+        c->policy.auto_lock_seconds==s->policy.auto_lock_seconds;
 }
 static fv_vault_result select_header(const fv_vault_platform *p,const fv_device_state *s,
                                      uint8_t h[512],fv_envelope_config *c,unsigned *slot) {
@@ -152,19 +154,26 @@ static fv_vault_result unlock(fv_vault *v,const fv_vault_platform *p,const uint8
     alignas(4) uint8_t header[512];fv_envelope_config c;unsigned slot;
     r=select_header(p,&s,header,&c,&slot);
     if(r!=FV_VAULT_OK)return r;
-    /* Charge before any operation that can evaluate the user's credential. */
-    s.attempts++;s.attempt_pending=true;
-    if(commit(p,&s))return FV_VAULT_STATE;
+    /* Enabled limits charge durably before evaluating a credential. Unlimited
+     * retries need no mutable counter: repeated guesses cannot wear the journal
+     * out, overflow its sequence, or eventually trigger key destruction. */
+    bool limited=s.policy.limit_action!=FV_LIMIT_NONE;
+    if(limited) {
+        s.attempts++;s.attempt_pending=true;
+        if(commit(p,&s))return FV_VAULT_STATE;
+    }
     uint8_t binding[32]={0},vmk[32]={0};
     int failed=p->authority.binding(p->authority.context,s.volume_id,s.token_slot,binding) ||
         fv_envelope_open(header,p->sd->ops->block_count(p->sd),p->kdf_limits,binding,secret,n,vmk);
     mbedtls_platform_zeroize(binding,32);
-    s.attempt_pending=false;
-    if(!failed)s.attempts=0;
     r=FV_VAULT_STATE;
-    if(commit(p,&s))goto done;
+    if(limited) {
+        s.attempt_pending=false;
+        if(!failed)s.attempts=0;
+        if(commit(p,&s))goto done;
+    }
     if(failed) {
-        r=s.attempts==s.policy.max_attempts?limit(p,&s):FV_VAULT_AUTH;
+        r=limited && s.attempts==s.policy.max_attempts?limit(p,&s):FV_VAULT_AUTH;
         goto done;
     }
     r=initialize_session(v,p,&c,vmk)?FV_VAULT_STATE:FV_VAULT_OK;
@@ -204,7 +213,8 @@ fv_vault_result fv_vault_change_credential(fv_vault *v,const fv_vault_platform *
     if(p->authority.load(p->authority.context,&s) || !state_valid(&s) || s.status!=FV_ENROLLMENT_ACTIVE ||
        select_header(p,&s,header,&old,&slot)!=FV_VAULT_OK || s.credential_generation==UINT64_MAX)goto done;
     r=FV_VAULT_INVALID;
-    if(!p->random || (!approved && (policy.max_attempts!=s.policy.max_attempts || policy.limit_action!=s.policy.limit_action)))goto done;
+    if(!p->random || (!approved && (policy.max_attempts!=s.policy.max_attempts ||
+        policy.limit_action!=s.policy.limit_action || policy.auto_lock_seconds!=s.policy.auto_lock_seconds)))goto done;
     fv_envelope_config c=v->config;
     c.credential_generation++;c.credential_profile=profile;c.iterations=iterations;c.policy=policy;
     if(p->authority.binding(p->authority.context,c.volume.volume_id,c.token_slot,binding) ||

@@ -185,6 +185,87 @@ try:
     request = b'\x02' + cbor.encode({1: surviving, 2: h, 5: {'uv': True}})
     assert d.exchange(request.hex()) == 'fragment-blocked'
     assert d.exchange('scope') == '0 0 0'
-    print('Firmware HID/store/UI adapter: signatures, persistence, verification, access scopes, file-only denial, local UI preservation, attempts and cancellation passed')
+    # The disabled attempt policy applies to actual CTAP verification as well:
+    # no false "blocked" retry count, no decrement or persistent flash churn.
+    d.control('attempt-limit-off')
+    sequence = d.exchange('authority-sequence')
+    d.control('wrong')
+    for _ in range(12):
+        with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
+            c.get_assertion(surviving, h, options={'uv': True})
+    assert list(map(int, d.exchange('counts').split()))[2] == 0
+    assert d.exchange('authority-sequence') == sequence
+    d.control('correct')
+    c.get_assertion(surviving, h, options={'uv': True})
+    assert ClientPin(c, PinProtocolV2()).get_uv_retries() == 255
+    assert d.exchange('authority-sequence') == sequence
+    assert d.exchange('scope') == '2 1 1'
+
+    # Run the actual device timeout runtime beside the firmware FIDO adapter.
+    # Public discovery and rejected requests leave the deadline unchanged;
+    # a completed, authorized private operation renews it.
+    d.control('mode 1')
+    d.control('timer 60')
+    d.control('advance 30000')
+    c.get_info()
+    assert d.exchange('remaining') == '30'
+    assert ClientPin(c, PinProtocolV2()).get_uv_retries() == 255
+    assert d.exchange('remaining') == '30'
+    agreement = c.client_pin(PinProtocolV2.VERSION, ClientPin.CMD.GET_KEY_AGREEMENT)
+    assert ClientPin.RESULT.KEY_AGREEMENT in agreement
+    assert d.exchange('remaining') == '30'
+    assert d.call(CTAPHID.CBOR, b'\x01') == b'\x12'
+    assert d.exchange('remaining') == '30'
+    c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('remaining') == '60'
+    d.control('advance 60000')
+    with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
+        c.get_info()
+    assert d.exchange('scope') == '0 0 0'
+    assert d.exchange('remaining') == '0'
+    c.get_info()  # Discovery works after the expired session has been cleared.
+    assert d.exchange('scope') == '0 0 0'
+
+    # Expiry while a credential prompt waits, and after the answer is accepted
+    # but before verification starts, must not consume a guess or reopen keys.
+    for timing in ('timeout-prompt', 'timeout-before-verify'):
+        d.control('mode 1')
+        d.control('timer 60')
+        before = d.exchange('counts')
+        locks = int(d.exchange('timeout-locks'))
+        d.control(timing)
+        with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
+            c.get_assertion(surviving, h, options={'uv': True})
+        assert d.exchange('counts') == before
+        assert int(d.exchange('timeout-locks')) == locks + 1
+        assert d.exchange('scope') == '0 0 0'
+        assert d.exchange('remaining') == '0'
+
+    # The same deadline also cancels a presence-only modal after cached UV.
+    d.control('mode 1')
+    c.get_assertion(surviving, h, options={'uv': True})
+    d.control('timer 60')
+    before = d.exchange('counts')
+    d.control('timeout-prompt')
+    with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
+        c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('counts') == before
+    assert d.exchange('scope') == '0 0 0'
+
+    # A valid completed result waiting for USB, or unsent response fragments,
+    # loses permission when the session deadline passes.
+    d.control('mode 1')
+    d.control('timer 60')
+    d.control('timeout-after-worker')
+    with rejected(CtapError.ERR.KEEPALIVE_CANCEL):
+        c.get_assertion(surviving, h, options={'uv': True})
+    assert d.exchange('scope') == '0 0 0'
+    d.control('mode 1')
+    d.control('timer 60')
+    d.control('timeout-between-fragments')
+    assert d.exchange(request.hex()) == 'fragment-blocked'
+    assert d.exchange('scope') == '0 0 0'
+    assert d.exchange('remaining') == '0'
+    print('Firmware HID/store/UI adapter: signatures, persistence, verification, access scopes, file-only denial, local UI preservation, attempts, cancellation and session timeout races passed')
 finally:
     d.close()
