@@ -100,6 +100,24 @@ target_include_directories(enrollment_tests PRIVATE ${FV_SHARED}/security/includ
 target_compile_options(enrollment_tests PRIVATE -Wall -Wextra -Werror)
 add_test(NAME enrollment COMMAND enrollment_tests)
 
+# The FIDO encrypted store holds the credential image and working secrets in RAM
+# while the vault is unlocked. Its lifecycle, interruption and lock behaviour are
+# security-relevant, so run these tests in every desktop build, not only when the
+# optional pico-fido engine is enabled. The test compiles store.c directly to
+# reach the static write_snapshot and links fido_test_platform for the fixture
+# and image_upgrade helpers; neither requires the engine.
+add_library(fido_test_platform STATIC tests/fido_test_platform.c)
+target_include_directories(fido_test_platform PUBLIC tests ${FV_SHARED}/fido/include)
+target_link_libraries(fido_test_platform PRIVATE fv_security)
+target_compile_options(fido_test_platform PRIVATE -UNDEBUG -Wall -Wextra -Werror)
+add_executable(fido_store_tests tests/fido_store_tests.c ${FV_SHARED}/fido/image_upgrade.c)
+target_include_directories(fido_store_tests PRIVATE tests ${FV_SHARED}/fido/include)
+target_compile_definitions(fido_store_tests PRIVATE FV_LEGACY_IMAGE="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/fido64-image.bin")
+target_link_libraries(fido_store_tests PRIVATE fido_test_platform fv_security)
+target_compile_options(fido_store_tests PRIVATE -UNDEBUG -Wall -Wextra -Werror)
+add_test(NAME fido_store COMMAND fido_store_tests)
+set_tests_properties(fido_store PROPERTIES TIMEOUT 120)
+
 add_executable(usb_storage_tests tests/usb_storage_tests.c ${FV_PICO}/device/usb_storage.c)
 target_include_directories(usb_storage_tests PRIVATE tests/msc_stubs ${FV_PICO}/device ${FV_SHARED}/storage/include)
 target_compile_options(usb_storage_tests PRIVATE -Wall -Wextra -Werror)
