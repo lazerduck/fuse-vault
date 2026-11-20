@@ -100,12 +100,8 @@ target_include_directories(enrollment_tests PRIVATE ${FV_SHARED}/security/includ
 target_compile_options(enrollment_tests PRIVATE -Wall -Wextra -Werror)
 add_test(NAME enrollment COMMAND enrollment_tests)
 
-# The FIDO encrypted store holds the credential image and working secrets in RAM
-# while the vault is unlocked. Its lifecycle, interruption and lock behaviour are
-# security-relevant, so run these tests in every desktop build, not only when the
-# optional pico-fido engine is enabled. The test compiles store.c directly to
-# reach the static write_snapshot and links fido_test_platform for the fixture
-# and image_upgrade helpers; neither requires the engine.
+# The encrypted snapshot lifecycle and migration fixtures run without the FIDO engine.
+# The test includes store.c to generate legacy snapshots with its private writer.
 add_library(fido_test_platform STATIC tests/fido_test_platform.c)
 target_include_directories(fido_test_platform PUBLIC tests ${FV_SHARED}/fido/include)
 target_link_libraries(fido_test_platform PRIVATE fv_security)
