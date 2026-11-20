@@ -1,3 +1,4 @@
+target_link_libraries(fido_test_platform PUBLIC fv_fido_store)
 add_executable(fido_usb_scheduling_tests tests/usb_storage_bridge_tests.c ${FV_PICO}/device/usb_storage_bridge.c)
 target_include_directories(fido_usb_scheduling_tests PRIVATE ${FV_SHARED}/fido/include tests/msc_stubs ${FV_PICO}/device ${FV_SHARED}/ui)
 target_compile_definitions(fido_usb_scheduling_tests PRIVATE FV_USB_FIDO=1 FV_USB_MSC=1 FV_DEVICE_UI=1)
